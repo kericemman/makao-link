@@ -12,17 +12,14 @@ import {
   FiList,
   FiHeart,
   FiEye,
-  FiCamera
+  FiCamera,
+  FiPlay,
+  FiPause
 } from "react-icons/fi"
 import { FaBed, FaBath, FaBuilding } from "react-icons/fa"
 import toast from "react-hot-toast"
 
 function Properties() {
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-}, []);
-
   const [properties, setProperties] = useState([])
   const [filteredProperties, setFilteredProperties] = useState([])
   const [loading, setLoading] = useState(true)
@@ -32,8 +29,10 @@ function Properties() {
   const [bedrooms, setBedrooms] = useState("all")
   const [viewMode, setViewMode] = useState("grid")
   const [showFilters, setShowFilters] = useState(false)
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true)
 
   useEffect(() => {
+    window.scrollTo(0, 0)
     fetchProperties()
   }, [])
 
@@ -123,95 +122,133 @@ function Properties() {
 
   return (
     <div className="min-h-screen bg-[#F0F7F4]">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-[#013E43] to-[#005C57] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+      {/* Hero Section with Video Background */}
+      <div className="relative h-[550px] md:h-[450px] lg:h-[500px] overflow-hidden">
+        {/* Video Background */}
+        <div className="absolute inset-0 w-full h-full">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute min-w-full min-h-full object-cover"
+          >
+            <source src="https://player.vimeo.com/external/434045526.hd.mp4?s=81a8c6b5b5b5b5b5b5b5b5b5b5b5b5b5&profile_id=174" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#013E43]/95 to-[#005C57]/90"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+        </div>
+
+        {/* Video Controls */}
+        <button
+          onClick={() => setIsVideoPlaying(!isVideoPlaying)}
+          className="absolute top-6 right-6 z-20 p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+        >
+          {isVideoPlaying ? <FiPause className="text-white text-xl" /> : <FiPlay className="text-white text-xl" />}
+        </button>
+
+        {/* Centered Hero Content */}
+        <div className="relative h-full flex flex-col items-center justify-center text-center text-white px-4 sm:px-6 lg:px-8 z-10">
+          {/* Badge */}
+          <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
+            <FiHome className="text-[#02BB31]" />
+            <span className="text-sm font-medium">Kenya's #1 Property Platform</span>
+          </div>
+
+          {/* Main Heading */}
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 max-w-4xl">
             Find Your Perfect Home
           </h1>
-          <p className="text-xl text-[#A8D8C1] mb-8 max-w-2xl">
+
+          {/* Description */}
+          <p className="text-xl text-[#A8D8C1] max-w-2xl mb-8">
             Discover verified rental properties across Kenya. Connect directly with landlords.
           </p>
-          
-          {/* Search Bar */}
-          <div className="bg-white rounded-2xl shadow-2xl p-4 max-w-3xl">
-            <div className="flex flex-col md:flex-row gap-3">
-              <div className="flex-1 relative">
-                <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#065A57]" />
-                <input
-                  type="text"
-                  placeholder="Search by location, city, or property name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 rounded-xl border border-[#A8D8C1] focus:outline-none focus:ring-2 focus:ring-[#02BB31] focus:border-transparent text-[#013E43]"
-                />
-              </div>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="px-6 py-4 bg-[#013E43] text-white rounded-xl hover:bg-[#005C57] transition-colors flex items-center justify-center space-x-2"
-              >
-                <FiFilter />
-                <span>Filters</span>
-              </button>
-            </div>
 
-            {/* Filters Panel */}
-            {showFilters && (
-              <div className="mt-4 pt-4 border-t border-[#A8D8C1] grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">Min Price (KES)</label>
+          {/* Search Bar */}
+          <div className="w-full max-w-3xl">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#065A57]" />
                   <input
-                    type="number"
-                    placeholder="Min"
-                    value={priceRange.min}
-                    onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-[#A8D8C1] focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#013E43]"
+                    type="text"
+                    placeholder="Search by location, city, or property name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 rounded-xl border border-white/30 bg-white/90 focus:outline-none focus:ring-2 focus:ring-[#02BB31] focus:border-transparent text-[#013E43]"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">Max Price (KES)</label>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={priceRange.max}
-                    onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-[#A8D8C1] focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#013E43]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">Property Type</label>
-                  <select
-                    value={propertyType}
-                    onChange={(e) => setPropertyType(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-[#A8D8C1] focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#013E43]"
-                  >
-                    {propertyTypes.map(type => (
-                      <option key={type} value={type}>
-                        {type === "all" ? "All Types" : type.charAt(0).toUpperCase() + type.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">Bedrooms</label>
-                  <select
-                    value={bedrooms}
-                    onChange={(e) => setBedrooms(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-[#A8D8C1] focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#013E43]"
-                  >
-                    <option value="all">Any</option>
-                    <option value="1">1 Bedroom</option>
-                    <option value="2">2 Bedrooms</option>
-                    <option value="3">3 Bedrooms</option>
-                    <option value="4">4+ Bedrooms</option>
-                  </select>
-                </div>
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="px-6 py-4 bg-[#013E43] text-white rounded-xl hover:bg-[#005C57] transition-colors flex items-center justify-center space-x-2"
+                >
+                  <FiFilter />
+                  <span>Filters</span>
+                </button>
               </div>
-            )}
+
+              {/* Filters Panel */}
+              {showFilters && (
+                <div className="mt-4 pt-4 border-t border-white/20 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-1">Min Price (KES)</label>
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      value={priceRange.min}
+                      onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
+                      className="w-full px-4 py-2 rounded-lg border border-white/30 bg-white/90 focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#013E43]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-1">Max Price (KES)</label>
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      value={priceRange.max}
+                      onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
+                      className="w-full px-4 py-2 rounded-lg border border-white/30 bg-white/90 focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#013E43]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-1">Property Type</label>
+                    <select
+                      value={propertyType}
+                      onChange={(e) => setPropertyType(e.target.value)}
+                      className="w-full px-4 py-2 rounded-lg border border-white/30 bg-white/90 focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#013E43]"
+                    >
+                      {propertyTypes.map(type => (
+                        <option key={type} value={type}>
+                          {type === "all" ? "All Types" : type.charAt(0).toUpperCase() + type.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-1">Bedrooms</label>
+                    <select
+                      value={bedrooms}
+                      onChange={(e) => setBedrooms(e.target.value)}
+                      className="w-full px-4 py-2 rounded-lg border border-white/30 bg-white/90 focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#013E43]"
+                    >
+                      <option value="all">Any</option>
+                      <option value="1">1 Bedroom</option>
+                      <option value="2">2 Bedrooms</option>
+                      <option value="3">3 Bedrooms</option>
+                      <option value="4">4+ Bedrooms</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Results Count and View Toggle */}
-          <div className="mt-6 flex items-center justify-between text-white">
+          <div className="mt-6 w-full max-w-3xl flex items-center justify-between text-white">
             <p className="text-[#A8D8C1]">
               {filteredProperties.length} properties found
             </p>
@@ -235,6 +272,8 @@ function Properties() {
             </div>
           </div>
         </div>
+
+       
       </div>
 
       {/* Properties Display */}

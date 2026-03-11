@@ -530,7 +530,7 @@ function PartnerApply() {
             {/* Documents Upload */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-[#013E43] mb-1">
-                Business Documents <span className="text-red-500">*</span>
+                Business Documents (County License, Registration certificate) <span className="text-red-500">*</span>
               </label>
               <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
                 errors.documents ? 'border-red-300 bg-red-50' : 'border-[#A8D8C1] hover:border-[#02BB31]'
@@ -626,7 +626,7 @@ function PartnerApply() {
             {/* Terms */}
             <p className="text-xs text-center text-[#065A57]">
               By submitting this application, you agree to our{' '}
-              <Link to="/terms" className="text-[#02BB31] hover:underline">
+              <Link to="/terms-of-service" className="text-[#02BB31] hover:underline">
                 Terms of Service
               </Link>{' '}
               and{' '}

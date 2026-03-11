@@ -19,10 +19,9 @@ const Footer = () => {
   const quickLinks = [
     { name: "Home", path: "/" },
     { name: "Properties", path: "/properties" },
-    { name: "How It Works", path: "/how-it-works" },
     { name: "About Us", path: "/about" },
     { name: "Partner with Us", path: "/partners" },
-    { name: "Contact", path: "/contact" },
+    { name: "Contact", path: "/support" },
     
   ];
 
@@ -30,8 +29,7 @@ const Footer = () => {
     { name: "List Property", path: "/register" },
     { name: "Landlord Login", path: "/login" },
     { name: "Pricing", path: "/pricing" },
-    { name: "Success Stories", path: "/success-stories" },
-    { name: "Resources", path: "/resources" },
+    { name: "Resources", path: "/articles" },
     { name: "Support", path: "/support" },
   ];
 
@@ -39,15 +37,13 @@ const Footer = () => {
     { name: "Find Homes", path: "/properties" },
     { name: "Tenant Guide", path: "/tenant-guide" },
     { name: "FAQs", path: "/faqs" },
-    { name: "Safety Tips", path: "/safety" },
     { name: "Logistics", path: "/logistics" },
   ];
 
   const legalLinks = [
-    { name: "Terms of Service", path: "/terms" },
+    { name: "Terms of Service", path: "/terms-of-service" },
     { name: "Privacy Policy", path: "/privacy" },
-    { name: "Cookie Policy", path: "/cookies" },
-    { name: "Disclaimer", path: "/disclaimer" },
+    { name: "Cookie Policy", path: "/privacy" }
   ];
 
   const socialLinks = [
@@ -55,7 +51,7 @@ const Footer = () => {
     { icon: FiTwitter, href: "https://twitter.com", label: "Twitter", color: "hover:text-[#1DA1F2]" },
     { icon: FiInstagram, href: "https://instagram.com", label: "Instagram", color: "hover:text-[#E4405F]" },
     { icon: FiLinkedin, href: "https://linkedin.com", label: "LinkedIn", color: "hover:text-[#0A66C2]" },
-    { icon: FaWhatsapp, href: "https://wa.me/254712345678", label: "WhatsApp", color: "hover:text-[#25D366]" },
+    { icon: FaWhatsapp, href: "https://wa.me/254702262169", label: "WhatsApp", color: "hover:text-[#25D366]" },
     { icon: FaTiktok, href: "https://tiktok.com", label: "TikTok", color: "hover:text-[#000000]" },
   ];
 

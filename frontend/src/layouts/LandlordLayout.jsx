@@ -58,10 +58,10 @@ function LandloardLayout() {
       description: "Create new listing"
     },
     { 
-      path: "/dashboard/inquiries", 
-      name: "Inquiries", 
+      path: "/dashboard/support", 
+      name: "Support", 
       icon: FiMessageSquare,
-      description: "Messages from tenants"
+      description: "Get intant MakaoLink support"
     },
   ]
 

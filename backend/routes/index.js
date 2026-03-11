@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const router = express.Router();
 
@@ -8,8 +9,17 @@ const paymentRoutes = require("../modules/payments/payment.routes");
 const adminRoutes = require("../modules/admin/admin.routes");
 const userRoutes = require("../modules/users/user.routes");
 const dashboardRoutes = require("../modules/users/dashboard.routes");
-const partnerRoutes = require("../modules/partners/partner.routes")
-const settingsRoutes = require("../modules/settings/setting.route")
+const partnerRoutes = require("../modules/partners/partner.routes");
+const settingsRoutes = require("../modules/settings/setting.route");
+const blogRoutes = require("../modules/blog/blog.route");
+const contactRoutes = require("../modules/contact/contact.route")
+const supportRoutes = require("../modules/support/ticket.route")
+
+
+
+
+
+
 
 
 
@@ -24,6 +34,10 @@ router.use("/admin", adminRoutes);
 router.use("/users", userRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/partners", partnerRoutes)
-router.use("/api/settings", settingsRoutes)
+router.use("/settings", settingsRoutes)
+router.use("/blogs", blogRoutes)
+router.use("/contact", contactRoutes)
+router.use("/support", supportRoutes)
+
 
 module.exports = router;

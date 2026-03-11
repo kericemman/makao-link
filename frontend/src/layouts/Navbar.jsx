@@ -15,7 +15,7 @@ import {
   FiSettings,
   FiHelpCircle
 } from "react-icons/fi"
-import { FaBuilding } from "react-icons/fa"
+import { FaBuilding, FaDollarSign, FaFileInvoiceDollar } from "react-icons/fa"
 import toast from "react-hot-toast"
 
 function Navbar() {
@@ -61,6 +61,15 @@ function Navbar() {
             >
               <FiGrid className="text-lg" />
               <span>Properties</span>
+            </Link>
+
+
+            <Link
+              to="/pricing"
+              className="px-4 py-2 text-[#065A57] hover:text-[#013E43] hover:bg-[#F0F7F4] rounded-lg transition-all flex items-center space-x-2"
+            >
+              <FaDollarSign className="text-lg" />
+              <span>Pricing</span>
             </Link>
 
             {!user && (
@@ -202,6 +211,15 @@ function Navbar() {
             >
               <FiGrid className="text-xl" />
               <span>Properties</span>
+            </Link>
+
+            <Link
+              to="/pricing"
+              className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              <FaDollarSign className="text-xl" />
+              <span>Pricing</span>
             </Link>
 
             {!user && (

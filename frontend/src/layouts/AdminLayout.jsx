@@ -10,8 +10,11 @@ import {
   FiX,
   FiChevronDown,
   FiBell,
-  FiSettings
+  FiSettings,
+  FiBook,
+  FiHelpCircle
 } from "react-icons/fi"
+import { FaMicroblog, FaPhoneAlt } from "react-icons/fa"
 
 function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
@@ -23,7 +26,10 @@ function AdminLayout() {
     { path: "/admin/properties", name: "Properties", icon: FiGrid },
     { path: "/admin/users", name: "Users", icon: FiUsers },
     { path: "/admin/kyc", name: "KYC", icon: FiUserCheck },
-    { path: "/admin/partners", name: "Partners", icon: FiUserCheck },
+    { path: "/admin/partners", name: "Partners", icon: FiBook},
+    { path: "/admin/blogs", name: "Blogs", icon: FaMicroblog },
+    { path: "/admin/contacts", name: "Contacts", icon: FaPhoneAlt },
+    { path: "/admin/tickets", name: "Support", icon: FiHelpCircle },
     { path: "/admin/settings", name: "Settings", icon: FiSettings },
   ]
 
