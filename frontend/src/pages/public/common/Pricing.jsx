@@ -191,7 +191,7 @@ function Pricing() {
     
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-10xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Billing Toggle */}
         <div className="flex justify-center mb-12">
           <div className="bg-white p-1 rounded-xl shadow-lg border border-[#A8D8C1] inline-flex">

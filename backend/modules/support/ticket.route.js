@@ -10,7 +10,8 @@ const {
   getTickets,
   getTicket,
   replyTicket,
-  closeTicket
+  closeTicket,
+  updateTicketStatus
 } = require("./ticket.controller")
 
 // landlord
@@ -20,7 +21,22 @@ router.get("/mine", auth, getMyTickets)
 // admin
 router.get("/", auth, role("admin"), getTickets)
 router.get("/:id", auth, role("admin"), getTicket)
-router.post("/:id/reply", auth, role("admin"), replyTicket)
+
+router.post(
+    "/:id/reply",
+    auth,
+    role("admin"),
+    replyTicket
+  )
+
+  router.post("/:id/reply", auth, role("admin"), replyTicket)
+
 router.put("/:id/close", auth, role("admin"), closeTicket)
+router.put(
+    "/:id/status",
+    auth,
+    role("admin"),
+    updateTicketStatus
+  )
 
 module.exports = router
