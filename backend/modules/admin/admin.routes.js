@@ -1,43 +1,25 @@
 const express = require("express");
 const router = express.Router();
-
-const auth = require("../../middleware/auth.middleware");
-const role = require("../../middleware/role.middleware");
-
 const {
-  approveProperty,
-  rejectProperty,
-  suspendUser,
-  approveKYC,
-  getDashboardStats,
-  getAllUsers, 
-  activateUser,
-  getPendingKYC, 
-  getAdminActivity,
-  getRevenueChart
+  getPendingListings,
+  approveListing,
+  rejectListing,
+  getAdminSummary,
+  getLandlords,
+  getAdminPayments,
+  getListingHistory,
+  getAdminInquiries
 } = require("./admin.controller");
+const { protect } = require("../../middleware/auth.middleware");
+const requireRole = require("../../middleware/role.middleware");
 
-router.get("/stats", auth, role("admin"), getDashboardStats);
-
-router.get("/users", auth, role("admin"), getAllUsers);
-
-router.put("/properties/:id/approve", auth, role("admin"), approveProperty);
-
-router.put("/properties/:id/reject", auth, role("admin"), rejectProperty);
-
-router.put("/users/:id/suspend", auth, role("admin"), suspendUser);
-
-router.put("/users/:id/approve-kyc", auth, role("admin"), approveKYC);
-
-router.put("/users/:id/activate", auth, role("admin"), activateUser)
-
-router.get("/kyc", auth, role("admin"), getPendingKYC)
-
-router.get("/activity", auth, role("admin"), getAdminActivity);
-
-router.get("/charts/revenue", auth, role("admin"), getRevenueChart);
+router.get("/summary", protect, requireRole("admin"), getAdminSummary);
+router.get("/landlords", protect, requireRole("admin"), getLandlords);
+router.get("/payments", protect, requireRole("admin"), getAdminPayments);
+router.get("/listings/pending", protect, requireRole("admin"), getPendingListings);
+router.patch("/listings/:id/approve", protect, requireRole("admin"), approveListing);
+router.patch("/listings/:id/reject", protect, requireRole("admin"), rejectListing);
+router.get("/listings/history", protect, requireRole("admin"), getListingHistory);
+router.get("/inquiries", protect, requireRole("admin"), getAdminInquiries);
 
 module.exports = router;
-
-
-

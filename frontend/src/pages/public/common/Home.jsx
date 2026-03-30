@@ -1,12 +1,12 @@
 import Hero from "../../../components/home/Hero"
 import RelocationSection from "../../../components/home/LogisticSection"
-import PropertySection from "../../../components/home/propertySection"
+
 
 function Home() {
     return (
       <div>
         <Hero/>
-        <PropertySection
+        {/* <PropertySection
         title="Villas"
         type="villa"
       />
@@ -24,7 +24,7 @@ function Home() {
       <PropertySection
         title="Bedsitters"
         type="bedsitter"
-      />
+      /> */}
 
       <RelocationSection/>
       </div>

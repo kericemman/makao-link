@@ -2,32 +2,47 @@ const mongoose = require("mongoose");
 
 const paymentSchema = new mongoose.Schema(
   {
-    landlord: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
-    },
-
-    plan: {
-      type: String
-    },
-
-    amount: {
-      type: Number
+      ref: "User",
+      required: true
     },
 
     reference: {
-      type: String
+      type: String,
+      required: true,
+      unique: true,
+      trim: true
+    },
+
+    amount: {
+      type: Number,
+      required: true
+    },
+
+    currency: {
+      type: String,
+      default: "KES"
+    },
+
+    plan: {
+      type: String,
+      enum: ["normal", "basic", "premium", "pro"],
+      required: true
     },
 
     status: {
       type: String,
-      enum: ["pending", "success", "failed"],
-      default: "pending"
+      enum: ["success", "failed"],
+      required: true
+    },
+
+    paidAt: {
+      type: Date,
+      default: null
     }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Payment", paymentSchema);

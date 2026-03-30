@@ -2,40 +2,63 @@ const mongoose = require("mongoose");
 
 const subscriptionSchema = new mongoose.Schema(
   {
-    landlord: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
+      unique: true
     },
 
     plan: {
       type: String,
-      enum: ["normal", "basic", "premium", "makaopro"],
+      enum: ["normal", "basic", "premium", "pro"],
+      required: true,
       default: "normal"
-    },
-
-    propertyLimit: {
-      type: Number
     },
 
     status: {
       type: String,
-      enum: ["active", "expired"],
-      default: "active"
+      enum: ["free", "pending_payment", "active", "grace", "expired", "cancelled"],
+      required: true,
+      default: "free"
     },
 
-    startDate: {
+    paystackCustomerCode: {
+      type: String,
+      default: null
+    },
+
+    paystackSubscriptionCode: {
+      type: String,
+      default: null
+    },
+
+    paystackEmailToken: {
+      type: String,
+      default: null
+    },
+
+    currentPeriodStart: {
       type: Date,
-      default: Date.now
+      default: null
     },
 
-    endDate: {
-      type: Date
+    currentPeriodEnd: {
+      type: Date,
+      default: null
+    },
+
+    gracePeriodEnd: {
+      type: Date,
+      default: null
+    },
+
+    lastPaymentDate: {
+      type: Date,
+      default: null
     }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Subscription", subscriptionSchema);

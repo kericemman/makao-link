@@ -1,75 +1,74 @@
-import { createContext, useContext, useEffect, useState } from "react"
-import { getCurrentUser } from "../services/auth.service"
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import api from "../api/api";
 
-const AuthContext = createContext()
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [subscription, setSubscription] = useState(null);
+  const [usage, setUsage] = useState({ used: 0, limit: 0, remaining: 0 });
+  const [loading, setLoading] = useState(true);
 
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const token = localStorage.getItem("makao_token");
+
+  const fetchMe = async () => {
+    try {
+      const { data } = await api.get("/auth/me");
+      setUser(data.user);
+      setSubscription(data.subscription);
+      setUsage(data.usage || { used: 0, limit: 0, remaining: 0 });
+      return data;
+    } catch (error) {
+      localStorage.removeItem("makao_token");
+      setUser(null);
+      setSubscription(null);
+      setUsage({ used: 0, limit: 0, remaining: 0 });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-
-    const token = localStorage.getItem("token")
-
-    if (!token) {
-      setLoading(false)
-      return
+    if (token) {
+      fetchMe().catch(() => {});
+    } else {
+      setLoading(false);
     }
+  }, []);
 
-    const fetchUser = async () => {
-
-      try {
-
-        const res = await getCurrentUser()
-
-        setUser(res.data)
-
-      } catch (error) {
-
-        console.error("Failed to fetch user")
-
-        localStorage.removeItem("token")
-
-      } finally {
-
-        setLoading(false)
-
-      }
-
-    }
-
-    fetchUser()
-
-  }, [])
+  const login = ({ token, user, subscription, usage }) => {
+    localStorage.setItem("makao_token", token);
+    setUser(user);
+    setSubscription(subscription);
+    setUsage(usage || { used: 0, limit: 0, remaining: 0 });
+  };
 
   const logout = () => {
+    localStorage.removeItem("makao_token");
+    setUser(null);
+    setSubscription(null);
+    setUsage({ used: 0, limit: 0, remaining: 0 });
+  };
 
-    localStorage.removeItem("token")
+  const refreshAuth = async () => {
+    return fetchMe();
+  };
 
-    setUser(null)
+  const value = useMemo(
+    () => ({
+      user,
+      subscription,
+      usage,
+      loading,
+      login,
+      logout,
+      refreshAuth
+    }),
+    [user, subscription, usage, loading]
+  );
 
-    window.location.href = "/login"
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
-  }
-
-  return (
-
-    <AuthContext.Provider
-      value={{
-        user,
-        setUser,
-        logout,
-        loading
-      }}
-    >
-
-      {children}
-
-    </AuthContext.Provider>
-
-  )
-
-}
-
-export const useAuth = () => useContext(AuthContext)
+export const useAuth = () => useContext(AuthContext);

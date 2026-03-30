@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { getPropertiesByType } from "../../services/property.service"
+import { getListingsByType } from "../../services/listings.service"
 import { 
   FiHome, 
   FiMapPin, 
@@ -14,22 +14,22 @@ import { FaBed, FaBath } from "react-icons/fa"
 import toast from "react-hot-toast"
 
 function PropertySection({ title, type }) {
-  const [properties, setProperties] = useState([])
+  const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchProperties()
+    fetchListings()
   }, [type])
 
-  const fetchProperties = async () => {
+  const fetchListings = async () => {
     try {
       setLoading(true)
-      const res = await getPropertiesByType(type)
-      // Get approved properties and slice to 3
-      const approvedProperties = res.data.filter(p => p.status === "approved")
-      setProperties(approvedProperties.slice(0, 3))
+      // Fetch listings by type using the updated service
+      const response = await getListingsByType(type)
+      // The API now returns approved listings by default
+      setListings(response.listings?.slice(0, 3) || [])
     } catch (error) {
-      toast.error(`Failed to load ${title} properties`, {
+      toast.error(`Failed to load ${title} listings`, {
         style: { background: "#013E43", color: "#fff" }
       })
     } finally {
@@ -45,7 +45,7 @@ function PropertySection({ title, type }) {
     }).format(price)
   }
 
-  // Get icon based on property type
+  // Get icon based on listing type
   const getTypeIcon = () => {
     switch(type) {
       case "apartment":
@@ -102,12 +102,12 @@ function PropertySection({ title, type }) {
             </div>
           ))}
         </div>
-      ) : properties.length === 0 ? (
+      ) : listings.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-[#A8D8C1]">
           <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
             <FiHome className="text-3xl text-[#A8D8C1]" />
           </div>
-          <h3 className="text-lg font-semibold text-[#013E43] mb-2">No properties found</h3>
+          <h3 className="text-lg font-semibold text-[#013E43] mb-2">No listings found</h3>
           <p className="text-sm text-[#065A57] mb-4">
             There are currently no {title.toLowerCase()} available.
           </p>
@@ -115,23 +115,23 @@ function PropertySection({ title, type }) {
             to="/properties"
             className="inline-flex items-center px-6 py-3 bg-[#02BB31] text-white rounded-lg font-semibold hover:bg-[#0D915C] transition-colors"
           >
-            Browse All Properties
+            Browse All Listings
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {properties.map((property) => (
+          {listings.map((listing) => (
             <Link
-              key={property._id}
-              to={`/properties/${property._id}`}
+              key={listing._id}
+              to={`/properties/${listing._id}`}
               className="group bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1"
             >
-              {/* Property Image */}
+              {/* Listing Image */}
               <div className="relative h-56 overflow-hidden">
-                {property.images?.[0] ? (
+                {listing.images?.[0] ? (
                   <img
-                    src={property.images[0].url || property.images[0]}
-                    alt={property.title}
+                    src={listing.images[0].url || listing.images[0]}
+                    alt={listing.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                 ) : (
@@ -142,49 +142,49 @@ function PropertySection({ title, type }) {
                 
                 {/* Price Tag */}
                 <div className="absolute bottom-4 left-4 px-4 py-2 bg-[#013E43]/90 text-white font-bold rounded-lg backdrop-blur-sm">
-                  {formatPrice(property.price)}
+                  {formatPrice(listing.price)}
                   <span className="text-xs text-[#A8D8C1] ml-1">/month</span>
                 </div>
 
-                {/* Property Type Badge */}
+                {/* Listing Type Badge */}
                 <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 backdrop-blur-sm text-[#013E43] text-sm font-medium rounded-full">
-                  {property.propertyType}
+                  {listing.propertyType}
                 </div>
 
                 {/* Image Count */}
                 <div className="absolute top-4 left-4 px-2 py-1 bg-black/50 text-white text-xs rounded-full flex items-center">
                   <FiCamera className="mr-1" />
-                  {property.images?.length || 0}
+                  {listing.images?.length || 0}
                 </div>
               </div>
 
               {/* Content */}
               <div className="p-5">
                 <h3 className="text-xl font-bold text-[#013E43] mb-2 line-clamp-1 group-hover:text-[#02BB31] transition-colors">
-                  {property.title}
+                  {listing.title}
                 </h3>
                 
                 <p className="text-[#065A57] mb-4 flex items-start">
                   <FiMapPin className="mr-2 mt-1 flex-shrink-0 text-[#02BB31]" />
-                  <span className="line-clamp-1">{property.location}, {property.city}</span>
+                  <span className="line-clamp-1">{listing.location}, {listing.city}</span>
                 </p>
 
-                {/* Property Features */}
+                {/* Listing Features */}
                 <div className="flex items-center space-x-4 mb-4 text-[#065A57]">
                   <span className="flex items-center text-sm">
                     <FaBed className="mr-2 text-[#02BB31]" /> 
-                    {property.bedrooms || 0} {property.bedrooms === 1 ? 'bed' : 'beds'}
+                    {listing.bedrooms || 0} {listing.bedrooms === 1 ? 'bed' : 'beds'}
                   </span>
                   <span className="flex items-center text-sm">
                     <FaBath className="mr-2 text-[#02BB31]" /> 
-                    {property.bathrooms || 0} {property.bathrooms === 1 ? 'bath' : 'baths'}
+                    {listing.bathrooms || 0} {listing.bathrooms === 1 ? 'bath' : 'baths'}
                   </span>
                 </div>
 
                 {/* Amenities Preview */}
-                {property.amenities?.length > 0 && (
+                {listing.amenities?.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {property.amenities.slice(0, 3).map((amenity) => (
+                    {listing.amenities.slice(0, 3).map((amenity) => (
                       <span
                         key={amenity}
                         className="px-3 py-1 bg-[#F0F7F4] text-[#065A57] text-xs rounded-full"
@@ -192,9 +192,9 @@ function PropertySection({ title, type }) {
                         {amenity}
                       </span>
                     ))}
-                    {property.amenities.length > 3 && (
+                    {listing.amenities.length > 3 && (
                       <span className="px-3 py-1 bg-[#F0F7F4] text-[#065A57] text-xs rounded-full">
-                        +{property.amenities.length - 3}
+                        +{listing.amenities.length - 3}
                       </span>
                     )}
                   </div>

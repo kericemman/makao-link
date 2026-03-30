@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
 
-const auth = require("../../middleware/auth.middleware");
 const { getDashboardStats } = require("./dashboard.controller");
+const { protect } = require("../../middleware/auth.middleware");
+const requireRole = require("../../middleware/role.middleware");
 
-router.get("/stats", auth, getDashboardStats);
+router.get("/stats", protect, requireRole("landlord"), getDashboardStats);
 
 module.exports = router;

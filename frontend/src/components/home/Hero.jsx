@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { getProperties } from "../../services/property.service"
+import { getPublicListings } from "../../services/listings.service";
 import { 
   FiHome, 
   FiMapPin, 
@@ -10,7 +10,8 @@ import {
   FiUsers,
   FiClock,
   FiArrowRight,
-  FiCheckCircle
+  FiCheckCircle,
+  FiStar
 } from "react-icons/fi"
 import { FaBuilding, FaHandshake, FaKey } from "react-icons/fa"
 import toast from "react-hot-toast"
@@ -32,7 +33,6 @@ function Hero() {
   useEffect(() => {
     fetchProperties()
     
-    // Image slideshow interval
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % backgroundImages.length)
     }, 5000)
@@ -43,10 +43,8 @@ function Hero() {
   const fetchProperties = async () => {
     try {
       setLoading(true)
-      const res = await getProperties()
-      // Get approved properties and slice to 3
-      const approvedProperties = res.data.filter(p => p.status === "approved")
-      setProperties(approvedProperties.slice(0, 3))
+      const response = await getPublicListings({ limit: 3 })
+      setProperties(response.listings || [])
     } catch (error) {
       toast.error("Failed to load recent properties", {
         style: { background: "#013E43", color: "#fff" }
@@ -64,13 +62,18 @@ function Hero() {
     }).format(price)
   }
 
- 
-
   const features = [
     "Direct landlord contact",
     "Verified properties",
     "No middlemen fees",
     "Fast response times"
+  ]
+
+  const stats = [
+    { icon: FiHome, value: "1,200+", label: "Verified Properties" },
+    { icon: FiUsers, value: "850+", label: "Happy Landlords" },
+    { icon: FiShield, value: "100%", label: "Secure Platform" },
+    { icon: FiClock, value: "24/7", label: "Support" }
   ]
 
   return (
@@ -94,123 +97,111 @@ function Hero() {
         
         {/* Multi-layer Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#013E43] via-[#013E43]/80 to-transparent"></div>
-        
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-[#013E43]/90"></div>
-        
-       
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#013E43]/80"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#013E43]/50 via-transparent to-[#013E43]/50"></div>
       </div>
 
       {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#02BB31] rounded-full opacity-20 blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#A8D8C1] rounded-full opacity-20 blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#0D915C] rounded-full opacity-10 blur-3xl"></div>
       </div>
 
-      {/* Floating Property Cards (Decorative) */}
-      
-        
-
-      <div className="absolute bottom-20 right-10 hidden lg:block animate-float-delayed">
-        <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20">
-          <div className="flex items-center space-x-3">
-            <img 
-              src="https://images.unsplash.com/photo-1570129477492-45c003edd2be?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80" 
-              alt="Property"
-              className="w-12 h-12 rounded-lg object-cover"
-            />
-            <div>
-              <p className="text-white text-sm font-medium">Luxury Villa</p>
-              <p className="text-[#A8D8C1] text-xs">KES 85,000/mo</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 z-10">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+      <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 xl:py-24 z-10">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 xl:gap-16 items-start">
           
           {/* LEFT SIDE - Main Content */}
-          <div className="space-y-8">
+          <div className="w-full lg:w-1/2 space-y-4 sm:space-y-6 lg:space-y-8">
             {/* Floating Badge */}
-            <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-full animate-fade-in">
-              <FiTrendingUp className="text-[#02BB31]" />
-              <span className="text-sm font-medium">Kenya's #1 Direct Landlord Platform</span>
+            <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full">
+              <FiTrendingUp className="text-[#02BB31] text-sm sm:text-base" />
+              <span className="text-xs sm:text-sm font-medium">Kenya's #1 Property Platform</span>
             </div>
 
             {/* Main Heading */}
-            <h1 className="text-2xl lg:text-3xl xl:text-5xl font-bold leading-tight animate-slide-up">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold leading-tight">
               <span className="text-white">Find Your Next Home</span>
-              <span className="block text-[#02BB31] mt-2">Without Agents</span>
+              <span className="block text-[#02BB31] mt-1 sm:mt-2">Without Agents</span>
             </h1>
 
             {/* Description */}
-            <p className="text-lg text-[#A8D8C1] leading-relaxed max-w-xl animate-slide-up delay-100">
+            <p className="text-sm sm:text-base md:text-lg text-[#A8D8C1] leading-relaxed max-w-xl">
               MakaoLink connects tenants directly with landlords. 
               Browse verified homes, schedule viewings and move 
               into your next home faster.
             </p>
 
             {/* Features List */}
-            <div className="grid grid-cols-2 gap-3 animate-slide-up delay-200">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {features.map((feature, index) => (
                 <div key={index} className="flex items-center space-x-2 text-white">
-                  <FiCheckCircle className="text-[#02BB31] flex-shrink-0" />
-                  <span className="text-sm">{feature}</span>
+                  <FiCheckCircle className="text-[#02BB31] text-xs sm:text-sm flex-shrink-0" />
+                  <span className="text-xs sm:text-sm">{feature}</span>
                 </div>
               ))}
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex gap-2 animate-slide-up delay-300">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Link
                 to="/properties"
-                className="inline-flex items-center space-x-2 px-10 text-sm  py-4 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105"
+                className="inline-flex items-center justify-center space-x-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105 text-sm sm:text-base"
               >
                 <span>Browse Homes</span>
-                
+                <FiArrowRight className="text-sm sm:text-base" />
               </Link>
               
               <Link
                 to="/register"
-                className="inline-flex items-center justify-center text-sm space-x-2 px-10 py-2 bg-white/10 backdrop-blur-sm text-white rounded-xl font-semibold hover:bg-white/20 transition-all border border-white/20"
+                className="inline-flex items-center justify-center space-x-2 px-6 sm:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-sm text-white rounded-xl font-semibold hover:bg-white/20 transition-all border border-white/20 text-sm sm:text-base"
               >
-                
+                <FaKey className="text-sm sm:text-base" />
                 <span>List Your Property</span>
               </Link>
             </div>
 
-            
-            
+            {/* Stats - Hidden on mobile, visible on tablet+ */}
+            <div className="hidden sm:grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+              {stats.map((stat, index) => {
+                const Icon = stat.icon
+                return (
+                  <div key={index} className="text-center">
+                    <Icon className="text-xl md:text-2xl text-[#02BB31] mx-auto mb-2" />
+                    <p className="text-base md:text-lg font-bold text-white">{stat.value}</p>
+                    <p className="text-xs text-[#A8D8C1]">{stat.label}</p>
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
           {/* RIGHT SIDE - Recent Listings */}
-          <div className="space-y-4 animate-slide-up delay-500">
+          <div className="w-full lg:w-1/2 space-y-4">
             {/* Section Header */}
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-white flex items-center">
-              <FiHome className="mr-2 text-[#02BB31]" />
+              <h3 className="text-base sm:text-lg font-semibold text-white flex items-center">
+                <FiHome className="mr-2 text-[#02BB31] text-sm sm:text-base" />
                 Recent Listings
               </h3>
               <Link
                 to="/properties"
-                className="text-sm text-[#A8D8C1] hover:text-white transition-colors flex items-center"
+                className="text-xs sm:text-sm text-[#A8D8C1] hover:text-white transition-colors flex items-center"
               >
                 View all
-                <FiArrowRight className="ml-1" />
+                <FiArrowRight className="ml-1 text-xs" />
               </Link>
             </div>
 
             {/* Loading State */}
             {loading ? (
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-8 text-center border border-white/10">
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 sm:p-8 text-center border border-white/10">
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#02BB31] border-t-transparent mx-auto mb-2"></div>
-                <p className="text-sm text-[#A8D8C1]">Loading properties...</p>
+                <p className="text-xs sm:text-sm text-[#A8D8C1]">Loading properties...</p>
               </div>
             ) : properties.length === 0 ? (
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-8 text-center border border-white/10">
-                <FiHome className="text-3xl text-[#A8D8C1] mx-auto mb-2" />
-                <p className="text-sm text-[#A8D8C1]">No properties available</p>
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 sm:p-8 text-center border border-white/10">
+                <FiHome className="text-2xl sm:text-3xl text-[#A8D8C1] mx-auto mb-2" />
+                <p className="text-xs sm:text-sm text-[#A8D8C1]">No properties available</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -218,10 +209,10 @@ function Hero() {
                   <Link
                     key={property._id}
                     to={`/properties/${property._id}`}
-                    className="flex gap-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-xl p-3 transition-all group border border-white/10 hover:border-white/20"
+                    className="flex gap-3 sm:gap-4 bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-xl p-3 transition-all group border border-white/10 hover:border-white/20"
                   >
                     {/* Property Image */}
-                    <div className="w-24 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                    <div className="w-20 h-16 sm:w-24 sm:h-20 rounded-lg overflow-hidden flex-shrink-0">
                       {property.images?.[0] ? (
                         <img
                           src={property.images[0].url || property.images[0]}
@@ -230,29 +221,29 @@ function Hero() {
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-r from-[#013E43] to-[#005C57] flex items-center justify-center">
-                          <FiHome className="text-white text-xl opacity-50" />
+                          <FiHome className="text-white text-lg sm:text-xl opacity-50" />
                         </div>
                       )}
                     </div>
 
                     {/* Property Details */}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-white truncate group-hover:text-[#02BB31] transition-colors">
+                      <p className="font-semibold text-white text-sm sm:text-base truncate group-hover:text-[#02BB31] transition-colors">
                         {property.title}
                       </p>
-                      <p className="text-sm text-[#A8D8C1] flex items-center mt-1">
-                      <FiMapPin className="mr-1 text-xs flex-shrink-0" />
+                      <p className="text-xs sm:text-sm text-[#A8D8C1] flex items-center mt-1">
+                        <FiMapPin className="mr-1 text-xs flex-shrink-0" />
                         <span className="truncate">{property.location}</span>
                       </p>
-                      <p className="text-[#02BB31] font-bold text-sm mt-1">
+                      <p className="text-[#02BB31] font-bold text-xs sm:text-sm mt-1">
                         {formatPrice(property.price)}
-                        <span className="text-xs text-[#A8D8C1] font-normal">/month</span>
+                        <span className="text-[#A8D8C1] text-xs font-normal">/month</span>
                       </p>
                     </div>
 
                     {/* Arrow Indicator */}
                     <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <FiArrowRight className="text-[#02BB31]" />
+                      <FiArrowRight className="text-[#02BB31] text-sm sm:text-base" />
                     </div>
                   </Link>
                 ))}
@@ -260,26 +251,26 @@ function Hero() {
             )}
 
             {/* Trust Badges */}
-            <div className="mt-6 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
-              <p className="text-xs text-[#A8D8C1] mb-3 flex items-center">
-                <FiShield className="mr-1 text-[#02BB31]" />
+            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+              <p className="text-xs text-[#A8D8C1] mb-2 sm:mb-3 flex items-center">
+                <FiShield className="mr-1 text-[#02BB31] text-xs" />
                 Why landlords choose MakaoLink
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center space-x-2">
-                  <FaHandshake className="text-[#02BB31] text-xs" />
-                  <span className="text-xs text-white">Direct tenant contact</span>
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                <div className="flex items-center space-x-1.5 sm:space-x-2">
+                  <FaHandshake className="text-[#02BB31] text-xs sm:text-sm" />
+                  <span className="text-xs text-white">Direct contact</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <FaBuilding className="text-[#02BB31] text-xs" />
+                <div className="flex items-center space-x-1.5 sm:space-x-2">
+                  <FaBuilding className="text-[#02BB31] text-xs sm:text-sm" />
                   <span className="text-xs text-white">Verified listings</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <FiClock className="text-[#02BB31] text-xs" />
+                <div className="flex items-center space-x-1.5 sm:space-x-2">
+                  <FiClock className="text-[#02BB31] text-xs sm:text-sm" />
                   <span className="text-xs text-white">Quick response</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <FiDollarSign className="text-[#02BB31] text-xs" />
+                <div className="flex items-center space-x-1.5 sm:space-x-2">
+                  <FiDollarSign className="text-[#02BB31] text-xs sm:text-sm" />
                   <span className="text-xs text-white">No hidden fees</span>
                 </div>
               </div>

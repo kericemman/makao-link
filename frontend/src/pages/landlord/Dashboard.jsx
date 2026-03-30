@@ -310,7 +310,7 @@ function DashboardHome() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 
           <Link
-            to="/dashboard/add-property"
+            to="/landlord/listings/new"
             className="p-4 bg-gray-50 rounded hover:bg-green-500 hover:text-white text-center transition"
           >
             <FiHome className="mx-auto text-xl mb-1" />

@@ -1,199 +1,154 @@
-const validator = require("validator");
 const User = require("../users/user.model");
-const crypto = require("crypto");
+const Listing = require("../listings/listings.model");
+const generateToken = require("../../utils/generateToken");
 const sendEmail = require("../../utils/sendEmail");
-const {
-  generateToken,
-  findUserByEmail,
-  createUser
-} = require("./auth.service");
+const plans = require("../payments/plan.config");
+const { createInitialSubscription } = require("../subscriptions/subscription.service");
 
-exports.register = async (req, res) => {
+exports.registerLandlord = async (req, res, next) => {
   try {
+    const { name, email, password, phone, plan } = req.body;
 
-    const { name, email, phone, password } = req.body;
-
-    if (!name || !email || !phone || !password) {
+    if (!name || !email || !password || !phone || !plan) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    if (!validator.isEmail(email)) {
-      return res.status(400).json({ message: "Invalid email" });
+    if (!plans[plan]) {
+      return res.status(400).json({ message: "Invalid plan selected" });
     }
 
-    const existingUser = await findUserByEmail(email);
+    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({ message: "Email already exists" });
     }
 
-    const user = await createUser({
+    const user = await User.create({
       name,
       email,
-      phone,
       password,
+      phone,
       role: "landlord"
     });
 
-    const token = generateToken(user._id);
+    const subscription = await createInitialSubscription(user._id, plan);
+
+    user.subscription = subscription._id;
+    await user.save();
+
+    const token = generateToken(user);
+
+    await sendEmail({
+      to: user.email,
+      subject: "Welcome to Makao",
+      html: `
+        <h2>Welcome to Makao</h2>
+        <p>Hello ${user.name}, your landlord account has been created successfully.</p>
+        <p>Selected plan: <strong>${plans[plan].name}</strong></p>
+        ${
+          plan === "normal"
+            ? "<p>You can now log in and list your first property immediately.</p>"
+            : "<p>Your account is ready. Complete payment to activate your plan and begin listing properties.</p>"
+        }
+      `
+    });
 
     res.status(201).json({
-      message: "Registration successful",
+      success: true,
+      message: "Account created successfully",
       token,
-      user
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role
+      },
+      subscription: {
+        ...subscription.toObject()
+      }
     });
-
   } catch (error) {
-    console.error("REGISTER ERROR:", error);
-    res.status(500).json({
-      message: "Server error",
-      error: error.message
-    });
+    next(error);
   }
 };
 
-// For simplicity, the login function is not implemented here. It would involve verifying the user's credentials and generating a token if valid.
+exports.loginLandlord = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
 
-exports.login = async (req, res) => {
-    try {
-  
-      const { email, password } = req.body;
-  
-      const user = await findUserByEmail(email);
-  
-      if (!user) {
-        return res.status(400).json({ message: "Invalid credentials" });
-      }
-  
-      const isMatch = await user.comparePassword(password);
-  
-      if (!isMatch) {
-        return res.status(400).json({ message: "Invalid credentials" });
-      }
-  
-      const token = generateToken(user._id);
-  
-      res.json({
-        message: "Login successful",
-        token,
-        user
-      });
-  
-    } catch (error) {
-      res.status(500).json({ message: "Server error" });
+    const user = await User.findOne({ email }).populate("subscription");
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
-  };
 
+    const isMatch = await user.matchPassword(password);
 
-  // forgot password
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
 
-  exports.forgotPassword = async (req, res) => {
+    const token = generateToken(user);
 
-    try {
-  
-      const { email } = req.body;
-  
-      const user = await User.findOne({ email });
-  
-      if (!user) {
-        return res.status(404).json({
-          message: "User not found"
-        });
+    const planConfig = user.subscription ? plans[user.subscription.plan] : null;
+
+    const usedListings = await Listing.countDocuments({
+      landlord: user._id,
+      isActive: true,
+      availability: "available"
+    });
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role
+      },
+      subscription: user.subscription,
+      usage: {
+        used: usedListings,
+        limit: planConfig?.listingLimit || 0,
+        remaining: Math.max((planConfig?.listingLimit || 0) - usedListings, 0)
       }
-  
-      const resetToken = user.createPasswordResetToken();
-  
-      await user.save({ validateBeforeSave: false });
-  
-      const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-  
-      const message = `
-        <h2>Password Reset</h2>
-        <p>You requested to reset your password.</p>
-        <p>Click the link below:</p>
-        <a href="${resetURL}">${resetURL}</a>
-        <p>This link expires in 10 minutes.</p>
-      `;
-  
-      await sendEmail(
-        user.email,
-        "Reset your password",
-        message
-      );
-  
-      res.json({
-        message: "Password reset link sent to email"
-      });
-  
-    } catch (error) {
-  
-      res.status(500).json({
-        message: "Error sending reset email"
-      });
-  
-    }
-  
-  };
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
+exports.getMe = async (req, res, next) => {
+  try {
+    const subscription = req.user.subscription;
+    const planConfig = subscription ? plans[subscription.plan] : null;
 
-  exports.resetPassword = async (req, res) => {
+    const usedListings = await Listing.countDocuments({
+      landlord: req.user._id,
+      isActive: true,
+      availability: "available"
+    });
 
-    try {
-  
-      const hashedToken = crypto
-        .createHash("sha256")
-        .update(req.params.token)
-        .digest("hex");
-  
-      const user = await User.findOne({
-        passwordResetToken: hashedToken,
-        passwordResetExpires: { $gt: Date.now() }
-      });
-  
-      if (!user) {
-        return res.status(400).json({
-          message: "Token invalid or expired"
-        });
+    res.json({
+      success: true,
+      user: {
+        _id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        phone: req.user.phone,
+        role: req.user.role
+      },
+      subscription,
+      usage: {
+        used: usedListings,
+        limit: planConfig?.listingLimit || 0,
+        remaining: Math.max((planConfig?.listingLimit || 0) - usedListings, 0)
       }
-  
-      user.password = req.body.password;
-  
-      user.passwordResetToken = undefined;
-      user.passwordResetExpires = undefined;
-  
-      await user.save();
-  
-      res.json({
-        message: "Password reset successful"
-      });
-  
-    } catch (error) {
-  
-      res.status(500).json({
-        message: "Password reset failed"
-      });
-  
-    }
-  
-  };
-
-// get current user
-
-exports.getCurrentUser = async (req, res) => {
-
-    try {
-  
-      const user = await User.findById(req.user._id)
-        .select("-password");
-  
-      res.json(user);
-  
-    } catch (error) {
-  
-      res.status(500).json({
-        message: "Failed to fetch user"
-      });
-  
-    }
-  
-  };
+    });
+  } catch (error) {
+    next(error);
+  }
+};

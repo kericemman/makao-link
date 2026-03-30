@@ -1,293 +1,173 @@
-import { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
-import API from "../../api/api"
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { getAdminSupportTickets } from "../../services/support.service";
 import { 
   FiHelpCircle, 
   FiClock, 
   FiCheckCircle, 
-  FiXCircle,
   FiRefreshCw,
   FiSearch,
   FiFilter,
-  FiEye,
-  FiMessageSquare,
   FiUser,
-  FiCalendar,
-  FiTag,
-  FiFlag,
-  FiMoreVertical,
-  FiDownload,
-  FiArrowRight,
   FiMail,
-  FiPhone,
-  FiSend,
-  FiX
-} from "react-icons/fi"
-import { FaWhatsapp } from "react-icons/fa"
-import toast from "react-hot-toast"
+  FiTag,
+  FiArrowRight,
+  FiAlertCircle,
+  FiTrendingUp
+} from "react-icons/fi";
+import { FaWhatsapp } from "react-icons/fa";
+import toast from "react-hot-toast";
 
-function AdminTickets() {
-  const [tickets, setTickets] = useState([])
-  const [filteredTickets, setFilteredTickets] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [priorityFilter, setPriorityFilter] = useState("all")
-  const [categoryFilter, setCategoryFilter] = useState("all")
-  const [dateRange, setDateRange] = useState("all")
-  const [selectedTicket, setSelectedTicket] = useState(null)
-  const [showDetailsModal, setShowDetailsModal] = useState(false)
-  const [response, setResponse] = useState("")
-  const [sendingResponse, setSendingResponse] = useState(false)
-  const [updatingStatus, setUpdatingStatus] = useState(false)
+const statusClasses = {
+  open: "bg-yellow-100 text-yellow-600",
+  in_progress: "bg-blue-100 text-blue-600",
+  resolved: "bg-[#02BB31]/10 text-[#02BB31]",
+  closed: "bg-gray-100 text-gray-600"
+};
 
-  const fetchTickets = async () => {
+const statusIcons = {
+  open: <FiClock className="text-yellow-500" />,
+  in_progress: <FiRefreshCw className="text-blue-500" />,
+  resolved: <FiCheckCircle className="text-[#02BB31]" />,
+  closed: <FiCheckCircle className="text-gray-500" />
+};
+
+const categories = {
+  billing: { label: "Billing", icon: "💰" },
+  listing: { label: "Listing", icon: "🏠" },
+  technical: { label: "Technical", icon: "🔧" },
+  account: { label: "Account", icon: "👤" },
+  other: { label: "Other", icon: "❓" }
+};
+
+const AdminSupportPage = () => {
+  const [tickets, setTickets] = useState([]);
+  const [filteredTickets, setFilteredTickets] = useState([]);
+  const [status, setStatus] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateRange, setDateRange] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchTickets = async (statusValue = "all") => {
     try {
-      setLoading(true)
-      const res = await API.get("/support")
-      setTickets(res.data || [])
-    } catch (error) {
-      toast.error("Failed to load tickets", {
+      setLoading(true);
+      const params = {};
+      if (statusValue !== "all") params.status = statusValue;
+
+      const data = await getAdminSupportTickets(params);
+      setTickets(data.tickets || []);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load support tickets");
+      toast.error("Failed to load support tickets", {
         style: { background: "#013E43", color: "#fff" }
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchTickets()
-  }, [])
+    fetchTickets(status);
+  }, [status]);
 
   useEffect(() => {
-    filterTickets()
-  }, [tickets, searchTerm, statusFilter, priorityFilter, categoryFilter, dateRange])
+    filterTickets();
+  }, [tickets, searchTerm, dateRange]);
 
   const filterTickets = () => {
-    let filtered = [...tickets]
+    let filtered = [...tickets];
 
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(ticket => 
         ticket.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ticket.landlord?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ticket.landlord?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.landlord?.phone?.includes(searchTerm)
-      )
-    }
-
-    // Status filter
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(ticket => ticket.status === statusFilter)
-    }
-
-    // Priority filter
-    if (priorityFilter !== "all") {
-      filtered = filtered.filter(ticket => ticket.priority === priorityFilter)
-    }
-
-    // Category filter
-    if (categoryFilter !== "all") {
-      filtered = filtered.filter(ticket => ticket.category === categoryFilter)
+        ticket.category?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
     // Date range filter
     if (dateRange !== "all") {
-      const now = new Date()
-      const filterDate = new Date()
+      const now = new Date();
+      const filterDate = new Date();
       
       switch(dateRange) {
         case "today":
-          filterDate.setHours(0, 0, 0, 0)
-          filtered = filtered.filter(ticket => new Date(ticket.createdAt) >= filterDate)
-          break
+          filterDate.setHours(0, 0, 0, 0);
+          filtered = filtered.filter(ticket => new Date(ticket.createdAt) >= filterDate);
+          break;
         case "week":
-          filterDate.setDate(filterDate.getDate() - 7)
-          filtered = filtered.filter(ticket => new Date(ticket.createdAt) >= filterDate)
-          break
+          filterDate.setDate(filterDate.getDate() - 7);
+          filtered = filtered.filter(ticket => new Date(ticket.createdAt) >= filterDate);
+          break;
         case "month":
-          filterDate.setMonth(filterDate.getMonth() - 1)
-          filtered = filtered.filter(ticket => new Date(ticket.createdAt) >= filterDate)
-          break
+          filterDate.setMonth(filterDate.getMonth() - 1);
+          filtered = filtered.filter(ticket => new Date(ticket.createdAt) >= filterDate);
+          break;
       }
     }
 
     // Sort by date (newest first)
-    filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
-    setFilteredTickets(filtered)
-  }
-
-  const updateStatus = async (id, status) => {
-    try {
-      setUpdatingStatus(true)
-      await API.put(`/support/${id}/status`, { status })
-      toast.success(`Ticket status updated to ${status}`, {
-        style: { background: "#02BB31", color: "#fff" }
-      })
-      fetchTickets()
-    } catch (error) {
-      toast.error("Failed to update ticket status", {
-        style: { background: "#013E43", color: "#fff" }
-      })
-    } finally {
-      setUpdatingStatus(false)
-    }
-  }
-
-  const sendReply = async () => {
-    if (!response.trim()) {
-      toast.error("Please enter a response", {
-        style: { background: "#013E43", color: "#fff" }
-      })
-      return
-    }
-
-    try {
-      setSendingResponse(true)
-      await API.post(`/support/${selectedTicket._id}/respond`, { message: response })
-      toast.success("Response sent successfully", {
-        style: { background: "#02BB31", color: "#fff" }
-      })
-      setResponse("")
-      setShowDetailsModal(false)
-      fetchTickets()
-    } catch (error) {
-      toast.error("Failed to send response", {
-        style: { background: "#013E43", color: "#fff" }
-      })
-    } finally {
-      setSendingResponse(false)
-    }
-  }
-
-  const getStatusIcon = (status) => {
-    switch(status) {
-      case "open":
-        return <FiClock className="text-yellow-500" />
-      case "in_progress":
-        return <FiRefreshCw className="text-blue-500" />
-      case "resolved":
-        return <FiCheckCircle className="text-[#02BB31]" />
-      case "closed":
-        return <FiXCircle className="text-gray-500" />
-      default:
-        return <FiHelpCircle className="text-[#065A57]" />
-    }
-  }
-
-  const getStatusBadge = (status) => {
-    switch(status) {
-      case "open":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600">
-            <FiClock className="mr-1" />
-            Open
-          </span>
-        )
-      case "in_progress":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-600">
-            <FiRefreshCw className="mr-1" />
-            In Progress
-          </span>
-        )
-      case "resolved":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#02BB31]/10 text-[#02BB31]">
-            <FiCheckCircle className="mr-1" />
-            Resolved
-          </span>
-        )
-      case "closed":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-            <FiXCircle className="mr-1" />
-            Closed
-          </span>
-        )
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-            {status}
-          </span>
-        )
-    }
-  }
-
-  const getPriorityBadge = (priority) => {
-    switch(priority) {
-      case "high":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">
-            <FiFlag className="mr-1" />
-            High
-          </span>
-        )
-      case "medium":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600">
-            <FiFlag className="mr-1" />
-            Medium
-          </span>
-        )
-      case "low":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-600">
-            <FiFlag className="mr-1" />
-            Low
-          </span>
-        )
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-            {priority}
-          </span>
-        )
-    }
-  }
+    setFilteredTickets(filtered);
+  };
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+      day: 'numeric'
+    });
+  };
 
   const formatTimeAgo = (date) => {
-    const now = new Date()
-    const ticketDate = new Date(date)
-    const diffInSeconds = Math.floor((now - ticketDate) / 1000)
+    const now = new Date();
+    const ticketDate = new Date(date);
+    const diffInSeconds = Math.floor((now - ticketDate) / 1000);
     
-    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
-    return `${Math.floor(diffInSeconds / 86400)} days ago`
-  }
+    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  };
 
   const stats = {
     total: tickets.length,
     open: tickets.filter(t => t.status === "open").length,
     inProgress: tickets.filter(t => t.status === "in_progress").length,
     resolved: tickets.filter(t => t.status === "resolved").length,
-    high: tickets.filter(t => t.priority === "high").length
-  }
-
-  const categories = [...new Set(tickets.map(t => t.category).filter(Boolean))]
+    closed: tickets.filter(t => t.status === "closed").length
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A8D8C1] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading tickets...</p>
+          <p className="text-[#065A57]">Loading support tickets...</p>
         </div>
       </div>
-    )
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg p-8 text-center border border-[#A8D8C1]">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <FiAlertCircle className="text-3xl text-red-500" />
+        </div>
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={() => fetchTickets(status)}
+          className="px-4 py-2 bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -300,24 +180,20 @@ function AdminTickets() {
               <FiHelpCircle className="text-white text-2xl" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-[#013E43]">Support Tickets</h1>
-              <p className="text-sm text-[#065A57]">Manage and respond to user support requests</p>
+              <h1 className="text-2xl font-bold text-[#013E43]">Support Oversight</h1>
+              <p className="text-sm text-[#065A57]">
+                Receive, follow up, and manage landlord support queries
+              </p>
             </div>
           </div>
           
           <div className="flex items-center space-x-3">
             <button
-              onClick={fetchTickets}
+              onClick={() => fetchTickets(status)}
               className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
               title="Refresh"
             >
               <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
-            </button>
-            <button
-              className="px-4 py-2 bg-[#013E43] text-white rounded-lg hover:bg-[#005C57] transition-colors flex items-center space-x-2"
-            >
-              <FiDownload />
-              <span>Export</span>
             </button>
           </div>
         </div>
@@ -341,9 +217,9 @@ function AdminTickets() {
           <p className="text-sm text-[#065A57]">Resolved</p>
           <p className="text-2xl font-bold text-[#02BB31]">{stats.resolved}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-red-400">
-          <p className="text-sm text-[#065A57]">High Priority</p>
-          <p className="text-2xl font-bold text-red-500">{stats.high}</p>
+        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-gray-400">
+          <p className="text-sm text-[#065A57]">Closed</p>
+          <p className="text-2xl font-bold text-gray-600">{stats.closed}</p>
         </div>
       </div>
 
@@ -355,7 +231,7 @@ function AdminTickets() {
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#065A57]" />
             <input
               type="text"
-              placeholder="Search by subject, description, landlord name, email, or phone..."
+              placeholder="Search by subject, landlord name, or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] focus:border-transparent"
@@ -365,8 +241,8 @@ function AdminTickets() {
           {/* Filters */}
           <div className="flex flex-wrap gap-3">
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
               className="px-3 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
             >
               <option value="all">All Status</option>
@@ -375,30 +251,6 @@ function AdminTickets() {
               <option value="resolved">Resolved</option>
               <option value="closed">Closed</option>
             </select>
-
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-3 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
-            >
-              <option value="all">All Priorities</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-
-            {categories.length > 0 && (
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
-              >
-                <option value="all">All Categories</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            )}
 
             <select
               value={dateRange}
@@ -419,290 +271,82 @@ function AdminTickets() {
         </div>
       </div>
 
-      {/* Tickets Table */}
+      {/* Tickets List */}
       {filteredTickets.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-[#A8D8C1]">
           <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
             <FiHelpCircle className="text-3xl text-[#A8D8C1]" />
           </div>
-          <h3 className="text-lg font-semibold text-[#013E43] mb-2">No tickets found</h3>
+          <h2 className="text-lg font-semibold text-[#013E43] mb-2">No support tickets found</h2>
           <p className="text-sm text-[#065A57]">
-            {searchTerm || statusFilter !== "all" || priorityFilter !== "all" || categoryFilter !== "all" || dateRange !== "all"
-              ? "Try adjusting your filters"
-              : "No support tickets have been submitted yet"}
+            {searchTerm || status !== "all" || dateRange !== "all"
+              ? "Try adjusting your search or filters"
+              : "Support tickets will appear here once landlords create them."}
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-[#A8D8C1]">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-[#013E43] to-[#005C57] text-white">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Ticket</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Landlord</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Category</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Priority</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Created</th>
-                  <th className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#A8D8C1]">
-                {filteredTickets.map((ticket) => (
-                  <tr key={ticket._id} className="hover:bg-[#F0F7F4] transition-colors">
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-medium text-[#013E43]">{ticket.subject}</p>
-                        <p className="text-xs text-[#065A57] truncate max-w-xs">{ticket.description?.slice(0, 50)}...</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-semibold text-[#013E43]">
-                          {ticket.landlord?.name || 'Unknown'}
-                        </p>
-                        <p className="text-sm text-[#065A57]">
-                          {ticket.landlord?.email || 'No email'}
-                        </p>
-                        {ticket.landlord?.phone && (
-                          <p className="text-xs text-[#065A57] flex items-center mt-1">
-                            <FiPhone className="mr-1 text-[#02BB31]" />
-                            {ticket.landlord.phone}
-                          </p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-600">
-                        <FiTag className="mr-1" />
-                        {ticket.category || 'General'}
+        <div className="grid gap-4">
+          {filteredTickets.map((ticket) => (
+            <Link
+              key={ticket._id}
+              to={`/admin/support/${ticket._id}`}
+              className="block bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1"
+            >
+              <div className="p-5">
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                      <h2 className="text-lg font-semibold text-[#013E43]">
+                        {ticket.subject}
+                      </h2>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium capitalize ${statusClasses[ticket.status]}`}>
+                        {statusIcons[ticket.status]}
+                        <span className="ml-1">{ticket.status.replace("_", " ")}</span>
                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {getPriorityBadge(ticket.priority)}
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(ticket.status)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="text-sm text-[#013E43]">{formatTimeAgo(ticket.createdAt)}</p>
-                        <p className="text-xs text-[#065A57]">{formatDate(ticket.createdAt)}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedTicket(ticket)
-                          setShowDetailsModal(true)
-                        }}
-                        className="p-2 text-[#02BB31] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                        title="View Details"
-                      >
-                        <FiEye />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="px-6 py-4 border-t border-[#A8D8C1] flex items-center justify-between">
-            <p className="text-sm text-[#065A57]">
-              Showing 1-{filteredTickets.length} of {filteredTickets.length} tickets
-            </p>
-            <div className="flex space-x-2">
-              <button className="px-3 py-1 border border-[#A8D8C1] rounded text-[#065A57] hover:bg-[#F0F7F4]">
-                Previous
-              </button>
-              <button className="px-3 py-1 bg-[#02BB31] text-white rounded hover:bg-[#0D915C]">
-                1
-              </button>
-              <button className="px-3 py-1 border border-[#A8D8C1] rounded text-[#065A57] hover:bg-[#F0F7F4]">
-                Next
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Details Modal */}
-      {showDetailsModal && selectedTicket && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-[#A8D8C1] p-6 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-3 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl">
-                  <FiHelpCircle className="text-white text-xl" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-[#013E43]">Ticket Details</h2>
-                  <p className="text-sm text-[#065A57]">ID: {selectedTicket._id.slice(-8)}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setSelectedTicket(null)
-                  setShowDetailsModal(false)
-                  setResponse("")
-                }}
-                className="p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
-              >
-                <FiX className="text-xl text-[#065A57]" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6 space-y-6">
-              {/* Status and Priority */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-[#F0F7F4] p-4 rounded-xl">
-                  <p className="text-xs text-[#065A57] mb-1">Status</p>
-                  <select
-                    value={selectedTicket.status}
-                    onChange={(e) => {
-                      updateStatus(selectedTicket._id, e.target.value)
-                      setSelectedTicket({
-                        ...selectedTicket,
-                        status: e.target.value
-                      })
-                    }}
-                    disabled={updatingStatus}
-                    className="w-full px-3 py-2 border border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors text-sm"
-                  >
-                    <option value="open">Open</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="closed">Closed</option>
-                  </select>
-                </div>
-                <div className="bg-[#F0F7F4] p-4 rounded-xl">
-                  <p className="text-xs text-[#065A57] mb-1">Priority</p>
-                  <div className="flex items-center">
-                    {getPriorityBadge(selectedTicket.priority)}
-                  </div>
-                </div>
-                <div className="bg-[#F0F7F4] p-4 rounded-xl">
-                  <p className="text-xs text-[#065A57] mb-1">Category</p>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-600">
-                    <FiTag className="mr-1" />
-                    {selectedTicket.category || 'General'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Landlord Info */}
-              <div>
-                <h3 className="font-semibold text-[#013E43] mb-3">Landlord Information</h3>
-                <div className="bg-[#F0F7F4] p-4 rounded-xl">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-full flex items-center justify-center text-white font-bold">
-                      {selectedTicket.landlord?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-[#013E43]">{selectedTicket.landlord?.name || 'Unknown'}</p>
-                      <p className="text-sm text-[#065A57] flex items-center">
-                        <FiMail className="mr-2 text-[#02BB31]" />
-                        {selectedTicket.landlord?.email || 'No email'}
-                      </p>
-                      {selectedTicket.landlord?.phone && (
-                        <p className="text-sm text-[#065A57] flex items-center mt-1">
-                          <FiPhone className="mr-2 text-[#02BB31]" />
-                          {selectedTicket.landlord.phone}
-                        </p>
-                      )}
+
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-[#065A57] mb-3">
+                      <span className="inline-flex items-center">
+                        <FiTag className="mr-1" />
+                        {categories[ticket.category]?.label || ticket.category}
+                      </span>
+                      <span className="inline-flex items-center">
+                        <FiUser className="mr-1" />
+                        {ticket.landlord?.name}
+                      </span>
+                      <span className="inline-flex items-center">
+                        <FiMail className="mr-1" />
+                        {ticket.landlord?.email}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-[#065A57] line-clamp-2 mb-3">
+                      {ticket.messages?.[0]?.message || "No messages"}
+                    </p>
+
+                    <div className="flex items-center gap-4 text-xs text-[#065A57]">
+                      <span className="flex items-center">
+                        <FiClock className="mr-1" />
+                        Updated {formatTimeAgo(ticket.updatedAt)}
+                      </span>
+                      <span className="flex items-center">
+                        Created {formatDate(ticket.createdAt)}
+                      </span>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Subject */}
-              <div>
-                <h3 className="font-semibold text-[#013E43] mb-2">Subject</h3>
-                <div className="bg-[#F0F7F4] p-4 rounded-lg">
-                  <p className="text-[#013E43]">{selectedTicket.subject}</p>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <h3 className="font-semibold text-[#013E43] mb-2">Description</h3>
-                <div className="bg-[#F0F7F4] p-4 rounded-lg">
-                  <p className="text-[#013E43] whitespace-pre-wrap">{selectedTicket.description}</p>
-                </div>
-              </div>
-
-              {/* Conversation History */}
-              {selectedTicket.responses && selectedTicket.responses.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-[#013E43] mb-3">Conversation</h3>
-                  <div className="space-y-3">
-                    {selectedTicket.responses.map((resp, index) => (
-                      <div key={index} className="bg-[#F0F7F4] p-3 rounded-lg">
-                        <div className="flex justify-between mb-1">
-                          <span className="text-xs font-medium text-[#013E43]">
-                            {resp.isAdmin ? 'Admin' : selectedTicket.landlord?.name || 'User'}
-                          </span>
-                          <span className="text-xs text-[#065A57]">{formatTimeAgo(resp.createdAt)}</span>
-                        </div>
-                        <p className="text-sm text-[#065A57]">{resp.message}</p>
-                      </div>
-                    ))}
+                  <div className="flex items-center text-[#02BB31] font-medium">
+                    View Details
+                    <FiArrowRight className="ml-2" />
                   </div>
                 </div>
-              )}
-
-              {/* Timestamps */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#F0F7F4] p-3 rounded-lg">
-                  <p className="text-xs text-[#065A57]">Created</p>
-                  <p className="font-medium">{formatDate(selectedTicket.createdAt)}</p>
-                </div>
-                <div className="bg-[#F0F7F4] p-3 rounded-lg">
-                  <p className="text-xs text-[#065A57]">Last Updated</p>
-                  <p className="font-medium">{formatDate(selectedTicket.updatedAt)}</p>
-                </div>
               </div>
-
-              {/* Reply Section */}
-              <div className="pt-4 border-t border-[#A8D8C1]">
-                <h3 className="font-semibold text-[#013E43] mb-3">Send Reply</h3>
-                <textarea
-                  placeholder="Type your response here..."
-                  value={response}
-                  onChange={(e) => setResponse(e.target.value)}
-                  rows="4"
-                  className="w-full px-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors resize-none mb-3"
-                />
-                <div className="flex justify-end">
-                  <button
-                    onClick={sendReply}
-                    disabled={sendingResponse || !response.trim()}
-                    className="px-6 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                  >
-                    {sendingResponse ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <FiSend className="mr-2" />
-                        Send Reply
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+            </Link>
+          ))}
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default AdminTickets
+export default AdminSupportPage;

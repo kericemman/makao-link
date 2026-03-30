@@ -1,4 +1,4 @@
-const Property = require("../properties/property.model");
+const Property = require("../listings/listings.model");
 const Inquiry = require("../inquiries/inquiry.model");
 const Subscription = require("../subscriptions/subscription.model");
 

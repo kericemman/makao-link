@@ -1,59 +1,41 @@
-import API from "../api/api"
+import api from "../api/api";
 
+export const getAdminSummary = async () => {
+  const response = await api.get("/admin/summary");
+  return response.data;
+};
 
-// Fetch all users
-export const getUsers = () => {
-  return API.get("/admin/users")
-}
+export const getPendingListings = async () => {
+  const response = await api.get("/admin/listings/pending");
+  return response.data;
+};
 
+export const approveListing = async (id) => {
+  const response = await api.patch(`/admin/listings/${id}/approve`);
+  return response.data;
+};
 
-// Suspend a user
-export const suspendUser = (id) => {
-  return API.put(`/admin/users/${id}/suspend`)
-}
+export const rejectListing = async (id) => {
+  const response = await api.patch(`/admin/listings/${id}/reject`);
+  return response.data;
+};
 
+export const getLandlords = async () => {
+  const response = await api.get("/admin/landlords");
+  return response.data;
+};
 
-// Fetch platform statistics
-export const getAdminStats = () => {
-  return API.get("/admin/stats")
-}
+export const getAdminPayments = async () => {
+  const response = await api.get("/admin/payments");
+  return response.data;
+};
 
+export const getListingHistory = async (params = {}) => {
+  const response = await api.get("/admin/listings/history", { params });
+  return response.data;
+};
 
-// Approve property listing
-export const approveProperty = (id) => {
-  return API.put(`/admin/properties/${id}/approve`)
-}
-
-
-// Reject property listing
-export const rejectProperty = (id) => {
-  return API.put(`/admin/properties/${id}/reject`)
-}
-
-
-// Fetch pending KYC
-export const getPendingKYC = () => {
-    return API.get("/admin/kyc")
-  }
-  
-
-// Approve KYC
-export const approveKYC = (id) => {
-  return API.put(`/admin/users/${id}/approve-kyc`)
-}
-
-
-// Fetch partner applications
-export const getPartnerApplications = () => {
-  return API.get("/partners/applications")
-}
-
-// Approve partner
-export const approvePartner = (id) => {
-  return API.put(`/partners/${id}/approve`)
-}
-
-// Reject partner
-export const rejectPartner = (id) => {
-  return API.put(`/partners/${id}/reject`)
-}
+export const getAdminInquiries = async (params = {}) => {
+  const response = await api.get("/admin/inquiries", { params });
+  return response.data;
+};

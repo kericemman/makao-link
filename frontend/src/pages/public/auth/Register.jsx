@@ -1,6 +1,8 @@
-import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
-import API from "../../../api/api"
+import { useMemo, useState } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { registerLandlord } from "../../../services/auth.service";
+import { initializeSubscriptionPayment } from "../../../services/payment.service";
+import { useAuth } from "../../../context/AuthContext";
 import { 
   FiUser, 
   FiMail, 
@@ -9,185 +11,149 @@ import {
   FiEye, 
   FiEyeOff,
   FiCheckCircle,
-  FiXCircle,
   FiShield,
-  FiUserPlus,
-  FiHome,
-  FiTrendingUp,
-  FiStar
-} from "react-icons/fi"
-import { FaBuilding, FaKey, FaHandshake } from "react-icons/fa"
-import toast from "react-hot-toast"
+  FiArrowLeft,
+  FiCreditCard,
+  FiAlertCircle,
+  FiUserPlus
+} from "react-icons/fi";
+import { FaBuilding, FaKey, FaHandshake } from "react-icons/fa";
+import toast from "react-hot-toast";
 
-function Register() {
-  const navigate = useNavigate()
+const RegisterLandlordPage = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const [form, setForm] = useState({
+  const selectedPlan = useMemo(() => searchParams.get("plan") || "normal", [searchParams]);
+
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     password: "",
     confirmPassword: "",
+    plan: selectedPlan,
     agreeTerms: false
-  })
+  });
 
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [passwordStrength, setPasswordStrength] = useState(0)
-  const [errors, setErrors] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: "",
-    agreeTerms: ""
-  })
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target
-    setForm({
-      ...form,
-      [name]: type === "checkbox" ? checked : value
-    })
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" })
-    }
+  const getPlanDetails = (plan) => {
+    const plans = {
+      normal: { name: "Normal", price: "Free", limit: "1 property", color: "text-gray-600", bgColor: "bg-gray-100" },
+      basic: { name: "Basic", price: "KES 500", limit: "5 properties", color: "text-[#02BB31]", bgColor: "bg-[#02BB31]/10" },
+      premium: { name: "Premium", price: "KES 1,500", limit: "15 properties", color: "text-purple-600", bgColor: "bg-purple-100" },
+      pro: { name: "Pro", price: "KES 2,500", limit: "100+ properties", color: "text-[#013E43]", bgColor: "bg-[#013E43]/10" }
+    };
+    return plans[plan] || plans.normal;
+  };
 
-    // Check password strength when password changes
-    if (name === "password") {
-      checkPasswordStrength(value)
-    }
-  }
+  const planDetails = getPlanDetails(selectedPlan);
 
   const checkPasswordStrength = (password) => {
-    let strength = 0
-    if (password.length >= 8) strength += 1
-    if (password.match(/[a-z]+/)) strength += 1
-    if (password.match(/[A-Z]+/)) strength += 1
-    if (password.match(/[0-9]+/)) strength += 1
-    if (password.match(/[$@#&!]+/)) strength += 1
-    setPasswordStrength(strength)
-  }
+    let strength = 0;
+    if (password.length >= 8) strength += 1;
+    if (password.match(/[a-z]+/)) strength += 1;
+    if (password.match(/[A-Z]+/)) strength += 1;
+    if (password.match(/[0-9]+/)) strength += 1;
+    if (password.match(/[$@#&!]+/)) strength += 1;
+    setPasswordStrength(strength);
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value
+    }));
+    
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
+    }
+
+    if (name === "password") {
+      checkPasswordStrength(value);
+    }
+  };
 
   const validateForm = () => {
-    let valid = true
-    const newErrors = {
-      name: "",
-      email: "",
-      phone: "",
-      password: "",
-      confirmPassword: "",
-      agreeTerms: ""
+    const newErrors = {};
+
+    if (!formData.name.trim()) newErrors.name = "Full name is required";
+    else if (formData.name.trim().length < 2) newErrors.name = "Name must be at least 2 characters";
+
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Please enter a valid email";
+
+    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+    else if (!/^(07|01)\d{8}$/.test(formData.phone)) {
+      newErrors.phone = "Please enter a valid Kenyan phone number";
     }
 
-    // Name validation
-    if (!form.name.trim()) {
-      newErrors.name = "Full name is required"
-      valid = false
-    } else if (form.name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters"
-      valid = false
-    }
+    if (!formData.password) newErrors.password = "Password is required";
+    else if (formData.password.length < 8) newErrors.password = "Password must be at least 8 characters";
+    else if (passwordStrength < 3) newErrors.password = "Password is too weak";
 
-    // Email validation
-    if (!form.email) {
-      newErrors.email = "Email is required"
-      valid = false
-    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
-      newErrors.email = "Please enter a valid email"
-      valid = false
-    }
+    if (!formData.confirmPassword) newErrors.confirmPassword = "Please confirm your password";
+    else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords do not match";
 
-    // Phone validation (Kenyan format)
-    if (!form.phone) {
-      newErrors.phone = "Phone number is required"
-      valid = false
-    } else if (!/^(07|01)\d{8}$/.test(form.phone)) {
-      newErrors.phone = "Please enter a valid Kenyan phone number"
-      valid = false
-    }
+    if (!formData.agreeTerms) newErrors.agreeTerms = "You must agree to the terms and conditions";
 
-    // Password validation
-    if (!form.password) {
-      newErrors.password = "Password is required"
-      valid = false
-    } else if (form.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters"
-      valid = false
-    } else if (passwordStrength < 3) {
-      newErrors.password = "Password is too weak"
-      valid = false
-    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    // Confirm password validation
-    if (!form.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password"
-      valid = false
-    } else if (form.password !== form.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match"
-      valid = false
-    }
-
-    // Terms agreement
-    if (!form.agreeTerms) {
-      newErrors.agreeTerms = "You must agree to the terms and conditions"
-      valid = false
-    }
-
-    setErrors(newErrors)
-    return valid
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleRegister = async (e) => {
+    e.preventDefault();
 
     if (!validateForm()) {
       toast.error("Please fix the errors in the form", {
         style: { background: "#013E43", color: "#fff" }
-      })
-      return
+      });
+      return;
     }
 
     try {
-      setIsLoading(true)
+      setLoading(true);
+      setError("");
 
-      // Remove confirmPassword and agreeTerms before sending
-      const { confirmPassword, agreeTerms, ...registrationData } = form
+      const data = await registerLandlord({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        plan: selectedPlan
+      });
 
-      await API.post("/auth/register", registrationData)
+      login(data);
 
-      toast.success("Registration successful! Please login to continue.", {
-        style: {
-          background: "#02BB31",
-          color: "#fff",
-        },
-        duration: 3000
-      })
+      toast.success("Account created successfully!", {
+        style: { background: "#02BB31", color: "#fff" }
+      });
 
-      // Redirect to login after successful registration
-      setTimeout(() => {
-        navigate("/login")
-      }, 2000)
+      if (selectedPlan === "normal") {
+        navigate("/landlord/dashboard");
+        return;
+      }
 
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Registration failed. Please try again.",
-        {
-          style: {
-            background: "#013E43",
-            color: "#fff",
-          }
-        }
-      )
+      const payment = await initializeSubscriptionPayment();
+      window.location.href = payment.authorization_url;
+    } catch (err) {
+      setError(err.response?.data?.message || "Registration failed");
+      toast.error(err.response?.data?.message || "Registration failed", {
+        style: { background: "#013E43", color: "#fff" }
+      });
     } finally {
-      setIsLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  // Password strength indicator
   const getStrengthColor = () => {
     const colors = {
       0: "bg-gray-200",
@@ -196,9 +162,9 @@ function Register() {
       3: "bg-yellow-500",
       4: "bg-[#02BB31]",
       5: "bg-[#0D915C]",
-    }
-    return colors[passwordStrength] || colors[0]
-  }
+    };
+    return colors[passwordStrength] || colors[0];
+  };
 
   const getStrengthText = () => {
     const texts = {
@@ -208,339 +174,287 @@ function Register() {
       3: "Good",
       4: "Strong",
       5: "Very Strong",
-    }
-    return texts[passwordStrength] || texts[0]
-  }
+    };
+    return texts[passwordStrength] || texts[0];
+  };
 
   return (
-    <div className="h-screen flex bg-gradient-to-br from-[#013E43] to-[#005C57] overflow-hidden">
-      {/* Left Column - Branding & Content */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#02BB31] opacity-10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#A8D8C1] opacity-10 rounded-full blur-3xl"></div>
-          
-          {/* Grid Pattern */}
-          <div className="absolute inset-0 opacity-5" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            backgroundSize: '60px 60px',
-          }}></div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#F0F7F4] to-white">
+      <div className="max-w-4xl mx-auto px-4 py-8 lg:py-12">
+        {/* Back Button */}
+        <Link
+          to="/pricing"
+          className="inline-flex items-center text-[#065A57] hover:text-[#013E43] transition-colors mb-6"
+        >
+          <FiArrowLeft className="mr-2" />
+          Back to Plans
+        </Link>
 
-        {/* Content - Centered vertically */}
-        <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-12 text-white">
-          {/* Logo */}
-          <div className="mb-8">
-            <div className="flex items-center space-x-3">
-              
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Left Column - Plan Details */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-xl border border-[#A8D8C1] p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className={`p-3 ${planDetails.bgColor} rounded-xl`}>
+                  <FiCreditCard className={`text-2xl ${planDetails.color}`} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[#013E43]">Selected Plan</h2>
+                  <p className="text-sm text-[#065A57]">Your subscription details</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-[#A8D8C1]">
+                  <span className="text-[#065A57]">Plan Name</span>
+                  <span className="font-semibold text-[#013E43] capitalize">{planDetails.name}</span>
+                </div>
+                <div className="flex justify-between items-center pb-3 border-b border-[#A8D8C1]">
+                  <span className="text-[#065A57]">Price</span>
+                  <span className="font-bold text-[#02BB31]">{planDetails.price}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[#065A57]">Properties Limit</span>
+                  <span className="font-semibold text-[#013E43]">{planDetails.limit}</span>
+                </div>
+              </div>
+
+              {selectedPlan !== "normal" && (
+                <div className="mt-4 p-3 bg-[#F0F7F4] rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <FiCheckCircle className="text-[#02BB31]" />
+                    <p className="text-xs text-[#065A57]">
+                      You'll be redirected to complete payment after registration
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Benefits */}
+            <div className="bg-white rounded-2xl shadow-xl border border-[#A8D8C1] p-6">
+              <h3 className="font-semibold text-[#013E43] mb-3">What's included:</h3>
+              <ul className="space-y-2">
+                <li className="flex items-center space-x-2">
+                  <FiCheckCircle className="text-[#02BB31]" />
+                  <span className="text-sm text-[#065A57]">List {planDetails.limit.toLowerCase()}</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <FiCheckCircle className="text-[#02BB31]" />
+                  <span className="text-sm text-[#065A57]">Direct tenant contact</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <FiCheckCircle className="text-[#02BB31]" />
+                  <span className="text-sm text-[#065A57]">Property analytics dashboard</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <FiCheckCircle className="text-[#02BB31]" />
+                  <span className="text-sm text-[#065A57]">24/7 support</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Right Column - Registration Form */}
+          <div className="bg-white rounded-2xl shadow-xl border border-[#A8D8C1] p-6">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-[#013E43]">Create Account</h1>
+              <p className="text-sm text-[#065A57] mt-1">
+                Join MakaoLink as a landlord
+              </p>
+            </div>
+
+            <form onSubmit={handleRegister} className="space-y-4">
+              {/* Full Name */}
               <div>
-                <h1 className="text-4xl font-bold">MakaoLink</h1>
-                <p className="text-[#A8D8C1] text-lg">Property Management Platform</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Tagline */}
-          <h2 className="text-xl font-bold text-center mb-6">
-            Join Kenya's Fastest Growing Property Platform
-          </h2>
-
-          {/* Single Combined Features Card */}
-          <div className="w-full max-w-md bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="p-2 bg-[#02BB31]/20 rounded-lg">
-                <FiStar className="text-[#02BB31] text-xl" />
-              </div>
-              <h3 className="text-lg font-semibold">Why Join MakaoLink?</h3>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center space-x-2">
-                <FiCheckCircle className="text-[#02BB31] flex-shrink-0" />
-                <span className="text-sm">Reach 1000s of tenants</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <FiCheckCircle className="text-[#02BB31] flex-shrink-0" />
-                <span className="text-sm">Verified profile</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <FiCheckCircle className="text-[#02BB31] flex-shrink-0" />
-                <span className="text-sm">Direct communication</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <FiCheckCircle className="text-[#02BB31] flex-shrink-0" />
-                <span className="text-sm">Unlimited listings</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <FiCheckCircle className="text-[#02BB31] flex-shrink-0" />
-                <span className="text-sm">Analytics dashboard</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <FiCheckCircle className="text-[#02BB31] flex-shrink-0" />
-                <span className="text-sm">24/7 support</span>
-              </div>
-            </div>
-          </div>
-
-          
-        </div>
-      </div>
-
-      {/* Right Column - Register Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 bg-white overflow-hidden">
-        <div className="w-full max-w-md">
-          {/* Mobile Logo (visible only on small screens) */}
-          <div className="lg:hidden text-center mb-6">
-            
-            <h1 className="text-xl font-bold text-[#013E43]">Create Account</h1>
-            <p className="text-sm text-[#065A57]">Join as a landlord</p>
-          </div>
-
-          {/* Form Header (visible only on large screens) */}
-          <div className="hidden lg:block mb-5">
-            <h2 className="text-2xl font-bold text-[#013E43] mb-1">Create Account</h2>
-            <p className="text-sm text-[#065A57]">Fill in your details to get started</p>
-          </div>
-
-          {/* Register Form - Compact spacing */}
-          <form onSubmit={handleSubmit} className="space-y-3">
-            {/* Full Name Field */}
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[#013E43] block">
-                Full Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiUser className={`h-4 w-4 ${errors.name ? 'text-red-400' : 'text-[#0D915C]'}`} />
+                <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#0D915C]" />
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Enter your full name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg outline-none transition-colors ${
+                      errors.name
+                        ? 'border-red-400 focus:border-red-500 bg-red-50'
+                        : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                    }`}
+                  />
                 </div>
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder="Enter your full name"
-                  className={`
-                    w-full pl-9 pr-4 py-2.5 text-sm rounded-lg border-2 outline-none transition-all
-                    ${errors.name 
-                      ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                      : 'border-[#A8D8C1] focus:border-[#02BB31] bg-white'
-                    }
-                  `}
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.name && (
-                <p className="text-xs text-red-500 mt-0.5">{errors.name}</p>
-              )}
-            </div>
-
-            {/* Email Field */}
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[#013E43] block">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiMail className={`h-4 w-4 ${errors.email ? 'text-red-400' : 'text-[#0D915C]'}`} />
-                </div>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="Enter your email"
-                  className={`
-                    w-full pl-9 pr-4 py-2.5 text-sm rounded-lg border-2 outline-none transition-all
-                    ${errors.email 
-                      ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                      : 'border-[#A8D8C1] focus:border-[#02BB31] bg-white'
-                    }
-                  `}
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-xs text-red-500 mt-0.5">{errors.email}</p>
-              )}
-            </div>
-
-            {/* Phone Field */}
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[#013E43] block">
-                Phone Number
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiPhone className={`h-4 w-4 ${errors.phone ? 'text-red-400' : 'text-[#0D915C]'}`} />
-                </div>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={form.phone}
-                  onChange={handleChange}
-                  placeholder="e.g., 0712345678"
-                  className={`
-                    w-full pl-9 pr-4 py-2.5 text-sm rounded-lg border-2 outline-none transition-all
-                    ${errors.phone 
-                      ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                      : 'border-[#A8D8C1] focus:border-[#02BB31] bg-white'
-                    }
-                  `}
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.phone && (
-                <p className="text-xs text-red-500 mt-0.5">{errors.phone}</p>
-              )}
-            </div>
-
-            {/* Password Field */}
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[#013E43] block">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiLock className={`h-4 w-4 ${errors.password ? 'text-red-400' : 'text-[#0D915C]'}`} />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="Create a password"
-                  className={`
-                    w-full pl-9 pr-10 py-2.5 text-sm rounded-lg border-2 outline-none transition-all
-                    ${errors.password 
-                      ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                      : 'border-[#A8D8C1] focus:border-[#02BB31] bg-white'
-                    }
-                  `}
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPassword ? (
-                    <FiEyeOff className="h-4 w-4 text-[#0D915C] hover:text-[#02BB31] transition-colors" />
-                  ) : (
-                    <FiEye className="h-4 w-4 text-[#0D915C] hover:text-[#02BB31] transition-colors" />
-                  )}
-                </button>
+                {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
               </div>
 
-              {/* Password Strength Indicator */}
-              {form.password && (
-                <div className="mt-1">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs text-[#065A57]">Password Strength</span>
-                    <span className="text-xs font-medium text-[#013E43]">
-                      {getStrengthText()}
-                    </span>
-                  </div>
-                  <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${getStrengthColor()} transition-all duration-300`}
-                      style={{ width: `${(passwordStrength / 5) * 100}%` }}
-                    ></div>
-                  </div>
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#0D915C]" />
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg outline-none transition-colors ${
+                      errors.email
+                        ? 'border-red-400 focus:border-red-500 bg-red-50'
+                        : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                    }`}
+                  />
                 </div>
-              )}
-              {errors.password && (
-                <p className="text-xs text-red-500 mt-0.5">{errors.password}</p>
-              )}
-            </div>
-
-            {/* Confirm Password Field */}
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[#013E43] block">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiLock className={`h-4 w-4 ${errors.confirmPassword ? 'text-red-400' : 'text-[#0D915C]'}`} />
-                </div>
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Confirm your password"
-                  className={`
-                    w-full pl-9 pr-10 py-2.5 text-sm rounded-lg border-2 outline-none transition-all
-                    ${errors.confirmPassword 
-                      ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                      : 'border-[#A8D8C1] focus:border-[#02BB31] bg-white'
-                    }
-                  `}
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showConfirmPassword ? (
-                    <FiEyeOff className="h-4 w-4 text-[#0D915C] hover:text-[#02BB31] transition-colors" />
-                  ) : (
-                    <FiEye className="h-4 w-4 text-[#0D915C] hover:text-[#02BB31] transition-colors" />
-                  )}
-                </button>
+                {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
               </div>
-              {errors.confirmPassword && (
-                <p className="text-xs text-red-500 mt-0.5">{errors.confirmPassword}</p>
-              )}
-            </div>
 
-            {/* Terms and Conditions */}
-            <div className="space-y-1">
-              <label className="flex items-start space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="agreeTerms"
-                  checked={form.agreeTerms}
-                  onChange={handleChange}
-                  className="mt-0.5 w-3.5 h-3.5 rounded border-[#A8D8C1] text-[#02BB31] focus:ring-[#02BB31]"
-                />
-                <span className="text-xs text-[#065A57]">
-                  I agree to the{' '}
-                  <Link
-                    to="/terms"
-                    className="font-semibold text-[#02BB31] hover:text-[#0D915C]"
+              {/* Phone */}
+              <div>
+                <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FiPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#0D915C]" />
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="0712345678"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg outline-none transition-colors ${
+                      errors.phone
+                        ? 'border-red-400 focus:border-red-500 bg-red-50'
+                        : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                    }`}
+                  />
+                </div>
+                {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#0D915C]" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    placeholder="Create a password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className={`w-full pl-10 pr-12 py-3 border-2 rounded-lg outline-none transition-colors ${
+                      errors.password
+                        ? 'border-red-400 focus:border-red-500 bg-red-50'
+                        : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
                   >
-                    Terms
-                  </Link>{' '}
-                  and{' '}
-                  <Link
-                    to="/privacy"
-                    className="font-semibold text-[#02BB31] hover:text-[#0D915C]"
-                  >
-                    Privacy Policy
-                  </Link>
-                </span>
-              </label>
-              {errors.agreeTerms && (
-                <p className="text-xs text-red-500">{errors.agreeTerms}</p>
-              )}
-            </div>
+                    {showPassword ? (
+                      <FiEyeOff className="text-[#0D915C] hover:text-[#02BB31]" />
+                    ) : (
+                      <FiEye className="text-[#0D915C] hover:text-[#02BB31]" />
+                    )}
+                  </button>
+                </div>
+                {formData.password && (
+                  <div className="mt-1">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs text-[#065A57]">Password Strength</span>
+                      <span className="text-xs font-medium text-[#013E43]">{getStrengthText()}</span>
+                    </div>
+                    <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${getStrengthColor()} transition-all duration-300`}
+                        style={{ width: `${(passwordStrength / 5) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+              </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full relative overflow-hidden group bg-gradient-to-r from-[#013E43] to-[#005C57] text-white py-2.5 rounded-lg font-semibold text-sm transition-all transform hover:scale-[1.02] hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              <span className="absolute inset-0 bg-gradient-to-r from-[#02BB31] to-[#0D915C] opacity-0 group-hover:opacity-100 transition-opacity"></span>
-              <span className="relative flex items-center justify-center">
-                {isLoading ? (
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  Confirm Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#0D915C]" />
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    placeholder="Confirm your password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className={`w-full pl-10 pr-12 py-3 border-2 rounded-lg outline-none transition-colors ${
+                      errors.confirmPassword
+                        ? 'border-red-400 focus:border-red-500 bg-red-50'
+                        : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  >
+                    {showConfirmPassword ? (
+                      <FiEyeOff className="text-[#0D915C] hover:text-[#02BB31]" />
+                    ) : (
+                      <FiEye className="text-[#0D915C] hover:text-[#02BB31]" />
+                    )}
+                  </button>
+                </div>
+                {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
+              </div>
+
+              {/* Terms Agreement */}
+              <div className="space-y-2">
+                <label className="flex items-start space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="agreeTerms"
+                    checked={formData.agreeTerms}
+                    onChange={handleChange}
+                    className="mt-0.5 w-4 h-4 rounded border-[#A8D8C1] text-[#02BB31] focus:ring-[#02BB31]"
+                  />
+                  <span className="text-sm text-[#065A57]">
+                    I agree to the{' '}
+                    <Link to="/terms" className="font-semibold text-[#02BB31] hover:text-[#0D915C]">
+                      Terms of Service
+                    </Link>{' '}
+                    and{' '}
+                    <Link to="/privacy" className="font-semibold text-[#02BB31] hover:text-[#0D915C]">
+                      Privacy Policy
+                    </Link>
+                  </span>
+                </label>
+                {errors.agreeTerms && <p className="text-xs text-red-500">{errors.agreeTerms}</p>}
+              </div>
+
+              {error && (
+                <div className="flex items-center space-x-2 p-3 bg-red-50 rounded-lg border border-red-200">
+                  <FiAlertCircle className="text-red-500" />
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {loading ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
                     Creating Account...
                   </>
                 ) : (
@@ -549,30 +463,27 @@ function Register() {
                     Create Account
                   </>
                 )}
-              </span>
-            </button>
-          </form>
+              </button>
+            </form>
 
-          {/* Login Link */}
-          <p className="text-center text-xs text-[#065A57] mt-4">
-            Already have an account?{' '}
-            <Link
-              to="/login"
-              className="font-semibold text-[#02BB31] hover:text-[#0D915C] transition-colors"
-            >
-              Sign in
-            </Link>
-          </p>
+            {/* Login Link */}
+            <p className="text-center text-sm text-[#065A57] mt-4">
+              Already have an account?{' '}
+              <Link to="/login" className="font-semibold text-[#02BB31] hover:text-[#0D915C]">
+                Sign in
+              </Link>
+            </p>
 
-          {/* Security Info */}
-          <div className="flex items-center justify-center space-x-2 text-xs text-[#065A57] mt-4 p-2 bg-[#F0F7F4] rounded-lg">
-            <FiShield className="h-3 w-3 text-[#02BB31]" />
-            <span>256-bit SSL encryption</span>
+            {/* Security Badge */}
+            <div className="flex items-center justify-center space-x-2 text-xs text-[#065A57] mt-4 p-2 bg-[#F0F7F4] rounded-lg">
+              <FiShield className="h-3 w-3 text-[#02BB31]" />
+              <span>Your information is protected by 256-bit SSL encryption</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Register
+export default RegisterLandlordPage;

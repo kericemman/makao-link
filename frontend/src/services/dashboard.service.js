@@ -1,5 +1,5 @@
-import API from "../api/api"
+import api from "../api/api"
 
 export const getDashboardStats = () => {
-  return API.get("/dashboard/stats")
+  return api.get("/dashboard/stats")
 }

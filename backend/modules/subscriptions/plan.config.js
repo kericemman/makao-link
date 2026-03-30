@@ -2,7 +2,7 @@ module.exports = {
     normal: {
       name: "Normal",
       price: 0,
-      propertyLimit: 2
+      propertyLimit: 3
     },
   
     basic: {

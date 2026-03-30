@@ -1,163 +1,209 @@
-import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
-import API from "../../../api/api"
-import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn } from "react-icons/fi"
-import { FaBuilding } from "react-icons/fa"
-import toast from "react-hot-toast"
 
-function Login() {
-  const navigate = useNavigate()
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { loginLandlord } from "../../../services/auth.service";
+import { useAuth } from "../../../context/AuthContext";
+import { 
+  FiMail, 
+  FiLock, 
+  FiEye, 
+  FiEyeOff, 
+  FiLogIn,
+  FiHome,
+  FiUsers,
+  FiShield,
+  FiCheckCircle,
+  FiArrowRight
+} from "react-icons/fi";
+import { FaBuilding, FaKey, FaHandshake } from "react-icons/fa";
+import toast from "react-hot-toast";
 
-  const [form, setForm] = useState({
+const LoginPage = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const [formData, setFormData] = useState({
     email: "",
     password: ""
-  })
-
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [errors, setErrors] = useState({
-    email: "",
-    password: ""
-  })
+  });
+  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setForm({
-      ...form,
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
       [name]: value
-    })
-    // Clear error when user starts typing
+    }));
     if (errors[name]) {
-      setErrors({ ...errors, [name]: "" })
+      setErrors({ ...errors, [name]: "" });
     }
-  }
+  };
 
   const validateForm = () => {
-    let valid = true
-    const newErrors = { email: "", password: "" }
+    const newErrors = {};
 
-    if (!form.email) {
-      newErrors.email = "Email is required"
-      valid = false
-    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
-      newErrors.email = "Please enter a valid email"
-      valid = false
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email";
     }
 
-    if (!form.password) {
-      newErrors.password = "Password is required"
-      valid = false
-    } else if (form.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters"
-      valid = false
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
     }
 
-    setErrors(newErrors)
-    return valid
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!validateForm()) return
+    if (!validateForm()) {
+      toast.error("Please fix the errors in the form", {
+        style: { background: "#013E43", color: "#fff" }
+      });
+      return;
+    }
 
     try {
-      setIsLoading(true)
+      setLoading(true);
+      setError("");
 
-      const res = await API.post("/auth/login", form)
+      const data = await loginLandlord(formData);
+      login(data);
 
-      // Store token
-      localStorage.setItem("token", res.data.token)
-      
-      // Store user data if needed
-      if (res.data.user) {
-        localStorage.setItem("user", JSON.stringify(res.data.user))
-      }
-
-      // Show success toast
       toast.success("Login successful! Redirecting...", {
         style: {
           background: "#02BB31",
           color: "#fff",
         },
         duration: 2000
-      })
+      });
 
-      // Redirect based on user role
-      setTimeout(() => {
-        if (res.data.user?.role === "admin") {
-          navigate("/admin")
-        } else if (res.data.user?.role === "landlord") {
-          navigate("/dashboard")
-        } else {
-          navigate("/")
+      if (data.user.role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/landlord/dashboard");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed");
+      toast.error(err.response?.data?.message || "Login failed", {
+        style: {
+          background: "#013E43",
+          color: "#fff",
         }
-      }, 1500)
-
-    } catch (error) {
-      // Show error toast
-      toast.error(
-        error.response?.data?.message || "Login failed. Please check your credentials.",
-        {
-          style: {
-            background: "#013E43",
-            color: "#fff",
-          }
-        }
-      )
+      });
     } finally {
-      setIsLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const features = [
+    { icon: FiHome, text: "1,200+ Verified Properties" },
+    { icon: FiUsers, text: "850+ Happy Landlords" },
+    { icon: FiShield, text: "100% Secure Platform" },
+    { icon: FaHandshake, text: "Direct Landlord Contact" }
+  ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#013E43] to-[#005C57] p-4 relative overflow-hidden">
-      {/* Decorative Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#02BB31] rounded-full opacity-20 blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#A8D8C1] rounded-full opacity-20 blur-3xl animate-pulse delay-1000"></div>
-        
-        {/* Grid Pattern */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          backgroundSize: '60px 60px',
-        }}></div>
-      </div>
+    <div className="min-h-screen flex bg-gradient-to-br from-[#F0F7F4] to-white">
+      {/* Left Column - Branding & Content */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-[#013E43] to-[#005C57]">
+        {/* Background Pattern */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#02BB31] opacity-10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#A8D8C1] opacity-10 rounded-full blur-3xl"></div>
+          
+          {/* Grid Pattern */}
+          <div className="absolute inset-0 opacity-5" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundSize: '60px 60px',
+          }}></div>
+        </div>
 
-      {/* Floating Elements */}
-      <div className="absolute top-20 left-10 hidden lg:block animate-float">
-        <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20">
-          <div className="flex items-center space-x-2">
-            <FaBuilding className="text-[#02BB31] text-xl" />
-            <span className="text-white text-sm">MakaoLink</span>
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
+          {/* Logo */}
+          <div className="mb-8">
+            <div className="flex items-center space-x-3">
+              <div className="w-16 h-16 bg-white rounded-2xl shadow-2xl flex items-center justify-center">
+                <span className="text-4xl font-bold text-[#013E43]">M</span>
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold">MakaoLink</h1>
+                <p className="text-[#A8D8C1] text-lg">Property Management Platform</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tagline */}
+          <h2 className="text-3xl font-bold text-center mb-6">
+            Welcome Back!
+          </h2>
+          <p className="text-center text-[#A8D8C1] mb-8 max-w-md">
+            Sign in to manage your properties, connect with tenants, and grow your rental business.
+          </p>
+
+          {/* Features */}
+          <div className="space-y-4 w-full max-w-md">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <div key={index} className="flex items-center space-x-4 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                  <div className="p-2 bg-[#02BB31]/20 rounded-lg">
+                    <Icon className="text-[#02BB31] text-xl" />
+                  </div>
+                  <span className="text-sm">{feature.text}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Testimonial */}
+          <div className="mt-8 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+            <p className="text-sm italic mb-2">"MakaoLink helped me find quality tenants in just 3 days!"</p>
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-[#02BB31] rounded-full flex items-center justify-center text-white font-bold text-sm">
+                J
+              </div>
+              <div>
+                <p className="font-semibold text-sm">James Mwangi</p>
+                <p className="text-xs text-[#A8D8C1]">Landlord, Nairobi</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="absolute bottom-20 right-10 hidden lg:block animate-float-delayed">
-        <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20">
-          <div className="flex items-center space-x-2">
-            <FiLogIn className="text-[#02BB31] text-xl" />
-            <span className="text-white text-sm">Welcome Back!</span>
+      {/* Right Column - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 bg-white">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo (visible only on small screens) */}
+          <div className="lg:hidden text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl mb-4">
+              <span className="text-3xl font-bold text-white">M</span>
+            </div>
+            <h1 className="text-2xl font-bold text-[#013E43]">Welcome Back</h1>
+            <p className="text-[#065A57]">Sign in to continue</p>
           </div>
-        </div>
-      </div>
 
-      {/* Main Login Card */}
-      <div className="relative w-full max-w-md">
-        {/* Brand Header */}
-        <div className="text-center mb-8">
-         
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-[#A8D8C1]">Sign in to continue to your dashboard</p>
-        </div>
+          {/* Form Header */}
+          <div className="hidden lg:block mb-8">
+            <h2 className="text-3xl font-bold text-[#013E43] mb-2">Welcome Back</h2>
+            <p className="text-[#065A57]">Please sign in to your account</p>
+          </div>
 
-        {/* Login Form */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-[#A8D8C1]/20">
+          {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[#013E43] block">
+              <label className="block text-sm font-medium text-[#013E43]">
                 Email Address
               </label>
               <div className="relative">
@@ -167,17 +213,15 @@ function Login() {
                 <input
                   type="email"
                   name="email"
-                  value={form.email}
+                  value={formData.email}
                   onChange={handleChange}
                   placeholder="Enter your email"
-                  className={`
-                    w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all
-                    ${errors.email 
+                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
+                    errors.email 
                       ? 'border-red-400 focus:border-red-500 bg-red-50' 
                       : 'border-[#A8D8C1] focus:border-[#02BB31] bg-white'
-                    }
-                  `}
-                  disabled={isLoading}
+                  }`}
+                  disabled={loading}
                 />
               </div>
               {errors.email && (
@@ -187,7 +231,7 @@ function Login() {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[#013E43] block">
+              <label className="block text-sm font-medium text-[#013E43]">
                 Password
               </label>
               <div className="relative">
@@ -197,17 +241,15 @@ function Login() {
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  value={form.password}
+                  value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className={`
-                    w-full pl-10 pr-12 py-3 rounded-lg border-2 outline-none transition-all
-                    ${errors.password 
+                  className={`w-full pl-10 pr-12 py-3 rounded-lg border-2 outline-none transition-all ${
+                    errors.password 
                       ? 'border-red-400 focus:border-red-500 bg-red-50' 
                       : 'border-[#A8D8C1] focus:border-[#02BB31] bg-white'
-                    }
-                  `}
-                  disabled={isLoading}
+                  }`}
+                  disabled={loading}
                 />
                 <button
                   type="button"
@@ -243,15 +285,23 @@ function Login() {
               </Link>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="flex items-center space-x-2 p-3 bg-red-50 rounded-lg border border-red-200">
+                <FiShield className="text-red-500" />
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={loading}
               className="w-full relative overflow-hidden group bg-gradient-to-r from-[#013E43] to-[#005C57] text-white py-3 rounded-lg font-semibold text-lg transition-all transform hover:scale-[1.02] hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <span className="absolute inset-0 bg-gradient-to-r from-[#02BB31] to-[#0D915C] opacity-0 group-hover:opacity-100 transition-opacity"></span>
               <span className="relative flex items-center justify-center">
-                {isLoading ? (
+                {loading ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -273,40 +323,22 @@ function Login() {
           <p className="text-center text-sm text-[#065A57] mt-6">
             Don't have an account?{' '}
             <Link
-              to="/register"
+              to="/pricing"
               className="font-semibold text-[#02BB31] hover:text-[#0D915C] transition-colors"
             >
               Create an account
             </Link>
           </p>
 
-        
-
           {/* Security Badge */}
-          <div className="flex items-center justify-center space-x-2 text-xs text-[#065A57] mt-4">
-            <span className="w-2 h-2 bg-[#02BB31] rounded-full"></span>
+          <div className="flex items-center justify-center space-x-2 text-xs text-[#065A57] mt-4 p-2 bg-[#F0F7F4] rounded-lg">
+            <FiShield className="h-3 w-3 text-[#02BB31]" />
             <span>256-bit SSL Encrypted</span>
-            <span className="w-2 h-2 bg-[#02BB31] rounded-full"></span>
           </div>
         </div>
       </div>
-
-      {/* Custom Animations */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-        .animate-float-delayed {
-          animation: float 8s ease-in-out infinite;
-          animation-delay: 2s;
-        }
-      `}</style>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default LoginPage;

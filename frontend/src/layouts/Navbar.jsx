@@ -83,7 +83,7 @@ function Navbar() {
                 </Link>
 
                 <Link
-                  to="/register"
+                  to="/landlord/register"
                   className="ml-2 px-5 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2"
                 >
                   <FiUserPlus className="text-lg" />
