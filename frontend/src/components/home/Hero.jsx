@@ -255,7 +255,7 @@ const Hero = () => {
             </div>
 
             {/* Main Heading */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-4xl xl:text-5xl font-bold leading-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-4xl xl:text-5xl font-bold leading-tight">
               <span className="text-white">Find Your Next Home</span>
               <span className="block text-[#02BB31] mt-1 sm:mt-2">Without Hustle</span>
             </h1>
