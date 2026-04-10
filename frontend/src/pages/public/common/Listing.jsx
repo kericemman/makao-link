@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { useSearchParams, Link } from "react-router-dom";
 import { getPublicListings } from "../../../services/listings.service";
-import ListingCard from "../../../components/common/ListingCard";
 import { 
   FiSearch, 
   FiFilter, 
@@ -11,38 +10,308 @@ import {
   FiSliders,
   FiRefreshCw,
   FiX,
+  FiHeart,
+  FiCamera,
+  FiStar,
+  FiUser,
   FiArrowRight,
-  FiChevronDown
+  FiChevronDown,
+  FiEye,
+  FiChevronLeft,
+  FiChevronRight
 } from "react-icons/fi";
-import { FaBed, FaBuilding } from "react-icons/fa";
+import { FaBath, FaBed, FaBuilding } from "react-icons/fa";
 import toast from "react-hot-toast";
 
+const propertyTypes = [
+  { value: "All", label: "All Properties", icon: FiHome },
+  { value: "apartment", label: "Apartments", icon: FaBuilding },
+  { value: "bedsitter", label: "Bedsitters", icon: FiHome },
+  { value: "maisonette", label: "Maisonettes", icon: FaBuilding },
+  { value: "studio", label: "Studios", icon: FiHome },
+  { value: "bungalow", label: "Bungalows", icon: FaBuilding },
+  { value: "townhouse", label: "Townhouses", icon: FaBuilding },
+  { value: "other", label: "Other", icon: FiHome }
+];
+
+// Helper function to get image URL
+const getImageUrl = (image) => {
+  if (!image) return null;
+  if (typeof image === 'object' && image.url) return image.url;
+  if (typeof image === 'string') return image;
+  return null;
+};
+
+// Listing Card Component
+const ListingCard = ({ listing }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const firstImage = listing.images?.[0] ? getImageUrl(listing.images[0]) : null;
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0
+    }).format(price);
+  };
+
+  return (
+    <div 
+      className="group relative overflow-hidden rounded-2xl bg-white shadow-lg border border-[#A8D8C1] transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Image Section */}
+      <div className="relative h-56 overflow-hidden bg-gradient-to-r from-[#013E43] to-[#005C57]">
+        {firstImage ? (
+          <img
+            src={firstImage}
+            alt={listing.title}
+            className={`h-full w-full object-cover transition-transform duration-500 ${
+              isHovered ? "scale-110" : "scale-100"
+            }`}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.parentElement.classList.add('flex', 'items-center', 'justify-center');
+            }}
+          />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center text-white">
+            <FiHome className="text-4xl text-white/50 mb-2" />
+            <p className="text-sm text-white/50">No image available</p>
+          </div>
+        )}
+        
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        
+        {/* Status Badges */}
+        <div className="absolute top-3 left-3 flex gap-2">
+          {listing.isFeatured && (
+            <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500 px-2 py-1 text-xs font-medium text-white shadow-lg">
+              <FiStar className="text-xs" />
+              Featured
+            </span>
+          )}
+          {listing.status === "pending" && (
+            <span className="rounded-full bg-yellow-500 px-2 py-1 text-xs font-medium text-white shadow-lg">
+              Pending
+            </span>
+          )}
+          {listing.status === "approved" && (
+            <span className="rounded-full bg-[#02BB31] px-2 py-1 text-xs font-medium text-white shadow-lg">
+              Approved
+            </span>
+          )}
+        </div>
+        
+        {/* Favorite Button */}
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            setIsFavorite(!isFavorite);
+          }}
+          className="absolute top-3 right-3 rounded-full bg-white/90 p-2 shadow-lg backdrop-blur-sm transition-all hover:scale-110"
+        >
+          <FiHeart 
+            className={`text-lg transition-colors ${
+              isFavorite ? "fill-red-500 text-red-500" : "text-[#065A57]"
+            }`} 
+          />
+        </button>
+        
+        {/* Price Tag */}
+        <div className="absolute bottom-3 left-3">
+          <div className="rounded-lg bg-[#013E43]/90 px-3 py-1.5 backdrop-blur-sm">
+            <p className="text-lg font-bold text-white">{formatPrice(listing.price)}</p>
+            <p className="text-xs text-[#A8D8C1]">/month</p>
+          </div>
+        </div>
+        
+        {/* Image Count Badge */}
+        {listing.images?.length > 0 && (
+          <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-xs text-white backdrop-blur-sm">
+            <FiCamera className="text-xs" />
+            <span>{listing.images.length}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Content Section */}
+      <div className="p-5">
+        <div className="mb-3">
+          <h3 className="text-lg font-bold text-[#013E43] line-clamp-1 group-hover:text-[#02BB31] transition-colors">
+            {listing.title}
+          </h3>
+          <p className="mt-1 flex items-center text-sm text-[#065A57]">
+            <FiMapPin className="mr-1 flex-shrink-0 text-[#02BB31]" />
+            <span className="line-clamp-1">{listing.location}</span>
+          </p>
+        </div>
+
+        <div className="mb-4 flex flex-wrap gap-2">
+          <span className="flex items-center gap-1 rounded-full bg-[#F0F7F4] px-3 py-1 text-xs text-[#065A57]">
+            <FaBuilding className="text-[#02BB31]" />
+            {listing.type || "Apartment"}
+          </span>
+          <span className="flex items-center gap-1 rounded-full bg-[#F0F7F4] px-3 py-1 text-xs text-[#065A57]">
+            <FaBed className="text-[#02BB31]" />
+            {listing.bedrooms || 0} {listing.bedrooms === 1 ? "bed" : "beds"}
+          </span>
+          <span className="flex items-center gap-1 rounded-full bg-[#F0F7F4] px-3 py-1 text-xs text-[#065A57]">
+            <FaBath className="text-[#02BB31]" />
+            {listing.bathrooms || 0} {listing.bathrooms === 1 ? "bath" : "baths"}
+          </span>
+        </div>
+
+        {listing.landlord && (
+          <div className="mb-4 flex items-center gap-2 border-t border-[#A8D8C1] pt-3">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-[#013E43] to-[#005C57]">
+              <FiUser className="text-xs text-white" />
+            </div>
+            <span className="text-xs text-[#065A57]">{listing.landlord.name}</span>
+          </div>
+        )}
+
+        <Link
+          to={`/listings/${listing._id}`}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#013E43] to-[#005C57] px-4 py-2.5 text-sm font-medium text-white transition-all hover:shadow-lg hover:scale-[1.02] group/btn"
+        >
+          <span>View Details</span>
+          <FiArrowRight className="transition-transform group-hover/btn:translate-x-1" />
+        </Link>
+      </div>
+
+      {isHovered && (
+        <div className="absolute inset-x-0 bottom-full left-0 mb-2 hidden lg:block">
+          <div className="rounded-lg bg-[#013E43] p-2 text-center text-xs text-white shadow-lg">
+            <p className="flex items-center justify-center gap-1">
+              <FiEye className="text-[#02BB31]" />
+              Click to view full details
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Category Tabs Component with smooth sliding
+const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
+  const scrollContainerRef = useRef(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
+
+  const checkScrollPosition = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setShowLeftArrow(scrollLeft > 0);
+      setShowRightArrow(scrollLeft + clientWidth < scrollWidth - 10);
+    }
+  };
+
+  const scroll = (direction) => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 200;
+      const newScrollLeft = scrollContainerRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
+      scrollContainerRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  useEffect(() => {
+    checkScrollPosition();
+    const handleResize = () => checkScrollPosition();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return (
+    <div className="relative">
+      {/* Left Arrow */}
+      {showLeftArrow && (
+        <button
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-lg border border-[#A8D8C1] hover:bg-[#F0F7F4] transition-all"
+        >
+          <FiChevronLeft className="text-[#013E43]" />
+        </button>
+      )}
+
+      {/* Categories Container */}
+      <div
+        ref={scrollContainerRef}
+        onScroll={checkScrollPosition}
+        className="flex overflow-x-auto scrollbar-hide gap-3 pb-4 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {categories.map((category) => {
+          const Icon = category.icon;
+          const isActive = activeCategory === category.value;
+          return (
+            <button
+              key={category.value}
+              onClick={() => onCategoryChange(category.value)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium whitespace-nowrap transition-all ${
+                isActive
+                  ? "bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white shadow-md"
+                  : "bg-white text-[#065A57] border border-[#A8D8C1] hover:bg-[#F0F7F4]"
+              }`}
+            >
+              <Icon className="text-base" />
+              <span>{category.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Right Arrow */}
+      {showRightArrow && (
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-lg border border-[#A8D8C1] hover:bg-[#F0F7F4] transition-all"
+        >
+          <FiChevronRight className="text-[#013E43]" />
+        </button>
+      )}
+    </div>
+  );
+};
+
 const ListingsPage = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [searchParams, setSearchParams] = useSearchParams();
+  const selectedType = searchParams.get("type") || "All";
+  const locationParam = searchParams.get("location") || "";
+  const minPriceParam = searchParams.get("minPrice") || "";
+  const maxPriceParam = searchParams.get("maxPrice") || "";
+  const bedroomsParam = searchParams.get("bedrooms") || "";
+
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-
   const [filters, setFilters] = useState({
-    location: searchParams.get("location") || "",
-    minPrice: searchParams.get("minPrice") || "",
-    maxPrice: searchParams.get("maxPrice") || "",
-    bedrooms: searchParams.get("bedrooms") || "",
-    type: searchParams.get("type") || ""
+    location: locationParam,
+    minPrice: minPriceParam,
+    maxPrice: maxPriceParam,
+    bedrooms: bedroomsParam,
+    type: selectedType !== "All" ? selectedType : ""
   });
 
   const fetchListings = async () => {
     try {
       setLoading(true);
-
-      const params = {
-        location: searchParams.get("location") || "",
-        minPrice: searchParams.get("minPrice") || "",
-        maxPrice: searchParams.get("maxPrice") || "",
-        bedrooms: searchParams.get("bedrooms") || "",
-        type: searchParams.get("type") || ""
-      };
-
+      const params = {};
+      if (filters.type) params.type = filters.type;
+      if (filters.location) params.location = filters.location;
+      if (filters.minPrice) params.minPrice = filters.minPrice;
+      if (filters.maxPrice) params.maxPrice = filters.maxPrice;
+      if (filters.bedrooms) params.bedrooms = filters.bedrooms;
       const data = await getPublicListings(params);
       setListings(data.listings || []);
     } catch (error) {
@@ -58,23 +327,32 @@ const ListingsPage = () => {
     fetchListings();
   }, [searchParams]);
 
-  const handleChange = (e) => {
-    setFilters((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
   };
 
   const handleFilterSubmit = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
-
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.set(key, value);
-    });
-
+    if (filters.location) params.set("location", filters.location);
+    if (filters.minPrice) params.set("minPrice", filters.minPrice);
+    if (filters.maxPrice) params.set("maxPrice", filters.maxPrice);
+    if (filters.bedrooms) params.set("bedrooms", filters.bedrooms);
+    if (filters.type) params.set("type", filters.type);
     setSearchParams(params);
     setShowMobileFilters(false);
+  };
+
+  const handleTypeChange = (type) => {
+    setFilters(prev => ({ ...prev, type: type === "All" ? "" : type }));
+    if (type === "All") {
+      const params = new URLSearchParams(searchParams);
+      params.delete("type");
+      setSearchParams(params);
+    } else {
+      setSearchParams({ ...Object.fromEntries(searchParams), type });
+    }
   };
 
   const handleReset = () => {
@@ -90,30 +368,31 @@ const ListingsPage = () => {
   };
 
   const hasActiveFilters = () => {
-    return Object.values(filters).some(value => value !== "");
+    return filters.location || filters.minPrice || filters.maxPrice || filters.bedrooms || filters.type;
   };
 
   const getActiveFiltersCount = () => {
-    return Object.values(filters).filter(value => value !== "").length;
+    let count = 0;
+    if (filters.location) count++;
+    if (filters.minPrice) count++;
+    if (filters.maxPrice) count++;
+    if (filters.bedrooms) count++;
+    if (filters.type) count++;
+    return count;
   };
 
   return (
     <div className="min-h-screen bg-[#F0F7F4]">
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-[#013E43] to-[#005C57] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Find Your Perfect Home
-            </h1>
-            <p className="text-lg text-[#A8D8C1]">
-              Browse verified rental properties across Kenya. Connect directly with landlords.
-            </p>
-          </div>
+      <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Category Tabs */}
+        <div className="mb-8">
+          <CategoryTabs 
+            categories={propertyTypes}
+            activeCategory={filters.type || "All"}
+            onCategoryChange={handleTypeChange}
+          />
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid gap-8 lg:grid-cols-[340px_1fr]">
           {/* Desktop Filters Sidebar */}
           <aside className="hidden lg:block h-fit">
@@ -147,7 +426,7 @@ const ListingsPage = () => {
                       name="location"
                       placeholder="Enter city or area"
                       value={filters.location}
-                      onChange={handleChange}
+                      onChange={handleFilterChange}
                       className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
                     />
                   </div>
@@ -166,7 +445,7 @@ const ListingsPage = () => {
                         name="minPrice"
                         placeholder="Min"
                         value={filters.minPrice}
-                        onChange={handleChange}
+                        onChange={handleFilterChange}
                         className="w-full pl-10 pr-3 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
                       />
                     </div>
@@ -177,7 +456,7 @@ const ListingsPage = () => {
                         name="maxPrice"
                         placeholder="Max"
                         value={filters.maxPrice}
-                        onChange={handleChange}
+                        onChange={handleFilterChange}
                         className="w-full pl-10 pr-3 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
                       />
                     </div>
@@ -194,7 +473,7 @@ const ListingsPage = () => {
                     <select
                       name="bedrooms"
                       value={filters.bedrooms}
-                      onChange={handleChange}
+                      onChange={handleFilterChange}
                       className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors appearance-none bg-white"
                     >
                       <option value="">Any</option>
@@ -218,7 +497,7 @@ const ListingsPage = () => {
                     <select
                       name="type"
                       value={filters.type}
-                      onChange={handleChange}
+                      onChange={handleFilterChange}
                       className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors appearance-none bg-white"
                     >
                       <option value="">All Types</option>
@@ -326,7 +605,7 @@ const ListingsPage = () => {
 
           {/* Main Content */}
           <section>
-            {/* Mobile Filter Button & Results Header */}
+            {/* Mobile Filter Button */}
             <div className="lg:hidden mb-6">
               <button
                 onClick={() => setShowMobileFilters(true)}
@@ -430,7 +709,6 @@ const ListingsPage = () => {
 
             <div className="p-4">
               <form onSubmit={handleFilterSubmit} className="space-y-5">
-                {/* Same filter fields as desktop */}
                 <div>
                   <label className="block text-sm font-medium text-[#013E43] mb-2">Location</label>
                   <div className="relative">
@@ -440,7 +718,7 @@ const ListingsPage = () => {
                       name="location"
                       placeholder="Enter city or area"
                       value={filters.location}
-                      onChange={handleChange}
+                      onChange={handleFilterChange}
                       className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
                     />
                   </div>
@@ -456,7 +734,7 @@ const ListingsPage = () => {
                         name="minPrice"
                         placeholder="Min"
                         value={filters.minPrice}
-                        onChange={handleChange}
+                        onChange={handleFilterChange}
                         className="w-full pl-10 pr-3 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
                       />
                     </div>
@@ -467,7 +745,7 @@ const ListingsPage = () => {
                         name="maxPrice"
                         placeholder="Max"
                         value={filters.maxPrice}
-                        onChange={handleChange}
+                        onChange={handleFilterChange}
                         className="w-full pl-10 pr-3 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
                       />
                     </div>
@@ -481,7 +759,7 @@ const ListingsPage = () => {
                     <select
                       name="bedrooms"
                       value={filters.bedrooms}
-                      onChange={handleChange}
+                      onChange={handleFilterChange}
                       className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors appearance-none bg-white"
                     >
                       <option value="">Any</option>
@@ -502,7 +780,7 @@ const ListingsPage = () => {
                     <select
                       name="type"
                       value={filters.type}
-                      onChange={handleChange}
+                      onChange={handleFilterChange}
                       className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors appearance-none bg-white"
                     >
                       <option value="">All Types</option>
@@ -539,6 +817,13 @@ const ListingsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Hide scrollbar styles */}
+      <style jsx>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 };

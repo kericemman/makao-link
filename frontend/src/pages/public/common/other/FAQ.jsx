@@ -19,9 +19,10 @@ import {
 import { FaWhatsapp, FaBuilding, FaHandshake } from "react-icons/fa"
 
 function FAQ() {
-    useEffect(() => {
-        window.scrollTo(0, 0);
-    }, []);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+  
   const [searchTerm, setSearchTerm] = useState("")
   const [activeCategory, setActiveCategory] = useState("all")
   const [openItems, setOpenItems] = useState({})
@@ -40,27 +41,27 @@ function FAQ() {
     {
       id: 1,
       category: "general",
-      question: "What is MakaoLink?",
-      answer: "MakaoLink is Kenya's premier property management platform that connects landlords directly with tenants. We provide a secure, transparent platform for listing properties, managing inquiries, and facilitating direct communication between property owners and potential renters."
+      question: "What is RendaHomes?",
+      answer: "RendaHomes is Kenya's premier property management platform that connects landlords directly with tenants. We provide a secure, transparent platform for listing properties, managing inquiries, and facilitating direct communication between property owners and potential renters."
     },
     {
       id: 2,
       category: "general",
-      question: "Is MakaoLink free to use?",
-      answer: "Yes! MakaoLink offers a free plan that allows you to list up to 2 properties. For landlords with more properties, we offer affordable premium plans with additional features like priority listing, advanced analytics, and priority support."
+      question: "Is RendaHomes free to use?",
+      answer: "Yes! RendaHomes offers a free plan that allows you to list up to 2 properties. For landlords with more properties, we offer affordable premium plans with additional features like priority listing, advanced analytics, and priority support."
     },
     {
       id: 3,
       category: "general",
-      question: "How is MakaoLink different from other property platforms?",
-      answer: "MakaoLink eliminates the middleman by connecting tenants directly with landlords. We verify all listings, provide secure communication channels, and offer transparent pricing with no hidden fees. Our platform is specifically designed for the Kenyan market with local payment options like M-Pesa."
+      question: "How is RendaHomes different from other property platforms?",
+      answer: "RendaHomes eliminates the middleman by connecting tenants directly with landlords. We verify all listings, provide secure communication channels, and offer transparent pricing with no hidden fees. Our platform is specifically designed for the Kenyan market with local payment options like M-Pesa."
     },
 
     // For Landlords
     {
       id: 4,
       category: "landlords",
-      question: "How do I list my property on MakaoLink?",
+      question: "How do I list my property on RendaHomes?",
       answer: "Listing your property is easy! Simply create a landlord account, click on 'Add Property' in your dashboard, and fill in the property details including title, description, price, location, and upload photos. Once submitted, our team will review and approve your listing within 24 hours."
     },
     {
@@ -79,7 +80,7 @@ function FAQ() {
       id: 7,
       category: "landlords",
       question: "What happens after my property is approved?",
-      answer: "Once approved, your property will be visible to thousands of potential tenants searching on MakaoLink. You'll start receiving inquiries and can manage them through your dashboard. You can also track views, update property details, or remove the listing at any time."
+      answer: "Once approved, your property will be visible to thousands of potential tenants searching on RendaHomes. You'll start receiving inquiries and can manage them through your dashboard. You can also track views, update property details, or remove the listing at any time."
     },
     {
       id: 8,
@@ -110,8 +111,8 @@ function FAQ() {
     {
       id: 12,
       category: "tenants",
-      question: "Are the properties on MakaoLink verified?",
-      answer: "Yes! All properties on MakaoLink are verified by our team. We ensure that listings are genuine, photos are accurate, and landlords are legitimate before approving any property. This helps protect tenants from scams."
+      question: "Are the properties on RendaHomes verified?",
+      answer: "Yes! All properties on RendaHomes are verified by our team. We ensure that listings are genuine, photos are accurate, and landlords are legitimate before approving any property. This helps protect tenants from scams."
     },
     {
       id: 13,
@@ -130,8 +131,8 @@ function FAQ() {
     {
       id: 15,
       category: "payments",
-      question: "How does the 14-day free trial work?",
-      answer: "We don't have the 14-days trial, but we give you two listings for free."
+      question: "Does RendaHomes offer a free trial?",
+      answer: "We don't have a 14-day trial, but we give you two free listings to get started."
     },
     {
       id: 16,
@@ -206,14 +207,19 @@ function FAQ() {
 
   return (
     <div className="min-h-screen bg-[#F0F7F4]">
-      {/* Hero Section */}
+      {/* Hero Section with Background Image */}
       <div className="relative bg-gradient-to-r from-[#013E43] to-[#005C57] text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#02BB31] rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#A8D8C1] rounded-full blur-3xl"></div>
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img
+            src="https://res.cloudinary.com/dhlz0p70t/image/upload/v1775822586/7879_xvv7ty.jpg"
+            alt="Help center background"
+            className="w-full h-full object-cover opacity-20"
+          />
+          
         </div>
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+        <div className="relative max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
             <FiHelpCircle className="text-[#02BB31]" />
             <span className="text-sm font-medium">Help Center</span>
@@ -223,8 +229,8 @@ function FAQ() {
             How Can We Help You?
           </h1>
           
-          <p className="text-xl text-[#A8D8C1] max-w-2xl mx-auto mb-8">
-            Find answers to commonly asked questions about MakaoLink
+          <p className="text-sm md:text-xl text-[#A8D8C1] max-w-2xl mx-auto mb-8">
+            Find answers to commonly asked questions about RendaHomes
           </p>
 
           {/* Search Bar */}
@@ -241,9 +247,12 @@ function FAQ() {
             </div>
           </div>
         </div>
+
+        {/* Bottom Wave */}
+        
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Category Filters */}
         <div className="flex flex-wrap gap-3 mb-8">
           {categories.map(category => {
@@ -350,7 +359,6 @@ function FAQ() {
               </div>
             </div>
             <div className="flex flex gap-3">
-            
               <a
                 href="tel:+254712345678"
                 className="px-3 py-3 bg-[#02BB31] text-white rounded-lg font-light hover:bg-[#0D915C] transition-colors flex items-center space-x-2"
@@ -382,7 +390,7 @@ function FAQ() {
           </Link>
           
           <Link
-            to="/contact"
+            to="/support"
             className="bg-white p-4 rounded-xl shadow-lg border border-[#A8D8C1] text-center hover:shadow-xl transition-all group"
           >
             <FiMail className="text-2xl text-[#02BB31] mx-auto mb-2 group-hover:scale-110 transition-transform" />
@@ -390,7 +398,7 @@ function FAQ() {
           </Link>
           
           <Link
-            to="/terms"
+            to="/terms-of-service"
             className="bg-white p-4 rounded-xl shadow-lg border border-[#A8D8C1] text-center hover:shadow-xl transition-all group"
           >
             <FiFileText className="text-2xl text-[#02BB31] mx-auto mb-2 group-hover:scale-110 transition-transform" />
@@ -398,11 +406,11 @@ function FAQ() {
           </Link>
           
           <Link
-            to="/privacy"
+            to="/properties"
             className="bg-white p-4 rounded-xl shadow-lg border border-[#A8D8C1] text-center hover:shadow-xl transition-all group"
           >
-            <FiShield className="text-2xl text-[#02BB31] mx-auto mb-2 group-hover:scale-110 transition-transform" />
-            <p className="text-sm font-medium text-[#013E43]">Privacy Policy</p>
+            <FiHome className="text-2xl text-[#02BB31] mx-auto mb-2 group-hover:scale-110 transition-transform" />
+            <p className="text-sm font-medium text-[#013E43]">Find a Home</p>
           </Link>
         </div>
       </div>

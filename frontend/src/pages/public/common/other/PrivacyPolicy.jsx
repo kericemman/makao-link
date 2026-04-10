@@ -67,21 +67,25 @@ function PrivacyPolicy() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'MakaoLink-Privacy-Policy.txt'
+    a.download = 'RendaHomes-Privacy-Policy.txt'
     a.click()
     URL.revokeObjectURL(url)
   }
 
-  const lastUpdated = "March 15, 2024"
-  const effectiveDate = "March 22, 2024"
+  const lastUpdated = "March 15, 2026"
+  const effectiveDate = "March 22, 2026"
 
   return (
     <div className="min-h-screen bg-[#F0F7F4]">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-[#013E43] to-[#005C57] text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#02BB31] rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#A8D8C1] rounded-full blur-3xl"></div>
+        <div className="absolute inset-0">
+          <img
+            src="https://res.cloudinary.com/dhlz0p70t/image/upload/v1775822926/locked-padlock-security-protection-privacy-3d-icon-bubble-speech-chat_yo34tr.jpg"
+            alt="Help center background"
+            className="w-full h-full object-cover opacity-20"
+          />
+          
         </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -119,7 +123,7 @@ function PrivacyPolicy() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Table of Contents - Sidebar */}
           <div className="lg:w-1/4">
@@ -154,18 +158,18 @@ function PrivacyPolicy() {
                 <h4 className="text-sm font-semibold text-[#013E43] mb-3">Privacy Questions?</h4>
                 <div className="space-y-2">
                   <a
-                    href="mailto:privacy@makaolink.com"
+                    href="mailto:privacy@rendahomes.com"
                     className="flex items-center space-x-2 text-sm text-[#065A57] hover:text-[#02BB31] transition-colors"
                   >
                     <FiMail className="text-[#02BB31]" />
-                    <span>privacy@makaolink.com</span>
+                    <span>privacy@rendahomes.com</span>
                   </a>
                   <a
-                    href="tel:+254712345678"
+                    href="tel:+254729353537"
                     className="flex items-center space-x-2 text-sm text-[#065A57] hover:text-[#02BB31] transition-colors"
                   >
                     <FiPhone className="text-[#02BB31]" />
-                    <span>+254 712 345 678</span>
+                    <span>+254 729 353 537</span>
                   </a>
                 </div>
               </div>
@@ -194,7 +198,7 @@ function PrivacyPolicy() {
                 <div>
                   <p className="text-sm text-[#013E43] font-medium">Effective Date: {effectiveDate}</p>
                   <p className="text-xs text-[#065A57] mt-1">
-                    This Privacy Policy describes how MakaoLink collects, uses, and protects your personal information.
+                    This Privacy Policy describes how RendaHomes collects, uses, and protects your personal information.
                   </p>
                 </div>
               </div>
@@ -207,7 +211,7 @@ function PrivacyPolicy() {
                 </h2>
                 <div className="space-y-4 text-[#065A57] leading-relaxed">
                   <p>
-                    At MakaoLink ("we," "our," "us"), we take your privacy seriously. This Privacy Policy 
+                    At RendaHomes ("we," "our," "us"), we take your privacy seriously. This Privacy Policy 
                     explains how we collect, use, disclose, and safeguard your information when you visit 
                     our website, use our mobile applications, or engage with our services.
                   </p>
@@ -219,7 +223,7 @@ function PrivacyPolicy() {
                   <p>
                     We are committed to protecting your personal information and being transparent about 
                     how we use it. If you have any questions or concerns, please contact us at 
-                    privacy@makaolink.com.
+                    privacy@rendahomes.com.
                   </p>
                 </div>
               </section>
@@ -367,7 +371,7 @@ function PrivacyPolicy() {
                     <li><span className="font-medium">Withdraw Consent:</span> Withdraw consent at any time.</li>
                   </ul>
                   <p className="mt-4">
-                    To exercise these rights, please contact us at privacy@makaolink.com. We will respond within 30 days.
+                    To exercise these rights, please contact us at privacy@rendahomes.com. We will respond within 30 days.
                   </p>
                 </div>
               </section>
@@ -399,7 +403,7 @@ function PrivacyPolicy() {
                 </h2>
                 <div className="space-y-4 text-[#065A57] leading-relaxed">
                   <p>
-                    MakaoLink is not intended for individuals under the age of 18. We do not knowingly 
+                    RendaHomes is not intended for individuals under the age of 18. We do not knowingly 
                     collect personal information from children. If you become aware that a child has 
                     provided us with personal information, please contact us immediately.
                   </p>
@@ -437,15 +441,15 @@ function PrivacyPolicy() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-[#F0F7F4] p-4 rounded-lg">
                     <p className="font-semibold text-[#013E43] mb-2">Email</p>
-                    <a href="mailto:privacy@makaolink.com" className="text-[#02BB31] hover:underline">
-                      privacy@makaolink.com
+                    <a href="mailto:privacy@rendahomes.com" className="text-[#02BB31] hover:underline">
+                      privacy@rendahomes.com
                     </a>
                   </div>
                   
                   <div className="bg-[#F0F7F4] p-4 rounded-lg">
                     <p className="font-semibold text-[#013E43] mb-2">Phone</p>
-                    <a href="tel:+254712345678" className="text-[#02BB31] hover:underline">
-                      +254 712 345 678
+                    <a href="tel:+254729353537" className="text-[#02BB31] hover:underline">
+                      +254 729 353 537
                     </a>
                   </div>
                   
@@ -456,7 +460,7 @@ function PrivacyPolicy() {
                   
                   <div className="bg-[#F0F7F4] p-4 rounded-lg">
                     <p className="font-semibold text-[#013E43] mb-2">Data Protection Officer</p>
-                    <p className="text-[#065A57]">dpo@makaolink.com</p>
+                    <p className="text-[#065A57]">dpo@rendahomes.com</p>
                   </div>
                 </div>
               </section>

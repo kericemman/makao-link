@@ -40,7 +40,7 @@ function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
             
-            <img src="/assets/logo1.png" alt="MakaoLink Logo" className="h-10 w-full" />
+            <img src="/assets/rend.jpeg" alt="MakaoLink Logo" className="h-10 w-full" />
             
             
           </Link>
@@ -62,6 +62,15 @@ function Navbar() {
               <FiGrid className="text-lg" />
               <span>Properties</span>
             </Link>
+
+            <Link 
+            to="/services"
+            className="px-4 py-2 text-[#065A57] hover:text-[#013E43] hover:bg-[#F0F7F4] rounded-lg transition-all flex items-center space-x-2"
+            >
+              <FaBuilding className="text-lg" />
+              <span>Services</span>
+            </Link>
+
 
 
             <Link
@@ -211,6 +220,15 @@ function Navbar() {
             >
               <FiGrid className="text-xl" />
               <span>Properties</span>
+            </Link>
+
+              <Link
+              to="/services"
+              className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              <FaBuilding className="text-xl" />
+              <span>Services</span>
             </Link>
 
             <Link

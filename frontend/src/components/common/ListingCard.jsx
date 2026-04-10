@@ -1,4 +1,7 @@
+
+
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { 
   FiMapPin, 
   FiEye, 
@@ -10,11 +13,20 @@ import {
   FiUser
 } from "react-icons/fi";
 import { FaBed, FaBath, FaBuilding } from "react-icons/fa";
-import { useState } from "react";
+
+// Helper function to get image URL
+const getImageUrl = (image) => {
+  if (!image) return null;
+  if (typeof image === 'object' && image.url) return image.url;
+  if (typeof image === 'string') return image;
+  return null;
+};
 
 const ListingCard = ({ listing }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  
+  const firstImage = listing.images?.[0] ? getImageUrl(listing.images[0]) : null;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-KE', {
@@ -38,13 +50,17 @@ const ListingCard = ({ listing }) => {
     >
       {/* Image Section */}
       <div className="relative h-56 overflow-hidden bg-gradient-to-r from-[#013E43] to-[#005C57]">
-        {listing.images?.[0] ? (
+        {firstImage ? (
           <img
-            src={`http://localhost:5002${listing.images[0]}`}
+            src={firstImage}
             alt={listing.title}
             className={`h-full w-full object-cover transition-transform duration-500 ${
               isHovered ? "scale-110" : "scale-100"
             }`}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.parentElement.classList.add('flex', 'items-center', 'justify-center');
+            }}
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center text-white">
@@ -78,8 +94,12 @@ const ListingCard = ({ listing }) => {
         
         {/* Favorite Button */}
         <button
-          onClick={() => setIsFavorite(!isFavorite)}
-          className="absolute top-3 right-3 rounded-full bg-white/90 p-2 shadow-lg backdrop-blur-sm transition-all hover:scale-110"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsFavorite(!isFavorite);
+          }}
+          className="absolute top-3 right-3 rounded-full bg-white/90 p-2 shadow-lg backdrop-blur-sm transition-all hover:scale-110 z-10"
         >
           <FiHeart 
             className={`text-lg transition-colors ${
@@ -109,10 +129,16 @@ const ListingCard = ({ listing }) => {
       <div className="p-5">
         {/* Title and Location */}
         <div className="mb-3">
-          <h3 className="text-lg font-bold text-[#013E43] line-clamp-1 group-hover:text-[#02BB31] transition-colors">
-            {listing.title}
-          </h3>
-          <p className="mt-1 flex items-center text-sm text-[#065A57]">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-lg font-bold text-[#013E43] line-clamp-1 group-hover:text-[#02BB31] transition-colors flex-1">
+              {listing.title}
+            </h3>
+            <span className="flex items-center gap-1 rounded-full bg-[#F0F7F4] px-2 py-1 text-xs text-[#065A57] whitespace-nowrap">
+              <FaBuilding className="text-[#02BB31] text-xs" />
+              {listing.type || "Apartment"}
+            </span>
+          </div>
+          <p className="mt-2 flex items-center text-sm text-[#065A57]">
             <FiMapPin className="mr-1 flex-shrink-0 text-[#02BB31]" />
             <span className="line-clamp-1">{listing.location}</span>
           </p>
@@ -126,11 +152,7 @@ const ListingCard = ({ listing }) => {
         )}
 
         {/* Property Features */}
-        <div className="mb-4 flex flex-wrap gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-[#F0F7F4] px-3 py-1 text-xs text-[#065A57]">
-            <FaBuilding className="text-[#02BB31]" />
-            {listing.type || "Apartment"}
-          </span>
+        <div className="mb-4 flex flex-wrap gap-3">
           <span className="flex items-center gap-1 rounded-full bg-[#F0F7F4] px-3 py-1 text-xs text-[#065A57]">
             <FaBed className="text-[#02BB31]" />
             {listing.bedrooms || 0} {listing.bedrooms === 1 ? "bed" : "beds"}
@@ -147,7 +169,7 @@ const ListingCard = ({ listing }) => {
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-[#013E43] to-[#005C57]">
               <FiUser className="text-xs text-white" />
             </div>
-            <span className="text-xs text-[#065A57]">{listing.landlord.name}</span>
+            <span className="text-xs text-[#065A57] truncate">{listing.landlord.name}</span>
           </div>
         )}
 
@@ -163,7 +185,7 @@ const ListingCard = ({ listing }) => {
 
       {/* Hover Tooltip - Quick View */}
       {isHovered && (
-        <div className="absolute inset-x-0 bottom-full left-0 mb-2 hidden lg:block">
+        <div className="absolute inset-x-0 bottom-full left-0 mb-2 hidden lg:block z-20">
           <div className="rounded-lg bg-[#013E43] p-2 text-center text-xs text-white shadow-lg">
             <p className="flex items-center justify-center gap-1">
               <FiEye className="text-[#02BB31]" />

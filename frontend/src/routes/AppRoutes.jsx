@@ -29,14 +29,24 @@ import LandlordSupportPage from "../pages/landlord/Support";
 import LandlordSupportDetailPage from "../pages/landlord/SupportDetails";
 import AdminSupportPage from "../pages/admin/AdminSupport";
 import AdminSupportDetailPage from "../pages/admin/AdminSupportdetails";
-import PartnersPage from "../pages/public/partners/PartnerPage";
-import PartnerApply from "../pages/public/partners/PartnerApply";
 import BlogPage from "../pages/public/common/Blog";
 import BlogDetails from "../pages/public/common/BlogDetails";
 import AdminBlogs from "../pages/admin/blog/AdminBlog";
 import CreateBlog from "../pages/admin/blog/CreateBlog";
 import ListingsPage from "../pages/public/common/Listing";
 import ListingDetailsPage from "../pages/public/common/ListingDetails";
+import AdminServiceApplicationsPage from "../pages/admin/AdminApplicationPage";
+import AdminServiceApplicationDetailPage from "../pages/admin/AdminApplicationDetails";
+import ServicesPage from "../pages/public/common/ServicePage";
+import PartnerApplicationPage from "../pages/public/partners/PartnerApply";
+import PartnerApplicationCallbackPage from "../pages/public/partners/PartnerPage";
+import ServiceCategoryPage from "../pages/public/common/ServiceCategory";
+import AboutUs from "../pages/public/common/other/About";
+import FAQ from "../pages/public/common/other/FAQ";
+import TermsOfService from "../pages/public/common/other/TOS";
+import PrivacyPolicy from "../pages/public/common/other/PrivacyPolicy";
+import Contact from "../pages/public/common/Contact";
+import Sitemap from "../pages/public/common/other/Sitemap";
 
 
 
@@ -50,12 +60,22 @@ const AppRoutes = () => {
         <Route path="/landlord/register" element={<RegisterLandlordPage />} />
         <Route path="/pricing" element={<PlansPage />} />
         <Route path="/payment/callback" element={<PaymentCallbackPage />} />
-        <Route path="/partners" element={<PartnersPage/>}/>
-        <Route path="/partners/apply" element={<PartnerApply/>}/>
+      
+
         <Route path="/articles" element={<BlogPage/>}/>
         <Route path="/articles/:id" element={<BlogDetails/>}/>
+        <Route path="/about" element={<AboutUs/>}/>
+        <Route path="/faqs" element={<FAQ/>}/>
+        <Route path="/support" element={<Contact/>}/>
+        <Route path="/sitemap" element={<Sitemap/>}/>
+        <Route path="/terms-of-service" element={<TermsOfService/>}/>
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/properties" element={<ListingsPage/>}/>
         <Route path="/properties/:id" element={<ListingDetailsPage/>}/>
+        <Route path="/services" element={<ServicesPage />} />
+        <Route path="/services/apply" element={<PartnerApplicationPage />} />
+        <Route path="/services/apply/callback" element={<PartnerApplicationCallbackPage />} />
+        <Route path="/services/:category" element={<ServiceCategoryPage />} />
       </Route>
 
       <Route element={<ProtectedRoute />}>
@@ -88,6 +108,8 @@ const AppRoutes = () => {
             <Route path="/admin/support/:id" element={<AdminSupportDetailPage />} />
             <Route path="/admin/blogs" element={<AdminBlogs/>}/>
             <Route path="/admin/blog/create" element={<CreateBlog />}/>
+            <Route path="/admin/services/applications" element={<AdminServiceApplicationsPage />} />
+            <Route path="/admin/services/applications/:id" element={<AdminServiceApplicationDetailPage />} />
           
           </Route>
         </Route>

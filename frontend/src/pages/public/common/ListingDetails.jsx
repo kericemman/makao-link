@@ -19,9 +19,10 @@ import {
   FiPrinter,
   FiCalendar,
   FiClock,
-  FiTag
+  FiTag,
+  FiXCircle
 } from "react-icons/fi";
-import { FaBed, FaBath, FaBuilding, FaWhatsapp, FaHome } from "react-icons/fa";
+import { FaBed, FaBath, FaBuilding, FaWhatsapp, FaHome as FaHomeIcon } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const amenityLabels = {
@@ -35,6 +36,9 @@ const amenityLabels = {
 };
 
 const ListingDetailsPage = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const { id } = useParams();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -119,6 +123,20 @@ const ListingDetailsPage = () => {
     }).format(price);
   };
 
+  // Helper function to get image URL - handles both string and object formats
+  const getImageUrl = (image) => {
+    if (!image) return null;
+    // If image is an object with url property
+    if (typeof image === 'object' && image.url) {
+      return image.url;
+    }
+    // If image is a string
+    if (typeof image === 'string') {
+      return image;
+    }
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -157,7 +175,9 @@ const ListingDetailsPage = () => {
     ([, value]) => value === true
   );
 
-  const images = listing.images?.length ? listing.images : [null];
+  // Process images - handle both formats
+  const rawImages = listing.images?.length ? listing.images : [null];
+  const images = rawImages.map(img => getImageUrl(img));
   const mainImage = images[selectedImage];
 
   return (
@@ -184,10 +204,15 @@ const ListingDetailsPage = () => {
               <div className="aspect-video">
                 {mainImage ? (
                   <img
-                    src={`http://localhost:5002${listing.images[0]}`}
+                    src={mainImage}
                     alt={listing.title}
                     className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
                     onClick={() => setShowFullImage(true)}
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      e.target.style.display = 'none';
+                      e.target.parentElement.classList.add('flex', 'items-center', 'justify-center');
+                    }}
                   />
                 ) : (
                   <div className="flex h-full flex-col items-center justify-center text-white">
@@ -211,22 +236,24 @@ const ListingDetailsPage = () => {
             </div>
 
             {/* Thumbnail Gallery */}
-            {images.length > 1 && (
+            {images.length > 1 && images.some(img => img !== null) && (
               <div className="mt-4 grid grid-cols-4 gap-3">
                 {images.map((img, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`relative overflow-hidden rounded-lg aspect-square ${
-                      selectedImage === index ? 'ring-2 ring-[#02BB31]' : ''
-                    }`}
-                  >
-                    <img
-                      src={img}
-                      alt={`Thumbnail ${index + 1}`}
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-                    />
-                  </button>
+                  img && (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImage(index)}
+                      className={`relative overflow-hidden rounded-lg aspect-square ${
+                        selectedImage === index ? 'ring-2 ring-[#02BB31]' : ''
+                      }`}
+                    >
+                      <img
+                        src={img}
+                        alt={`Thumbnail ${index + 1}`}
+                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                      />
+                    </button>
+                  )
                 ))}
               </div>
             )}
@@ -263,7 +290,7 @@ const ListingDetailsPage = () => {
                 {listing.bathrooms} {listing.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
-                <FaHome className="text-[#02BB31]" />
+                <FaHomeIcon className="text-[#02BB31]" />
                 {listing.kitchen ? "Kitchen Available" : "No Kitchen"}
               </span>
             </div>
@@ -460,6 +487,14 @@ const ListingDetailsPage = () => {
               src={mainImage}
               alt={listing.title}
               className="w-full rounded-lg shadow-2xl"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                const parent = e.target.parentElement;
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'flex h-full items-center justify-center text-white';
+                errorDiv.innerHTML = '<p>Failed to load image</p>';
+                parent?.appendChild(errorDiv);
+              }}
             />
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm">
               {selectedImage + 1} / {images.length}

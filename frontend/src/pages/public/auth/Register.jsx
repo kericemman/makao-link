@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { registerLandlord } from "../../../services/auth.service";
 import { initializeSubscriptionPayment } from "../../../services/payment.service";
@@ -21,6 +21,9 @@ import { FaBuilding, FaKey, FaHandshake } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const RegisterLandlordPage = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { login } = useAuth();

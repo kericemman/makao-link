@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { sendMessage } from "../../../services/contact.service"
 import { Link } from "react-router-dom"
@@ -19,6 +19,11 @@ import { FaWhatsapp, FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaTiktok } 
 import toast from "react-hot-toast"
 
 function Contact() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({
@@ -116,16 +121,16 @@ function Contact() {
     {
       icon: FiPhone,
       title: "Call Us",
-      value: "+254 (702) 262 169",
-      link: "tel:+254702262169",
+      value: "+254 (729) 353 537",
+      link: "tel:+254729353537",
       bgColor: "bg-[#013E43]/10",
       textColor: "text-[#013E43]"
     },
     {
       icon: FaWhatsapp,
       title: "WhatsApp",
-      value: "+254 702 262 169",
-      link: "https://wa.me/254702262169",
+      value: "+254 729 353 537",
+      link: "https://wa.me/254729353537",
       bgColor: "bg-[#25D366]/10",
       textColor: "text-[#25D366]"
     },
@@ -184,7 +189,7 @@ function Contact() {
 
           {/* Description */}
           <p className="text-base sm:text-lg md:text-xl text-[#A8D8C1] max-w-2xl mb-6 sm:mb-8 px-4">
-            MakaoLink team is here to help.
+            RendaHomes team is here to help.
           </p>
 
           {/* Quick Contact Stats */}

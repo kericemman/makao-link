@@ -1,6 +1,7 @@
 const Listing = require("./listings.model");
 const sendEmail = require("../../utils/sendEmail");
 const { canCreateListing } = require("../subscriptions/subscription.service");
+const uploadToCloudinary = require("../../utils/uploadToCloudinary");
 
 exports.getPublicListings = async (req, res, next) => {
   try {
@@ -94,7 +95,17 @@ exports.createListing = async (req, res, next) => {
       }
     }
 
-    const imageUrls = req.files?.map((file) => `/uploads/${file.filename}`) || [];
+    let imageUrls = [];
+
+    if (req.files && req.files.length > 0) {
+      const uploadedImages = await Promise.all(
+        req.files.map((file) =>
+          uploadToCloudinary(file.buffer, "makao/listings")
+        )
+      );
+
+      imageUrls = uploadedImages.map((img) => img.secure_url);
+    }
 
     const listing = await Listing.create({
       ...req.body,
@@ -127,7 +138,6 @@ exports.createListing = async (req, res, next) => {
   }
 };
 
-
 exports.getMyListings = async (req, res, next) => {
   try {
     const listings = await Listing.find({ landlord: req.user._id }).sort({ createdAt: -1 });
@@ -143,15 +153,37 @@ exports.getMyListings = async (req, res, next) => {
 
 exports.updateListing = async (req, res, next) => {
   try {
-    const imageUrls = req.files?.map((file) => file.path || file.originalname);
+    let parsedAmenities = req.body.amenities;
 
-    if (imageUrls && imageUrls.length > 0) {
-      req.body.images = imageUrls;
+    if (req.body.amenities && typeof req.body.amenities === "string") {
+      try {
+        parsedAmenities = JSON.parse(req.body.amenities);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid amenities format" });
+      }
+    }
+
+    let updateData = {
+      ...req.body
+    };
+
+    if (parsedAmenities) {
+      updateData.amenities = parsedAmenities;
+    }
+
+    if (req.files && req.files.length > 0) {
+      const uploadedImages = await Promise.all(
+        req.files.map((file) =>
+          uploadToCloudinary(file.buffer, "makao/listings")
+        )
+      );
+
+      updateData.images = uploadedImages.map((img) => img.secure_url);
     }
 
     const listing = await Listing.findOneAndUpdate(
       { _id: req.params.id, landlord: req.user._id },
-      req.body,
+      updateData,
       { new: true }
     );
 

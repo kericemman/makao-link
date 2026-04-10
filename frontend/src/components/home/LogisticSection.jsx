@@ -56,7 +56,7 @@ function RelocationSection() {
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#013E43] opacity-5 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="relative max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
           
           {/* LEFT SIDE - Content */}
@@ -64,11 +64,11 @@ function RelocationSection() {
             {/* Section Label */}
             <div className="inline-flex items-center space-x-2 bg-[#02BB31]/10 text-[#02BB31] px-4 py-2 rounded-full">
               <FiHome className="text-sm" />
-              <span className="text-sm font-medium">Relocation Services</span>
+              <span className="text-sm font-medium">Other Services</span>
             </div>
 
             {/* Heading */}
-            <h2 className="text-3xl md:text-3xl lg:text-4xl font-bold text-[#013E43] leading-tight">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#013E43] leading-tight">
               Relocation Made
               <span className="block text-[#02BB31] mt-2">Easy & Stress-Free</span>
             </h2>
@@ -100,7 +100,7 @@ function RelocationSection() {
                 to="/partners"
                 className="inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105"
               >
-                <span>Explore Moving/Cleaning Companies</span>
+                <span>Explore More Services</span>
                 <FiArrowRight className="text-lg" />
               </Link>
               

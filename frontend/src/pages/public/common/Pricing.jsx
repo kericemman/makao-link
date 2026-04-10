@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { 
   FiHome, 
   FiStar, 
@@ -19,11 +19,11 @@ const plans = [
     key: "normal", 
     name: "Normal", 
     price: 0, 
-    limit: 1,
+    limit: 2,
     icon: FiHome,
     description: "Perfect for landlords with a single property",
     features: [
-      "List up to 1 property",
+      "List up to 2 properties",
       "Basic property listing",
       "Direct tenant contact",
       "Dashboard access",
@@ -175,15 +175,13 @@ const PlanCard = ({ plan, onSelect, isPopular }) => {
 };
 
 const Pricing = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState("monthly"); // monthly or yearly
 
-  const stats = [
-    { icon: FiUsers, value: "850+", label: "Happy Landlords" },
-    { icon: FiHome, value: "1,200+", label: "Verified Properties" },
-    { icon: FiShield, value: "100%", label: "Secure Platform" },
-    { icon: FiClock, value: "24/7", label: "Support" }
-  ];
+
 
   const handleSelectPlan = (plan) => {
     navigate(`/landlord/register?plan=${plan}`);
@@ -199,18 +197,22 @@ const Pricing = () => {
     <div className="min-h-screen bg-[#F0F7F4]">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-[#013E43] to-[#005C57] text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#02BB31] rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#A8D8C1] rounded-full blur-3xl"></div>
+        <div className="absolute inset-0 opacity-20">
+          <img
+            src="https://res.cloudinary.com/dhlz0p70t/image/upload/v1775826459/rm373batch9-002_oltvwv.jpg"
+            alt="Pricing Hero"
+            className="w-full h-full object-cover"
+          />
         </div>
+
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
             <FiDollarSign className="text-[#02BB31]" />
-            <span className="text-sm font-medium">Simple & Transparent Pricing</span>
+            <span className="text-xs font-medium">Simple & Transparent Pricing</span>
           </div>
           
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+          <h1 className="text-2xl md:text-3xl lg:text-5xl font-bold mb-4">
             Choose Your Perfect Plan
           </h1>
           
@@ -279,19 +281,7 @@ const Pricing = () => {
           </div>
         )}
 
-        {/* Stats Section */}
-        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <div key={index} className="bg-white rounded-xl shadow-lg p-6 text-center border border-[#A8D8C1]">
-                <Icon className="text-3xl text-[#02BB31] mx-auto mb-3" />
-                <p className="text-2xl font-bold text-[#013E43]">{stat.value}</p>
-                <p className="text-sm text-[#065A57]">{stat.label}</p>
-              </div>
-            );
-          })}
-        </div>
+        
 
         {/* FAQ Section */}
         <div className="mt-16">

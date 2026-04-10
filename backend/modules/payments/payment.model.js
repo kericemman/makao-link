@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const partnerApplicationModel = require("../services/partnerApplication.model");
 
 const paymentSchema = new mongoose.Schema(
   {
@@ -35,6 +36,18 @@ const paymentSchema = new mongoose.Schema(
       type: String,
       enum: ["success", "failed"],
       required: true
+    },
+
+    paymentType: {
+      type: String,
+      enum: ["subscription", "partnerApplication"],
+      default: "subscription"
+    },
+
+    application: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PartnerApplication",
+      default: null
     },
 
     paidAt: {

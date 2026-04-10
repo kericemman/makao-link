@@ -8,7 +8,11 @@ const {
   getLandlords,
   getAdminPayments,
   getListingHistory,
-  getAdminInquiries
+  getAdminInquiries,
+  getServiceApplications,
+  getServiceApplicationById,
+  approveServiceApplication,
+  rejectServiceApplication
 } = require("./admin.controller");
 const { protect } = require("../../middleware/auth.middleware");
 const requireRole = require("../../middleware/role.middleware");
@@ -22,4 +26,9 @@ router.patch("/listings/:id/reject", protect, requireRole("admin"), rejectListin
 router.get("/listings/history", protect, requireRole("admin"), getListingHistory);
 router.get("/inquiries", protect, requireRole("admin"), getAdminInquiries);
 
+
+router.get("/service-applications", protect, requireRole("admin"), getServiceApplications);
+router.get("/service-applications/:id", protect, requireRole("admin"), getServiceApplicationById);
+router.patch("/service-applications/:id/approve", protect, requireRole("admin"), approveServiceApplication);
+router.patch("/service-applications/:id/reject", protect, requireRole("admin"), rejectServiceApplication);
 module.exports = router;

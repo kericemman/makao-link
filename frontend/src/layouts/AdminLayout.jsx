@@ -65,6 +65,12 @@ const navItems = [
     icon: FiHelpCircle,
     description: "Support requests"
   },
+  {
+    label: "Service Applications",
+    path: "/admin/services/applications",
+    icon: FiFileText,
+    description: "Review service applications"
+  },
   { 
     label: "Blogs", 
     path: "/admin/blogs", 

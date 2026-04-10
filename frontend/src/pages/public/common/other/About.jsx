@@ -85,21 +85,21 @@ function AboutUs() {
 
           {/* Description */}
           <p className="text-base sm:text-lg md:text-xl text-[#A8D8C1] max-w-2xl mb-6 sm:mb-8 px-4">
-            MakaoLink is on a mission to make property rental simple, transparent, and secure for everyone.
+            RendaHomes is on a mission to make property rental simple, transparent, and secure for everyone.
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-wrap gap-4 justify-center">
             <Link
               to="/properties"
-              className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2"
+              className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-light hover:shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2"
             >
-              <span>Browse Properties</span>
+              <span>Find Rentals</span>
               <FiArrowRight />
             </Link>
             <Link
               to="/register"
-              className="px-6 sm:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-sm text-white rounded-xl font-semibold hover:bg-white/20 transition-all border border-white/20 flex items-center space-x-2"
+              className="px-6 sm:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-sm text-white rounded-xl font-light hover:bg-white/20 transition-all border border-white/20 flex items-center space-x-2"
             >
               <FaKey />
               <span>List Your Property</span>
@@ -115,7 +115,7 @@ function AboutUs() {
      
 
       {/* Our Story Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+      <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <div className="inline-flex items-center space-x-2 bg-[#02BB31]/10 text-[#02BB31] px-4 py-2 rounded-full mb-4">
@@ -126,13 +126,13 @@ function AboutUs() {
               Making Property Rental
               <span className="block text-[#02BB31] mt-2">Simple & Transparent</span>
             </h2>
-            <p className="text-lg text-[#065A57] mb-6 leading-relaxed">
-              MakaoLink was born from a simple observation: finding a rental home in Kenya was 
+            <p className="text-sm md:text-lg text-[#065A57] mb-6 leading-relaxed">
+              RendaHomes was born from a simple observation: finding a rental home in Kenya was 
               too complicated, and landlords struggled to connect with genuine tenants. We set 
               out to build a platform that eliminates the middleman and puts control back in 
               the hands of property owners and renters.
             </p>
-            <p className="text-lg text-[#065A57] mb-8 leading-relaxed">
+            <p className="text-sm md:text-lg text-[#065A57] mb-8 leading-relaxed">
               Today, we're proud to be Kenya's fastest-growing property platform, helping thousands 
               of landlords find quality tenants and countless families find their perfect home.
             </p>
@@ -163,7 +163,7 @@ function AboutUs() {
 
       {/* Our Values */}
       <div className="bg-white md:py-10 py-5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <div className="inline-flex items-center space-x-2 bg-[#02BB31]/10 text-[#02BB31] px-4 py-2 rounded-full mb-4">
            
@@ -172,7 +172,7 @@ function AboutUs() {
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#013E43] mb-4">
               What Drives Us Forward
             </h2>
-            <p className="text-lg text-[#065A57] max-w-2xl mx-auto">
+            <p className="text-sm md:text-lg text-[#065A57] max-w-2xl mx-auto">
               These core principles guide every decision we make and shape the way we serve our community.
             </p>
           </div>
@@ -205,9 +205,7 @@ function AboutUs() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4">Why Choose MakaoLink?</h2>
-            <p className="text-lg text-[#A8D8C1] max-w-2xl mx-auto">
-              We're not just another property platform. Here's what makes us different.
-            </p>
+           
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -249,25 +247,25 @@ function AboutUs() {
         <div className="bg-white rounded-3xl shadow-2xl border border-[#A8D8C1] p-8 md:p-12">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div>
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#013E43] mb-2">
+              <h2 className="text-xl md:text-3xl text-center lg:text-4xl font-bold text-[#013E43] mb-2">
                 Ready to Find Your Next Home?
               </h2>
-              <p className="text-[#065A57]">
+              <p className="text-[#065A57] text-sm md:text-lg text-center mb-0">
                 Join thousands of satisfied landlords and tenants on MakaoLink today.
               </p>
             </div>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex gap-2">
               <Link
                 to="/properties"
-                className="px-8 py-4 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105"
+                className="px-6 py-4 text-sm md:text-base  bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-light hover:shadow-lg transition-all transform hover:scale-105"
               >
-                Browse Properties
+                Find Rentals
               </Link>
               <Link
                 to="/register"
-                className="px-8 py-4 border-2 border-[#A8D8C1] text-[#013E43] rounded-xl font-semibold hover:bg-[#F0F7F4] transition-all"
+                className="px-6 py-4 border-2 text-sm md:text-base border-[#A8D8C1] text-[#013E43] rounded-xl font-light hover:bg-[#F0F7F4] transition-all"
               >
-                List Your Property
+                List Properties
               </Link>
             </div>
           </div>
@@ -283,7 +281,7 @@ function AboutUs() {
                 <FaWhatsappSquare className="text-xl text-[#02BB31]" />
               </div>
               <div>
-                <a href="https://wa.me/+254702262169">Send a Message</a>
+                <a href="https://wa.me/+254729353537">Send a Message</a>
               </div>
             </div>
             
@@ -293,8 +291,8 @@ function AboutUs() {
               </div>
               <div>
                 <p className="text-sm font-medium text-[#013E43]">Email Us</p>
-                <a href="mailto:info@makaolink.com" className="text-sm text-[#065A57] hover:text-[#02BB31]">
-                  info@makaolink.com
+                <a href="mailto:info@rendahomes.com" className="text-sm text-[#065A57] hover:text-[#02BB31]">
+                  info@rendahomes.com
                 </a>
               </div>
             </div>
@@ -305,8 +303,8 @@ function AboutUs() {
               </div>
               <div>
                 <p className="text-sm font-medium text-[#013E43]">Call Us</p>
-                <a href="tel:+254702262169" className="text-sm text-[#065A57] hover:text-[#02BB31]">
-                  +254 (702) 226 2169
+                <a href="tel:+254729353537" className="text-sm text-[#065A57] hover:text-[#02BB31]">
+                  +254 (729) 353 537
                 </a>
               </div>
             </div>

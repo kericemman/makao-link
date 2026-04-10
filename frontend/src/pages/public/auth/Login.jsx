@@ -105,8 +105,8 @@ const LoginPage = () => {
   };
 
   const features = [
-    { icon: FiHome, text: "1,200+ Verified Properties" },
-    { icon: FiUsers, text: "850+ Happy Landlords" },
+    { icon: FiHome, text: "Verified Properties" },
+    { icon: FiUsers, text: "Happy Landlords" },
     { icon: FiShield, text: "100% Secure Platform" },
     { icon: FaHandshake, text: "Direct Landlord Contact" }
   ];
@@ -133,11 +133,11 @@ const LoginPage = () => {
           <div className="mb-8">
             <div className="flex items-center space-x-3">
               <div className="w-16 h-16 bg-white rounded-2xl shadow-2xl flex items-center justify-center">
-                <span className="text-4xl font-bold text-[#013E43]">M</span>
+                <img src="/assets/logo.png" alt="Renda Homes Logo" className="w-10 h-10 object-contain" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold">MakaoLink</h1>
-                <p className="text-[#A8D8C1] text-lg">Property Management Platform</p>
+                <h1 className="text-4xl font-bold">Renda Homes</h1>
+                <p className="text-[#A8D8C1] text-lg">Connecting You to Your Perfect Home</p>
               </div>
             </div>
           </div>
@@ -166,18 +166,8 @@ const LoginPage = () => {
           </div>
 
           {/* Testimonial */}
-          <div className="mt-8 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
-            <p className="text-sm italic mb-2">"MakaoLink helped me find quality tenants in just 3 days!"</p>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-[#02BB31] rounded-full flex items-center justify-center text-white font-bold text-sm">
-                J
-              </div>
-              <div>
-                <p className="font-semibold text-sm">James Mwangi</p>
-                <p className="text-xs text-[#A8D8C1]">Landlord, Nairobi</p>
-              </div>
-            </div>
-          </div>
+          
+          
         </div>
       </div>
 

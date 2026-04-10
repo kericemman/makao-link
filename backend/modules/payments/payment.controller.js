@@ -4,12 +4,14 @@ const User = require("../users/user.model");
 const Payment = require("./payment.model");
 const Subscription = require("../subscriptions/subscription.model");
 const Listing = require("../listings/listings.model");
+const PartnerApplication = require("../services/partnerApplication.model");
 const plans = require("./plan.config");
 const sendEmail = require("../../utils/sendEmail");
 const {
   restoreListingsAfterRenewal,
   markExpiredAndUnlist
 } = require("../subscriptions/subscription.service");
+const partnerApplicationModel = require("../services/partnerApplication.model");
 
 exports.initializeSubscriptionPayment = async (req, res, next) => {
   try {
@@ -144,6 +146,26 @@ const handleChargeSuccess = async (data) => {
 
   const subscription = await Subscription.findOne({ user: userId });
   if (!subscription) return;
+
+  const parnerApplicationId = data.metadata?.applicationId;
+
+  if (parnerApplicationId) {
+    const application = await PartnerApplication.findById(parnerApplicationId);
+    if (application) {
+      application.paymentStatus = "success";
+      await application.save();
+    }
+  }
+
+
+  const sendEmailPromise = sendEmail({
+    to: partnerApplicationModel.email,
+    subject: "Payment Successful",
+    html: `
+      <h2>Payment Successful</h2>
+      <p>Hello ${partnerApplicationModel.name}, your payment has been processed successfully. Your application is under review, upon approval your company will be activated.</p>
+    `
+  });
 
   const now = new Date();
   const nextBilling = new Date();
@@ -298,3 +320,6 @@ exports.changeSubscriptionPlan = async (req, res, next) => {
     next(error);
   }
 };
+
+
+

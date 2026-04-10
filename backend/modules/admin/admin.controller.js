@@ -4,6 +4,8 @@ const User = require("../users/user.model");
 const Payment = require("../payments/payment.model");
 const plans = require("../payments/plan.config");
 const Inquiry = require("../inquiries/inquiry.model");
+const PartnerApplication = require("../services/partnerApplication.model");
+const ServicePartner = require("../services/servicePartner.model");
 
 exports.getPendingListings = async (req, res, next) => {
   try {
@@ -314,6 +316,164 @@ exports.getAdminInquiries = async (req, res, next) => {
     res.json({
       success: true,
       inquiries: formattedInquiries
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+exports.getServiceApplications = async (req, res, next) => {
+  try {
+    const { status, paymentStatus } = req.query;
+
+    const filter = {};
+
+    if (
+      status &&
+      ["pending_review", "approved", "rejected"].includes(status)
+    ) {
+      filter.status = status;
+    }
+
+    if (
+      paymentStatus &&
+      ["pending", "success", "failed"].includes(paymentStatus)
+    ) {
+      filter.paymentStatus = paymentStatus;
+    }
+
+    const applications = await PartnerApplication.find(filter).sort({
+      createdAt: -1
+    });
+
+    res.json({
+      success: true,
+      applications
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getServiceApplicationById = async (req, res, next) => {
+  try {
+    const application = await PartnerApplication.findById(req.params.id);
+
+    if (!application) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    res.json({
+      success: true,
+      application
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.approveServiceApplication = async (req, res, next) => {
+  try {
+    const application = await PartnerApplication.findById(req.params.id);
+
+    if (!application) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    if (application.paymentStatus !== "success") {
+      return res.status(400).json({
+        message: "Cannot approve application before payment is confirmed"
+      });
+    }
+
+    const existingPartner = await ServicePartner.findOne({
+      application: application._id
+    });
+
+    let partner = existingPartner;
+
+    if (!existingPartner) {
+      partner = await ServicePartner.create({
+        companyName: application.companyName,
+        contactPerson: application.contactPerson,
+        email: application.email,
+        phone: application.phone,
+        category: application.category,
+        description: application.description,
+        location: application.location,
+        website: application.website,
+        logo: application.logo,
+        application: application._id,
+        isActive: true
+      });
+    } else {
+      existingPartner.isActive = true;
+      await existingPartner.save();
+    }
+
+    application.status = "approved";
+    await application.save();
+
+    await sendEmail({
+      to: application.email,
+      subject: "Your Makao Partner Application Has Been Approved",
+      html: `
+        <h2>Application Approved</h2>
+        <p>Hello ${application.contactPerson},</p>
+        <p>Your company <strong>${application.companyName}</strong> has been approved as a Makao service partner.</p>
+        <p>Your details can now be displayed under the <strong>${application.category}</strong> service category.</p>
+      `
+    });
+
+    res.json({
+      success: true,
+      message: "Application approved successfully",
+      application,
+      partner
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.rejectServiceApplication = async (req, res, next) => {
+  try {
+    const application = await PartnerApplication.findById(req.params.id);
+
+    if (!application) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    application.status = "rejected";
+    await application.save();
+
+    const existingPartner = await ServicePartner.findOne({
+      application: application._id
+    });
+
+    if (existingPartner) {
+      existingPartner.isActive = false;
+      await existingPartner.save();
+    }
+
+    await sendEmail({
+      to: application.email,
+      subject: "Update on Your Makao Partner Application",
+      html: `
+        <h2>Application Update</h2>
+        <p>Hello ${application.contactPerson},</p>
+        <p>Your partner application for <strong>${application.companyName}</strong> was not approved at this time.</p>
+        <p>If needed, our team may contact you with more details.</p>
+      `
+    });
+
+    res.json({
+      success: true,
+      message: "Application rejected successfully",
+      application
     });
   } catch (error) {
     next(error);

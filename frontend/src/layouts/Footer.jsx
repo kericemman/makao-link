@@ -9,9 +9,11 @@ import {
   FiInstagram, 
   FiLinkedin,
   FiChevronRight,
-  FiHeart
+  FiHeart,
+  FiAlertCircle
 } from "react-icons/fi";
-import { FaWhatsapp, FaTiktok } from "react-icons/fa";
+import { FaWhatsapp, FaTiktok, FaApple, FaGooglePlay } from "react-icons/fa";
+import toast from "react-hot-toast";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -20,13 +22,12 @@ const Footer = () => {
     { name: "Home", path: "/" },
     { name: "Properties", path: "/properties" },
     { name: "About Us", path: "/about" },
-    { name: "Partner with Us", path: "/partners" },
+    { name: "Partner with Us", path: "/services/apply" },
     { name: "Contact", path: "/support" },
-    
   ];
 
   const landlordLinks = [
-    { name: "List Property", path: "/register" },
+    { name: "List Property", path: "/pricing" },
     { name: "Landlord Login", path: "/login" },
     { name: "Pricing", path: "/pricing" },
     { name: "Resources", path: "/articles" },
@@ -35,25 +36,32 @@ const Footer = () => {
 
   const tenantLinks = [
     { name: "Find Homes", path: "/properties" },
-    { name: "Tenant Guide", path: "/tenant-guide" },
     { name: "FAQs", path: "/faqs" },
-    { name: "Logistics", path: "/logistics" },
   ];
 
   const legalLinks = [
     { name: "Terms of Service", path: "/terms-of-service" },
-    { name: "Privacy Policy", path: "/privacy" },
-    { name: "Cookie Policy", path: "/privacy" }
+    { name: "Privacy Policy", path: "/privacy-policy" },
   ];
 
   const socialLinks = [
-    { icon: FiFacebook, href: "https://facebook.com", label: "Facebook", color: "hover:text-[#1877F2]" },
-    { icon: FiTwitter, href: "https://twitter.com", label: "Twitter", color: "hover:text-[#1DA1F2]" },
-    { icon: FiInstagram, href: "https://instagram.com", label: "Instagram", color: "hover:text-[#E4405F]" },
-    { icon: FiLinkedin, href: "https://linkedin.com", label: "LinkedIn", color: "hover:text-[#0A66C2]" },
-    { icon: FaWhatsapp, href: "https://wa.me/254702262169", label: "WhatsApp", color: "hover:text-[#25D366]" },
-    { icon: FaTiktok, href: "https://tiktok.com", label: "TikTok", color: "hover:text-[#000000]" },
+    { icon: FiFacebook, href: "https://www.facebook.com/share/1CYY4uVPTy/", label: "Facebook", color: "hover:text-[#1877F2]" },
+    { icon: FiInstagram, href: "https://www.instagram.com/renda.homes?igsh=MW5hM2s3dHMyeHZlaQ==", label: "Instagram", color: "hover:text-[#E4405F]" },
+    { icon: FiLinkedin, href: "https://www.linkedin.com/company/renda-homes/", label: "LinkedIn", color: "hover:text-[#0A66C2]" },
+    { icon: FaWhatsapp, href: "https://wa.me/254729353537", label: "WhatsApp", color: "hover:text-[#25D366]" },
+    { icon: FaTiktok, href: "https://www.tiktok.com/@rendahomes", label: "TikTok", color: "hover:text-[#000000]" },
   ];
+
+  const handleAppDownload = (platform) => {
+    toast.success(`${platform} app coming soon! We'll notify you when it's ready.`, {
+      style: {
+        background: "#02BB31",
+        color: "#fff",
+      },
+      duration: 4000,
+      icon: '📱',
+    });
+  };
 
   return (
     <footer className="bg-gradient-to-b from-[#013E43] to-[#001A1C] text-white mt-20 relative overflow-hidden">
@@ -68,10 +76,10 @@ const Footer = () => {
           {/* Brand Column */}
           <div className="lg:col-span-1 space-y-4">
             <Link to="/" className="flex items-center space-x-2 group">
-                <FiHome className="text-[#02BB31] text-2xl" />
-                <span className="text-2xl font-bold text-white group-hover:text-[#02BB31] transition-colors">
-                    MakaoLink
-                </span>
+              <FiHome className="text-[#02BB31] text-2xl" />
+              <span className="text-2xl font-bold text-white group-hover:text-[#02BB31] transition-colors">
+                RendaHomes
+              </span>
             </Link>
             
             <p className="text-sm text-[#A8D8C1] leading-relaxed">
@@ -86,14 +94,14 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-3 text-sm">
                 <FiPhone className="text-[#02BB31] flex-shrink-0" />
-                <a href="tel:+254712345678" className="text-[#A8D8C1] hover:text-white transition-colors">
-                  +254 712 345 678
+                <a href="tel:+254729353537" className="text-[#A8D8C1] hover:text-white transition-colors">
+                  +254 729 353 537
                 </a>
               </div>
               <div className="flex items-center space-x-3 text-sm">
                 <FiMail className="text-[#02BB31] flex-shrink-0" />
-                <a href="mailto:info@makaolink.com" className="text-[#A8D8C1] hover:text-white transition-colors">
-                  info@makaolink.com
+                <a href="mailto:info@rendahomes.com" className="text-[#A8D8C1] hover:text-white transition-colors">
+                  info@rendahomes.com
                 </a>
               </div>
             </div>
@@ -212,7 +220,7 @@ const Footer = () => {
 
             {/* Newsletter */}
             <div className="flex-1 max-w-md">
-              <form className="flex items-center">
+              <form className="flex items-center" onSubmit={(e) => e.preventDefault()}>
                 <input
                   type="email"
                   placeholder="Enter your email for updates"
@@ -227,15 +235,32 @@ const Footer = () => {
               </form>
             </div>
 
-            {/* Download App (Optional) */}
+            {/* Download App */}
             <div className="flex items-center space-x-3">
               <span className="text-sm text-[#A8D8C1]">Download app:</span>
               <div className="flex items-center space-x-2">
-                <button className="px-3 py-1.5 bg-black rounded-lg text-xs text-white hover:bg-gray-800 transition-colors">
-                  App Store
+                {/* iOS App Store Button */}
+                <button
+                  onClick={() => handleAppDownload("iOS App")}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-black rounded-lg text-white hover:bg-gray-800 transition-all transform hover:scale-105 group"
+                >
+                  <FaApple className="text-lg group-hover:text-[#02BB31] transition-colors" />
+                  <div className="text-left">
+                    <p className="text-[8px] text-gray-400">Download on the</p>
+                    <p className="text-xs font-semibold">App Store</p>
+                  </div>
                 </button>
-                <button className="px-3 py-1.5 bg-black rounded-lg text-xs text-white hover:bg-gray-800 transition-colors">
-                  Google Play
+                
+                {/* Google Play Button */}
+                <button
+                  onClick={() => handleAppDownload("Android App")}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-black rounded-lg text-white hover:bg-gray-800 transition-all transform hover:scale-105 group"
+                >
+                  <FaGooglePlay className="text-lg group-hover:text-[#02BB31] transition-colors" />
+                  <div className="text-left">
+                    <p className="text-[8px] text-gray-400">GET IT ON</p>
+                    <p className="text-xs font-semibold">Google Play</p>
+                  </div>
                 </button>
               </div>
             </div>
@@ -245,22 +270,22 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-8 pt-6 border-t border-[#065A57] flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-[#A8D8C1] flex items-center">
-            © {currentYear} MakaoLink. All rights reserved.
-            <span className="mx-2">•</span>
-            <span className="flex items-center">
-              Made with <FiHeart className="text-red-500 mx-1" /> by <a href="https://thedigitalagame.com" className="text-[#A8D8C1] hover:text-white underline transition-colors ml-2"> The Digital A-Game</a>
+            © {currentYear} RendaHomes. All rights reserved.
+            
+            <span className="flex items-center ml-2">
+              Made with <FiHeart className="text-red-500 mx-1" /> by 
+              <a href="https://thedigitalagame.com" target="_blank" rel="noopener noreferrer" className="text-[#A8D8C1] hover:text-white underline transition-colors ml-2">
+                The Digital A-Game
+              </a>
             </span>
           </p>
           
           <div className="flex items-center space-x-6">
-            <Link to="/privacy" className="text-xs text-[#A8D8C1] hover:text-white transition-colors">
+            <Link to="/privacy-policy" className="text-xs text-[#A8D8C1] hover:text-white transition-colors">
               Privacy
             </Link>
-            <Link to="/terms" className="text-xs text-[#A8D8C1] hover:text-white transition-colors">
+            <Link to="/terms-of-service" className="text-xs text-[#A8D8C1] hover:text-white transition-colors">
               Terms
-            </Link>
-            <Link to="/cookies" className="text-xs text-[#A8D8C1] hover:text-white transition-colors">
-              Cookies
             </Link>
             <Link to="/sitemap" className="text-xs text-[#A8D8C1] hover:text-white transition-colors">
               Sitemap

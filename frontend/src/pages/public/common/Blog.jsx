@@ -132,7 +132,7 @@ function BlogPage() {
           {/* Blog Badge */}
           <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-full mb-4 sm:mb-6">
             <FaBlog className="text-[#02BB31] text-sm sm:text-base" />
-            <span className="text-xs sm:text-sm font-medium">MakaoLink Insights</span>
+            <span className="text-xs sm:text-sm font-medium">Renda Insights</span>
           </div>
 
          

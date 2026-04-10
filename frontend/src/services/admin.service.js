@@ -39,3 +39,24 @@ export const getAdminInquiries = async (params = {}) => {
   const response = await api.get("/admin/inquiries", { params });
   return response.data;
 };
+
+
+export const getServiceApplications = async (params = {}) => {
+  const response = await api.get("/admin/service-applications", { params });
+  return response.data;
+};
+
+export const getServiceApplicationById = async (id) => {
+  const response = await api.get(`/admin/service-applications/${id}`);
+  return response.data;
+};
+
+export const approveServiceApplication = async (id) => {
+  const response = await api.patch(`/admin/service-applications/${id}/approve`);
+  return response.data;
+};
+
+export const rejectServiceApplication = async (id) => {
+  const response = await api.patch(`/admin/service-applications/${id}/reject`);
+  return response.data;
+};
