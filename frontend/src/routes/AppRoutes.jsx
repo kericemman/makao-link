@@ -5,7 +5,7 @@ import LandlordLayout from "../layouts/LandlordLayout";
 // import AdminLayout from "../layouts/AdminLayout";
 
 import ProtectedRoute from "../routes/protextedRoute";
-import RoleRoute from "../routes/roleRoute";
+import RoleRoute from "../routes/RoleRoute";
 
 import HomePage from "../pages/public/common/Home";
 import PlansPage from "../pages/public/common/Pricing";
