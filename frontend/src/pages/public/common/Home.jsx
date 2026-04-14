@@ -1,6 +1,6 @@
 import HomeCategories from "../../../components/common/HomeCategories"
-import HomeListingsPreview from "../../../components/common/homeListingPreview"
 import Hero from "../../../components/home/Hero"
+import HomeLisingsPreview from "../../../components/common/HomeListingPreview"
 
 
 
@@ -9,7 +9,7 @@ function Home() {
       <div>
         <Hero/>
         <HomeCategories/>
-        <HomeListingsPreview/>
+        <HomeLisingsPreview/>
 
   
       </div>
