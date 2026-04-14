@@ -2,7 +2,7 @@ module.exports = {
     normal: {
       name: "Normal",
       price: 0,
-      propertyLimit: 3
+      propertyLimit: 2
     },
   
     basic: {
@@ -20,6 +20,6 @@ module.exports = {
     makaopro: {
       name: "MakaoPro",
       price: 2500,
-      propertyLimit: 100
+      propertyLimit: 50
     }
   };

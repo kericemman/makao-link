@@ -47,6 +47,8 @@ import TermsOfService from "../pages/public/common/other/TOS";
 import PrivacyPolicy from "../pages/public/common/other/PrivacyPolicy";
 import Contact from "../pages/public/common/Contact";
 import Sitemap from "../pages/public/common/other/Sitemap";
+import ForgotPasswordPage from "../pages/public/common/ForgotPassword";
+import ResetPasswordPage from "../pages/public/common/ResetPassword";
 
 
 
@@ -60,6 +62,8 @@ const AppRoutes = () => {
         <Route path="/landlord/register" element={<RegisterLandlordPage />} />
         <Route path="/pricing" element={<PlansPage />} />
         <Route path="/payment/callback" element={<PaymentCallbackPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       
 
         <Route path="/articles" element={<BlogPage/>}/>

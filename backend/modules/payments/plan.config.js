@@ -2,7 +2,7 @@ const plans = {
   normal: {
     name: "Normal",
     price: 0,
-    listingLimit: 3,
+    listingLimit: 2,
     planCode: null
   },
 
@@ -23,7 +23,7 @@ const plans = {
   pro: {
     name: "Pro",
     price: 2500,
-    listingLimit: 100,
+    listingLimit: 50,
     planCode: process.env.PAYSTACK_PRO_PLAN
   }
 };

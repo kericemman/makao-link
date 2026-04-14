@@ -143,21 +143,14 @@ function Navbar() {
                         </div>
                         <div className="p-2">
                           <Link
-                            to={user.role === "admin" ? "/admin" : "/dashboard"}
+                            to={user.role === "admin" || user.role === "landlord" ? "/landlord/dashboard" : "/admin/dashboard"}
                             className="flex items-center space-x-3 px-4 py-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
                             onClick={() => setShowUserMenu(false)}
                           >
                             <FiUser />
                             <span>Dashboard</span>
                           </Link>
-                          <Link
-                            to="/settings"
-                            className="flex items-center space-x-3 px-4 py-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                            onClick={() => setShowUserMenu(false)}
-                          >
-                            <FiSettings />
-                            <span>Settings</span>
-                          </Link>
+                         
                           <Link
                             to="/support"
                             className="flex items-center space-x-3 px-4 py-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
@@ -252,7 +245,7 @@ function Navbar() {
                 </Link>
 
                 <Link
-                  to="/register"
+                  to="/pricing"
                   className="flex items-center space-x-3 px-4 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold"
                   onClick={() => setIsOpen(false)}
                 >
@@ -270,7 +263,7 @@ function Navbar() {
                 </div>
 
                 <Link
-                  to={user.role === "admin" ? "/admin" : "/dashboard"}
+                  to={user.role === "admin" ? "/admin" : "/admin/dashboard"}
                   className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
                   onClick={() => setIsOpen(false)}
                 >
@@ -278,14 +271,7 @@ function Navbar() {
                   <span>Dashboard</span>
                 </Link>
 
-                <Link
-                  to="/settings"
-                  className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <FiSettings />
-                  <span>Settings</span>
-                </Link>
+                
 
                 <Link
                   to="/support"

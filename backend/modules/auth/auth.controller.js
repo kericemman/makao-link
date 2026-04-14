@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const User = require("../users/user.model");
 const Listing = require("../listings/listings.model");
 const generateToken = require("../../utils/generateToken");
@@ -147,6 +148,104 @@ exports.getMe = async (req, res, next) => {
         limit: planConfig?.listingLimit || 0,
         remaining: Math.max((planConfig?.listingLimit || 0) - usedListings, 0)
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+
+    // Always return same response to avoid email enumeration
+    const genericResponse = {
+      success: true,
+      message: "If an account exists for that email, a reset link has been sent."
+    };
+
+    if (!user) {
+      return res.json(genericResponse);
+    }
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+
+    user.passwordResetToken = hashedToken;
+    user.passwordResetExpires = Date.now() + 1000 * 60 * 30; // 30 minutes
+    await user.save();
+
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${rawToken}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: "Reset Your Makao Password",
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>Hello ${user.name},</p>
+        <p>We received a request to reset your password.</p>
+        <p>
+          <a href="${resetUrl}" target="_blank" rel="noreferrer">
+            Click here to reset your password
+          </a>
+        </p>
+        <p>This link will expire in 30 minutes.</p>
+        <p>If you did not request this, you can ignore this email.</p>
+      `
+    });
+
+    res.json(genericResponse);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters long"
+      });
+    }
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Reset link is invalid or has expired"
+      });
+    }
+
+    user.password = password;
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Password reset successful. You can now log in."
     });
   } catch (error) {
     next(error);

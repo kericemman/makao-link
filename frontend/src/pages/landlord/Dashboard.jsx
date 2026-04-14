@@ -326,7 +326,7 @@ function DashboardHome() {
           </Link>
 
           <Link
-            to="/dashboard/subscription"
+            to="/landlord/subscription"
             className="p-4 bg-gray-50 rounded hover:bg-green-500 hover:text-white text-center transition"
           >
             <FiStar className="mx-auto text-xl mb-1" />

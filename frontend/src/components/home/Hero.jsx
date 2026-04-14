@@ -299,7 +299,7 @@ const Hero = () => {
             <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
               <p className="text-xs text-[#A8D8C1] mb-2 sm:mb-3 flex items-center">
                 <FiShield className="mr-1 text-[#02BB31] text-xs" />
-                Why choose MakaoLink
+                Why choose RendaHomes?
               </p>
               <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                 <div className="flex items-center space-x-1.5 sm:space-x-2">

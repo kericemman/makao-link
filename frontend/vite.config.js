@@ -12,7 +12,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 
-        'https://rendahomes.com',
+        'http://localhost:5173',
         changeOrigin: true,
         secure: false,
       },
