@@ -20,7 +20,12 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://rendahomes.com",
+      "https://www.rendahomes.com",
+      "www.rendahomes.com"
+    ],
     credentials: true
   })
 );
