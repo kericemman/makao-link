@@ -177,9 +177,9 @@ const PartnerApplicationPage = () => {
               <FaHandshake className="text-2xl text-[#02BB31]" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold">Apply as a Partner</h1>
+              <h1 className="text-2xl md:text-3xl font-bold">Apply as a Partner</h1>
               <p className="text-sm text-[#A8D8C1] mt-1">
-                Join MakaoLink's trusted service network
+                Join RendaHomes trusted service network
               </p>
             </div>
           </div>
@@ -456,7 +456,7 @@ const PartnerApplicationPage = () => {
             <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] p-6">
               <h3 className="text-lg font-bold text-[#013E43] mb-4 flex items-center">
                 <FiInfo className="mr-2 text-[#02BB31]" />
-                Why Join MakaoLink?
+                Why Join RendaHomes?
               </h3>
               <ul className="space-y-3">
                 <li className="flex items-start gap-2">

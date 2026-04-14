@@ -42,7 +42,7 @@ const getImageUrl = (image) => {
   return null;
 };
 
-// Listing Card Component
+// Listing Card Component - Entire card is clickable
 const ListingCard = ({ listing }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -57,13 +57,14 @@ const ListingCard = ({ listing }) => {
   };
 
   return (
-    <div 
-      className="group relative overflow-hidden rounded-2xl bg-white shadow-lg border border-[#A8D8C1] transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
+    <Link
+      to={`/properties/${listing._id}`}
+      className="group relative block overflow-hidden rounded-2xl bg-white shadow-lg border border-[#A8D8C1] transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Image Section */}
-      <div className="relative h-56 overflow-hidden bg-gradient-to-r from-[#013E43] to-[#005C57]">
+      <div className="relative h-48 sm:h-52 md:h-56 overflow-hidden bg-gradient-to-r from-[#013E43] to-[#005C57]">
         {firstImage ? (
           <img
             src={firstImage}
@@ -109,9 +110,10 @@ const ListingCard = ({ listing }) => {
         <button
           onClick={(e) => {
             e.preventDefault();
+            e.stopPropagation();
             setIsFavorite(!isFavorite);
           }}
-          className="absolute top-3 right-3 rounded-full bg-white/90 p-2 shadow-lg backdrop-blur-sm transition-all hover:scale-110"
+          className="absolute top-3 right-3 rounded-full bg-white/90 p-2 shadow-lg backdrop-blur-sm transition-all hover:scale-110 z-10"
         >
           <FiHeart 
             className={`text-lg transition-colors ${
@@ -123,7 +125,7 @@ const ListingCard = ({ listing }) => {
         {/* Price Tag */}
         <div className="absolute bottom-3 left-3">
           <div className="rounded-lg bg-[#013E43]/90 px-3 py-1.5 backdrop-blur-sm">
-            <p className="text-lg font-bold text-white">{formatPrice(listing.price)}</p>
+            <p className="text-sm sm:text-base md:text-lg font-bold text-white">{formatPrice(listing.price)}</p>
             <p className="text-xs text-[#A8D8C1]">/month</p>
           </div>
         </div>
@@ -138,61 +140,38 @@ const ListingCard = ({ listing }) => {
       </div>
 
       {/* Content Section */}
-      <div className="p-5">
-        <div className="mb-3">
-          <h3 className="text-lg font-bold text-[#013E43] line-clamp-1 group-hover:text-[#02BB31] transition-colors">
+      <div className="p-4 sm:p-5">
+        <div className="mb-2 sm:mb-3">
+          <h3 className="text-base sm:text-lg font-bold text-[#013E43] line-clamp-1 group-hover:text-[#02BB31] transition-colors">
             {listing.title}
           </h3>
-          <p className="mt-1 flex items-center text-sm text-[#065A57]">
+          <p className="mt-1 flex items-center text-xs sm:text-sm text-[#065A57]">
             <FiMapPin className="mr-1 flex-shrink-0 text-[#02BB31]" />
             <span className="line-clamp-1">{listing.location}</span>
           </p>
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-[#F0F7F4] px-3 py-1 text-xs text-[#065A57]">
-            <FaBuilding className="text-[#02BB31]" />
+        <div className="mb-3 sm:mb-4 flex flex-wrap gap-1.5 sm:gap-2">
+          <span className="flex items-center gap-1 rounded-full bg-[#F0F7F4] px-2 sm:px-3 py-1 text-xs text-[#065A57]">
+            <FaBuilding className="text-[#02BB31] text-xs" />
             {listing.type || "Apartment"}
           </span>
-          <span className="flex items-center gap-1 rounded-full bg-[#F0F7F4] px-3 py-1 text-xs text-[#065A57]">
-            <FaBed className="text-[#02BB31]" />
+          <span className="flex items-center gap-1 rounded-full bg-[#F0F7F4] px-2 sm:px-3 py-1 text-xs text-[#065A57]">
+            <FaBed className="text-[#02BB31] text-xs" />
             {listing.bedrooms || 0} {listing.bedrooms === 1 ? "bed" : "beds"}
           </span>
-          <span className="flex items-center gap-1 rounded-full bg-[#F0F7F4] px-3 py-1 text-xs text-[#065A57]">
-            <FaBath className="text-[#02BB31]" />
+          <span className="flex items-center gap-1 rounded-full bg-[#F0F7F4] px-2 sm:px-3 py-1 text-xs text-[#065A57]">
+            <FaBath className="text-[#02BB31] text-xs" />
             {listing.bathrooms || 0} {listing.bathrooms === 1 ? "bath" : "baths"}
           </span>
         </div>
 
-        {listing.landlord && (
-          <div className="mb-4 flex items-center gap-2 border-t border-[#A8D8C1] pt-3">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-[#013E43] to-[#005C57]">
-              <FiUser className="text-xs text-white" />
-            </div>
-            <span className="text-xs text-[#065A57]">{listing.landlord.name}</span>
-          </div>
-        )}
-
-        <Link
-          to={`/listings/${listing._id}`}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#013E43] to-[#005C57] px-4 py-2.5 text-sm font-medium text-white transition-all hover:shadow-lg hover:scale-[1.02] group/btn"
-        >
-          <span>View Details</span>
-          <FiArrowRight className="transition-transform group-hover/btn:translate-x-1" />
-        </Link>
+        
       </div>
 
-      {isHovered && (
-        <div className="absolute inset-x-0 bottom-full left-0 mb-2 hidden lg:block">
-          <div className="rounded-lg bg-[#013E43] p-2 text-center text-xs text-white shadow-lg">
-            <p className="flex items-center justify-center gap-1">
-              <FiEye className="text-[#02BB31]" />
-              Click to view full details
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
+      
+      
+    </Link>
   );
 };
 
@@ -230,7 +209,6 @@ const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
 
   return (
     <div className="relative">
-      {/* Left Arrow */}
       {showLeftArrow && (
         <button
           onClick={() => scroll('left')}
@@ -240,7 +218,6 @@ const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
         </button>
       )}
 
-      {/* Categories Container */}
       <div
         ref={scrollContainerRef}
         onScroll={checkScrollPosition}
@@ -254,20 +231,19 @@ const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
             <button
               key={category.value}
               onClick={() => onCategoryChange(category.value)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full font-medium whitespace-nowrap transition-all text-sm sm:text-base ${
                 isActive
                   ? "bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white shadow-md"
                   : "bg-white text-[#065A57] border border-[#A8D8C1] hover:bg-[#F0F7F4]"
               }`}
             >
-              <Icon className="text-base" />
+              <Icon className="text-sm sm:text-base" />
               <span>{category.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Right Arrow */}
       {showRightArrow && (
         <button
           onClick={() => scroll('right')}
@@ -670,7 +646,7 @@ const ListingsPage = () => {
                 )}
               </div>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
                 {listings.map((listing) => (
                   <ListingCard key={listing._id} listing={listing} />
                 ))}
