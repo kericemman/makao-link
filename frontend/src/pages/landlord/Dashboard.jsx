@@ -177,7 +177,7 @@ function DashboardHome() {
 
       {/* Stats Cards */}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
         {statCards.map((card, i) => {
 
@@ -192,10 +192,10 @@ function DashboardHome() {
 
                 <div>
                   <p className="text-sm text-gray-500">{card.title}</p>
-                  <p className="text-2xl font-bold">{card.value}</p>
+                  <p className="text-xl font-bold">{card.value}</p>
                 </div>
 
-                <Icon className="text-2xl text-[#02BB31]" />
+                <Icon className="text-xl mt-8 text-[#02BB31]" />
 
               </div>
             </div>

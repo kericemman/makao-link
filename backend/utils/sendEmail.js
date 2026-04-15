@@ -1,8 +1,8 @@
 const resend = require("../config/resend");
 
 const sendEmail = async ({ to, subject, html }) => {
-  if (!process.env.RESEND_API_KEY) {
-    console.warn("RESEND_API_KEY missing. Email skipped.");
+  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) {
+    console.warn("Missing RESEND config. Email skipped.");
     return;
   }
 

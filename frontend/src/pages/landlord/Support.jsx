@@ -163,7 +163,7 @@ const LandlordSupportPage = () => {
             <FiHelpCircle className="text-white text-2xl" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-[#013E43]">Support Center</h1>
+            <h1 className="text-lg font-semibold text-[#013E43]">Support Center</h1>
             <p className="text-sm text-[#065A57]">
               Contact admin, follow up on issues, and track replies in one place
             </p>
@@ -172,20 +172,20 @@ const LandlordSupportPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#013E43]">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Total Tickets</p>
           <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-yellow-400">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Open</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.open}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-blue-400">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">In Progress</p>
           <p className="text-2xl font-bold text-blue-600">{stats.inProgress}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#02BB31]">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Resolved</p>
           <p className="text-2xl font-bold text-[#02BB31]">{stats.resolved}</p>
         </div>

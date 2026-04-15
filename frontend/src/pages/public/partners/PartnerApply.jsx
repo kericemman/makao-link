@@ -426,8 +426,8 @@ const PartnerApplicationPage = () => {
                       <h3 className="font-semibold text-[#013E43]">Application Fee</h3>
                       <p className="text-sm text-[#065A57]">
                         A one-time joining fee of <strong>KES 5,000</strong> applies.
-                        After submitting this form, you will be redirected to Paystack to complete payment.
-                        Once payment is confirmed, your application will move to admin review.
+                        After submitting this form, you will be redirected to complete payment.
+                        Once payment is confirmed, your application will move to admin review and follow up.
                       </p>
                     </div>
                   </div>

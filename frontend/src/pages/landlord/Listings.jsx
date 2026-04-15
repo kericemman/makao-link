@@ -207,15 +207,7 @@ const LandlordListings = () => {
       {/* Header Section */}
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl">
-              <FiHome className="text-white text-2xl" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-[#013E43]">My Listings</h1>
-              <p className="text-sm text-[#065A57]">Manage your property listings</p>
-            </div>
-          </div>
+          
           
           <div className="flex items-center space-x-3">
             <button
@@ -225,16 +217,16 @@ const LandlordListings = () => {
             >
               <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
             </button>
-            <button
+            {/* <button
               onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
               className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
               title={viewMode === "grid" ? "Switch to table view" : "Switch to grid view"}
             >
               {viewMode === "grid" ? <FiList className="text-lg" /> : <FiGrid className="text-lg" />}
-            </button>
+            </button> */}
             <Link
               to="/landlord/listings/new"
-              className="px-4 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center"
+              className="px-4 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-light hover:shadow-lg transition-all flex items-center"
             >
               <FiPlus className="mr-2" />
               Add Listing
@@ -244,20 +236,20 @@ const LandlordListings = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#013E43]">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Total Listings</p>
           <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#02BB31]">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Approved</p>
           <p className="text-2xl font-bold text-[#02BB31]">{stats.approved}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-yellow-400">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Pending</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#02BB31]">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Available</p>
           <p className="text-2xl font-bold text-[#02BB31]">{stats.available}</p>
         </div>
@@ -323,7 +315,7 @@ const LandlordListings = () => {
           </p>
           <Link
             to="/landlord/listings/new"
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-light hover:shadow-lg transition-all"
           >
             <FiPlus className="mr-2" />
             Add Your First Listing

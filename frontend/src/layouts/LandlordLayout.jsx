@@ -123,17 +123,8 @@ const LandlordLayout = () => {
           {/* Sidebar Header */}
           <div className={`sticky top-0 z-10 p-4 border-b border-[#065A57] bg-gradient-to-r from-[#02BB31]/10 to-transparent backdrop-blur-sm ${!isSidebarOpen && 'lg:p-3'}`}>
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                  <span className="text-xl font-bold text-[#013E43]">M</span>
-                </div>
-                {isSidebarOpen && (
-                  <div className="truncate">
-                    <h2 className="text-xl font-bold text-white">MakaoLink</h2>
-                    <p className="text-xs text-[#A8D8C1]">Landlord Portal</p>
-                  </div>
-                )}
-              </div>
+              
+                
               
               {/* Mobile Close Button */}
               <button
@@ -158,9 +149,7 @@ const LandlordLayout = () => {
           {/* User Profile Card */}
           <div className={`p-4 border-b border-[#065A57] bg-white/5 backdrop-blur-sm`}>
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-[#02BB31] to-[#0D915C] rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg flex-shrink-0">
-                {user?.name?.charAt(0).toUpperCase() || 'L'}
-              </div>
+              
               {isSidebarOpen && (
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-white truncate">{user?.name || 'Landlord'}</p>
@@ -244,7 +233,7 @@ const LandlordLayout = () => {
           {/* Bottom Section */}
           <div className="sticky bottom-0 p-4 border-t border-[#065A57] bg-gradient-to-t from-[#013E43] to-transparent backdrop-blur-sm">
             <div className="space-y-2">
-              <button
+              {/* <button
                 onClick={() => navigate("/landlord/settings")}
                 className={`flex items-center ${!isSidebarOpen && 'justify-center'} w-full p-3 rounded-xl text-[#A8D8C1] hover:bg-white/10 hover:text-white transition-colors group relative`}
               >
@@ -255,7 +244,7 @@ const LandlordLayout = () => {
                     Settings
                   </div>
                 )}
-              </button>
+              </button> */}
 
               <button
                 onClick={handleLogout}
@@ -291,7 +280,7 @@ const LandlordLayout = () => {
 
               {/* Page Title */}
               <div className="flex-1 ml-4 lg:ml-0">
-                <h1 className="text-2xl font-bold text-[#013E43]">
+                <h1 className="text-xl font-bold text-[#013E43]">
                   {navigationItems.find(item => isActivePath(item.path))?.name || 'Dashboard'}
                 </h1>
                 <p className="text-sm text-[#065A57]">

@@ -92,9 +92,7 @@ const HomeCategories = () => {
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#013E43] mb-3">
             Browse by Category
           </h2>
-          <p className="text-lg text-[#065A57] max-w-2xl mx-auto">
-            Start with the kind of property you want and move faster through the search process.
-          </p>
+          
         </div>
 
         {/* Categories Grid */}
@@ -104,7 +102,7 @@ const HomeCategories = () => {
             return (
               <Link
                 key={category.type}
-                to={`/listings?type=${encodeURIComponent(category.type)}`}
+                to={`/properties?type=${encodeURIComponent(category.type)}`}
                 className="group relative bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1"
               >
                 {/* Category Image */}
@@ -140,20 +138,13 @@ const HomeCategories = () => {
                   
                   {/* View Link */}
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-[#02BB31] group-hover:text-[#0D915C] transition-colors">
+                    <span className="text-sm font-light text-[#02BB31] group-hover:text-[#0D915C] transition-colors">
                       View {category.title} listings
                     </span>
                     <FiArrowRight className="text-[#02BB31] group-hover:translate-x-1 transition-transform" />
                   </div>
 
-                  {/* Property Count Placeholder (optional - would need API integration) */}
-                  <div className="mt-3 pt-3 border-t border-[#A8D8C1]">
-                    <div className="flex items-center gap-2 text-xs text-[#065A57]">
-                      <FiMapPin className="text-[#02BB31]" />
-                      <span>Available across Nairobi</span>
-                    </div>
-                  </div>
-                </div>
+                 </div>
               </Link>
             );
           })}
@@ -162,8 +153,8 @@ const HomeCategories = () => {
         {/* View All CTA */}
         <div className="text-center mt-12">
           <Link
-            to="/listings"
-            className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105 group"
+            to="/properties"
+            className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-light hover:shadow-lg transition-all transform hover:scale-105 group"
           >
             <span>Browse All Properties</span>
             <FiArrowRight className="group-hover:translate-x-1 transition-transform" />

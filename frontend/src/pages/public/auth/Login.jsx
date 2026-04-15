@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginLandlord } from "../../../services/auth.service";
 import { useAuth } from "../../../context/AuthContext";
@@ -19,6 +19,9 @@ import { FaBuilding, FaKey, FaHandshake } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const LoginPage = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const navigate = useNavigate();
   const { login } = useAuth();
 

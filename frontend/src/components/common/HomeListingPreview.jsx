@@ -177,7 +177,7 @@ const ListingPreviewCard = ({ listing }) => {
         {/* Action Button */}
         <Link
           to={`/properties/${listing._id}`}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#013E43] to-[#005C57] px-4 py-2.5 text-sm font-medium text-white transition-all hover:shadow-lg hover:scale-[1.02] group/btn"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#013E43] to-[#005C57] px-4 py-2.5 text-sm font-light text-white transition-all hover:shadow-lg hover:scale-[1.02] group/btn"
         >
           <span>View Details</span>
           <FiArrowRight className="transition-transform group-hover/btn:translate-x-1" />
@@ -293,7 +293,7 @@ const HomeListingsPreview = () => {
 
           <Link
             to="/properties"
-            className="inline-flex justify-center font-light text-sm text-center gap-2 px-4 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105 group"
+            className="inline-flex justify-center font-light text-sm text-center gap-2 px-4 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-light hover:shadow-lg transition-all transform hover:scale-105 group"
           >
             <span>View All Listings</span>
             <FiArrowRight className="group-hover:translate-x-1 mt-1 transition-transform" />
