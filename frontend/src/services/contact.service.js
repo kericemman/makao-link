@@ -1,17 +1,21 @@
-import API from "../api/api"
+import api from "../api/api";
 
-export const sendMessage = (data) => {
-  return API.post("/contact", data)
-}
+export const sendMessage = async (payload) => {
+  const response = await api.post("/contact", payload);
+  return response.data;
+};
 
-export const getMessages = () => {
-  return API.get("/contact")
-}
+export const getAdminContactMessages = async (params = {}) => {
+  const response = await api.get("/contact/admin", { params });
+  return response.data;
+};
 
-export const markMessageRead = (id) => {
-  return API.put(`/contact/${id}/read`)
-}
+export const getAdminContactMessageById = async (id) => {
+  const response = await api.get(`/contact/admin/${id}`);
+  return response.data;
+};
 
-export const deleteMessage = (id) => {
-  return API.delete(`/contact/${id}`)
-}
+export const updateAdminContactMessage = async (id, payload) => {
+  const response = await api.patch(`/contact/admin/${id}`, payload);
+  return response.data;
+};

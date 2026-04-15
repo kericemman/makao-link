@@ -12,7 +12,7 @@ import { FaBuilding, FaHome, FaCity } from "react-icons/fa";
 
 const categories = [
   {
-    title: "Apartment",
+    title: "Apartments",
     description: "Modern apartments for individuals, couples, and families.",
     type: "apartment",
     image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
@@ -22,17 +22,7 @@ const categories = [
     textColor: "text-[#013E43]",
     badgeColor: "bg-[#013E43]"
   },
-  {
-    title: "Bedsitter",
-    description: "Affordable and practical spaces for simple living.",
-    type: "bedsitter",
-    image: "/assets/bed.jpeg",
-    icon: FiHome,
-    color: "from-[#02BB31] to-[#0D915C]",
-    bgColor: "bg-[#02BB31]/10",
-    textColor: "text-[#02BB31]",
-    badgeColor: "bg-[#02BB31]"
-  },
+ 
   {
     title: "Maisonette",
     description: "Spacious multi-level homes for bigger households.",
@@ -116,15 +106,11 @@ const HomeCategories = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                   
                   {/* Category Badge */}
-                  <div className="absolute top-4 right-4">
-                    <div className={`w-12 h-12 ${category.bgColor} rounded-xl flex items-center justify-center backdrop-blur-sm shadow-lg`}>
-                      <Icon className={`text-xl ${category.textColor}`} />
-                    </div>
-                  </div>
+                 
                   
                   {/* Category Title Overlay */}
                   <div className="absolute bottom-4 left-4">
-                    <h3 className="text-2xl font-bold text-white drop-shadow-lg">
+                    <h3 className="text-xl md:text-2xl font-bold text-white drop-shadow-lg">
                       {category.title}
                     </h3>
                   </div>
@@ -139,7 +125,7 @@ const HomeCategories = () => {
                   {/* View Link */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-light text-[#02BB31] group-hover:text-[#0D915C] transition-colors">
-                      View {category.title} listings
+                      View {category.title} 
                     </span>
                     <FiArrowRight className="text-[#02BB31] group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -150,16 +136,7 @@ const HomeCategories = () => {
           })}
         </div>
 
-        {/* View All CTA */}
-        <div className="text-center mt-12">
-          <Link
-            to="/properties"
-            className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-light hover:shadow-lg transition-all transform hover:scale-105 group"
-          >
-            <span>Browse All Properties</span>
-            <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
+        
       </div>
     </section>
   );

@@ -57,6 +57,11 @@ const listingSchema = new mongoose.Schema(
       validate: [arrayLimit, "Maximum 5 images allowed"]
     },
 
+    video: {
+      type: String,
+      default: null
+    },
+
     amenities: {
       garden: { type: Boolean, default: false },
       tarmacAccess: { type: Boolean, default: false },

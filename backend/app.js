@@ -13,7 +13,7 @@ const adminRoutes = require("./modules/admin/admin.routes");
 const dashboardRoutes = require("./modules/users/dashboard.routes");
 const supportRoutes = require("./modules/support/support.route");
 const serviceRoutes = require("./modules/services/service.routes");
-
+const contactRoutes = require("./modules/contact/contact.route");
 
 const app = express();
 
@@ -51,6 +51,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/support", supportRoutes);
 app.use("/api/services", serviceRoutes);
+app.use("/api/contact", contactRoutes);
 
 
 app.use(errorHandler);

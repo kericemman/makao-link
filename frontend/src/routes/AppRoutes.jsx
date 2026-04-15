@@ -49,7 +49,8 @@ import Contact from "../pages/public/common/Contact";
 import Sitemap from "../pages/public/common/other/Sitemap";
 import ForgotPasswordPage from "../pages/public/common/ForgotPassword";
 import ResetPasswordPage from "../pages/public/common/ResetPassword";
-
+import AdminContactMessagesPage from "../pages/admin/AdminContact";
+import AdminContactMessageDetailPage from "../pages/admin/AdminContactDetails";
 
 
 
@@ -114,6 +115,8 @@ const AppRoutes = () => {
             <Route path="/admin/blog/create" element={<CreateBlog />}/>
             <Route path="/admin/services/applications" element={<AdminServiceApplicationsPage />} />
             <Route path="/admin/services/applications/:id" element={<AdminServiceApplicationDetailPage />} />
+            <Route path="/admin/contact" element={<AdminContactMessagesPage />} />
+            <Route path="/admin/contact/:id" element={<AdminContactMessageDetailPage />} />
           
           </Route>
         </Route>

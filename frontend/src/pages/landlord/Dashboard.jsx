@@ -155,7 +155,7 @@ function DashboardHome() {
             </div>
 
             <div>
-              <h1 className="text-xl font-bold">
+              <h1 className="text-lg font-bold">
                 Welcome back, {user?.name || "Landlord"}
               </h1>
 

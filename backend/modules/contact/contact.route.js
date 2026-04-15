@@ -1,26 +1,22 @@
-const express = require("express")
-const router = express.Router()
-
-const auth = require("../../middleware/auth.middleware")
-const role = require("../../middleware/role.middleware")
+const express = require("express");
+const router = express.Router();
 
 const {
-  createContact,
-  getContacts,
-  markAsRead,
-  deleteContact
-} = require("./contact.controller")
+  createContactMessage,
+  getAdminContactMessages,
+  getAdminContactMessageById,
+  updateContactMessageStatus
+} = require("./contact.controller");
 
+const { protect } = require("../../middleware/auth.middleware");
+const requireRole = require("../../middleware/role.middleware");
 
-// Public
-router.post("/", createContact)
+// public
+router.post("/", createContactMessage);
 
+// admin
+router.get("/admin", protect, requireRole("admin"), getAdminContactMessages);
+router.get("/admin/:id", protect, requireRole("admin"), getAdminContactMessageById);
+router.patch("/admin/:id", protect, requireRole("admin"), updateContactMessageStatus);
 
-// Admin
-router.get("/", auth, role("admin"), getContacts)
-
-router.put("/:id/read", auth, role("admin"), markAsRead)
-
-router.delete("/:id", auth, role("admin"), deleteContact)
-
-module.exports = router
+module.exports = router;

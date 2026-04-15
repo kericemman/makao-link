@@ -276,12 +276,10 @@ const LandlordSubscription = () => {
             <div className="p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex items-start space-x-4">
-                  <div className={`p-3 ${currentPlanDetails.bgColor} rounded-xl`}>
-                    <PlanIcon className={`text-2xl ${currentPlanDetails.textColor}`} />
-                  </div>
+                  
                   <div>
                     <p className="text-sm text-[#065A57]">Current Plan</p>
-                    <h2 className="mt-1 text-3xl font-bold text-[#013E43]">
+                    <h2 className="mt-1 text-xl font-bold text-[#013E43]">
                       {subscription?.plan?.toUpperCase()}
                     </h2>
                     <p className="mt-2 text-sm text-[#065A57]">
@@ -300,16 +298,16 @@ const LandlordSubscription = () => {
                 </span>
               </div>
 
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 grid-cols-2">
                 <div className="rounded-xl bg-[#F0F7F4] p-4 border border-[#A8D8C1]">
                   <p className="text-xs uppercase tracking-wide text-[#065A57] flex items-center">
-                    <FiBarChart2 className="mr-1" />
+                    
                     Used Listings
                   </p>
-                  <h3 className="mt-2 text-2xl font-bold text-[#013E43]">
+                  <h3 className="mt-2 text-lg font-bold text-[#013E43]">
                     {usage.used} / {usage.limit}
                   </h3>
-                  <p className="mt-1 text-sm text-[#065A57]">
+                  <p className="mt-1 text-xs md:text-lg text-[#065A57]">
                     {usage.remaining} slot{usage.remaining !== 1 ? "s" : ""} remaining
                   </p>
                 </div>
@@ -319,18 +317,18 @@ const LandlordSubscription = () => {
                     <FiCalendar className="mr-1" />
                     Billing Date
                   </p>
-                  <h3 className="mt-2 text-base font-semibold text-[#013E43]">
+                  <h3 className="mt-2 text-sm md:text-lg font-semibold text-[#013E43]">
                     {subscription?.currentPeriodEnd
                       ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
                       : "Not available"}
                   </h3>
 
                   {subscription?.gracePeriodEnd ? (
-                    <p className="mt-2 text-sm text-orange-600">
+                    <p className="mt-2 text-sm text-lg text-orange-600 text-sm">
                       Grace ends on {new Date(subscription.gracePeriodEnd).toLocaleDateString()}
                     </p>
                   ) : (
-                    <p className="mt-2 text-sm text-[#065A57]">No grace period active</p>
+                    <p className="mt-2 text-xs md:text-lg text-[#065A57]">No grace period active</p>
                   )}
                 </div>
               </div>
@@ -365,7 +363,7 @@ const LandlordSubscription = () => {
                 <button
                   onClick={handlePayNow}
                   disabled={payLoading}
-                  className="mt-6 w-full py-4 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="mt-6 w-full py-4 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-light hover:shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {payLoading ? (
                     <>
@@ -413,9 +411,9 @@ const LandlordSubscription = () => {
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start space-x-3">
-                        <div className={`p-2 ${plan.bgColor} rounded-lg`}>
+                        {/* <div className={`p-2 ${plan.bgColor} rounded-lg`}>
                           <PlanIconComponent className={`text-lg ${plan.textColor}`} />
-                        </div>
+                        </div> */}
                         <div>
                           <h3 className="text-lg font-semibold text-[#013E43]">{plan.name}</h3>
                           <p className="mt-1 text-sm text-[#02BB31] font-medium">

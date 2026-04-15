@@ -208,7 +208,7 @@ const Hero = () => {
                 Latest Listings
               </h3>
               <Link
-                to="/listings"
+                to="/properties"
                 className="text-xs sm:text-sm text-[#A8D8C1] hover:text-white transition-colors flex items-center"
               >
                 View all
@@ -280,7 +280,7 @@ const Hero = () => {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Link
-                to="/listings"
+                to="/properties"
                 className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105 text-sm sm:text-base"
               >
                 <FiSearch className="text-sm sm:text-base" />
@@ -288,7 +288,7 @@ const Hero = () => {
               </Link>
               
               <Link
-                to="/plans"
+                to="/pricing"
                 className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 bg-white/10 backdrop-blur-sm text-white rounded-xl font-semibold hover:bg-white/20 transition-all border border-white/20 text-sm sm:text-base"
               >
                 <FaKey className="text-sm sm:text-base" />

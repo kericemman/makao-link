@@ -113,15 +113,15 @@ function Contact() {
     {
       icon: FiMail,
       title: "Email Us",
-      value: "info@makaolink.com",
-      link: "mailto:info@makaolink.com",
+      
+      link: "mailto:info@rendahomes.com",
       bgColor: "bg-[#02BB31]/10",
       textColor: "text-[#02BB31]"
     },
     {
       icon: FiPhone,
       title: "Call Us",
-      value: "+254 (729) 353 537",
+   
       link: "tel:+254729353537",
       bgColor: "bg-[#013E43]/10",
       textColor: "text-[#013E43]"
@@ -129,7 +129,7 @@ function Contact() {
     {
       icon: FaWhatsapp,
       title: "WhatsApp",
-      value: "+254 729 353 537",
+    
       link: "https://wa.me/254729353537",
       bgColor: "bg-[#25D366]/10",
       textColor: "text-[#25D366]"
@@ -138,11 +138,11 @@ function Contact() {
   ]
 
   const socialLinks = [
-    { icon: FaFacebook, link: "https://facebook.com/makaolink", color: "text-[#25D366]" },
-    { icon: FaTwitter, link: "https://twitter.com/makaolink", color: "text-[#25D366]" },
-    { icon: FaLinkedin, link: "https://linkedin.com/company/makaolink", color: "text-[#25D366]" },
-    { icon: FaInstagram, link: "https://instagram.com/makaolink", color: "text-[#25D366]" },
-    { icon: FaTiktok, link: "https://tiktok/makaolink", color: "text-[#25D366]" }
+    { icon: FaFacebook, link: "https://www.facebook.com/share/1CYY4uVPTy/", color: "text-[#25D366]" },
+    { icon: FaLinkedin, link: "https://www.linkedin.com/company/renda-homes/", color: "text-[#25D366]" },
+    
+    { icon: FaInstagram, link: "https://www.instagram.com/renda.homes?igsh=MW5hM2s3dHMyeHZlaQ==", color: "text-[#25D366]" },
+    { icon: FaTiktok, link: "https://www.tiktok.com/@rendahomes", color: "text-[#25D366]" }
   ]
 
   const faqs = [
@@ -202,10 +202,7 @@ function Contact() {
               <FiCheckCircle className="mr-2 text-[#02BB31]" />
               Dedicated support
             </span>
-            <span className="flex items-center">
-              <FiGlobe className="mr-2 text-[#02BB31]" />
-              Kenya-wide
-            </span>
+            
           </div>
         </div>
 
@@ -240,7 +237,7 @@ function Contact() {
                   <Icon className={`text-xl ${info.textColor}`} />
                 </div>
                 <p className="text-sm text-[#065A57]">{info.title}</p>
-                <p className="font-semibold text-[#013E43]">{info.value}</p>
+                
               </div>
             )
           })}

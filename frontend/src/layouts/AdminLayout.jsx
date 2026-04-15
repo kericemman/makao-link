@@ -21,7 +21,8 @@ import {
   FiFlag,
   FiDollarSign,
   FiUserCheck,
-  FiActivity
+  FiActivity,
+  FiPhoneCall
 } from "react-icons/fi";
 import { FaBuilding, FaKey, FaHandshake, FaBlog } from "react-icons/fa";
 import toast from "react-hot-toast";
@@ -58,6 +59,13 @@ const navItems = [
     path: "/admin/inquiries", 
     icon: FiMessageSquare,
     description: "Tenant inquiries"
+  },
+
+  {
+    label: "Contact Inquiries",
+    path: "/admin/contact",
+    icon: FiPhoneCall,
+    description: "User queries"
   },
   { 
     label: "Support Tickets", 
