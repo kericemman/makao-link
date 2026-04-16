@@ -226,7 +226,7 @@ const AdminDashboard = () => {
               key={index}
               className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1"
             >
-              <div className={`h-1.5 bg-gradient-to-r ${card.color}`}></div>
+              {/* <div className={`h-1.5 bg-gradient-to-r ${card.color}`}></div> */}
               <div className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div className={`p-2 ${card.bgColor} rounded-lg`}>

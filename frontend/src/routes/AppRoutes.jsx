@@ -51,6 +51,7 @@ import ForgotPasswordPage from "../pages/public/common/ForgotPassword";
 import ResetPasswordPage from "../pages/public/common/ResetPassword";
 import AdminContactMessagesPage from "../pages/admin/AdminContact";
 import AdminContactMessageDetailPage from "../pages/admin/AdminContactDetails";
+import LandlordProfilePage from "../pages/landlord/LandlordProfile";
 
 
 
@@ -90,7 +91,7 @@ const AppRoutes = () => {
             <Route path="landlord/listings" element={<Listings />} />
             <Route path="/landlord/support" element={<LandlordSupportPage />} />
             <Route path="/landlord/support/:id" element={<LandlordSupportDetailPage />} />
-           
+            <Route path="/landlord/profile" element={<LandlordProfilePage />} />
             
             <Route path="/landlord/inquiries" element={<LandlordInquiries />} />
             <Route path="/landlord/subscription" element={<LandlordSubscription/>} />

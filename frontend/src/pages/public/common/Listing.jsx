@@ -150,7 +150,7 @@ const ListingCard = ({ listing }) => {
         <div className="flex flex-wrap gap-1 sm:gap-1.5 md:gap-2">
           <span className="flex items-center gap-0.5 sm:gap-1 rounded-full bg-[#F0F7F4] px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 text-[9px] sm:text-xs text-[#065A57]">
             <FaBuilding className="text-[#02BB31] text-[8px] sm:text-xs" />
-            {listing.type?.slice(0, 3) || "Apt"}
+            {listing.type}
           </span>
           <span className="flex items-center gap-0.5 sm:gap-1 rounded-full bg-[#F0F7F4] px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 text-[9px] sm:text-xs text-[#065A57]">
             <FaBed className="text-[#02BB31] text-[8px] sm:text-xs" />
@@ -200,14 +200,14 @@ const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
 
   return (
     <div className="relative">
-      {showLeftArrow && (
+      {/* {showLeftArrow && (
         <button
           onClick={() => scroll('left')}
           className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-lg border border-[#A8D8C1] hover:bg-[#F0F7F4] transition-all"
         >
           <FiChevronLeft className="text-[#013E43]" />
         </button>
-      )}
+      )} */}
 
       <div
         ref={scrollContainerRef}
@@ -230,20 +230,20 @@ const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
             >
               <Icon className="text-xs sm:text-sm md:text-base" />
               <span className="hidden sm:inline">{category.label}</span>
-              <span className="sm:hidden">{category.label.slice(0, 6)}</span>
+              <span className="sm:hidden">{category.label}</span>
             </button>
           );
         })}
       </div>
 
-      {showRightArrow && (
+      {/* {showRightArrow && (
         <button
           onClick={() => scroll('right')}
           className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-lg border border-[#A8D8C1] hover:bg-[#F0F7F4] transition-all"
         >
           <FiChevronRight className="text-[#013E43]" />
         </button>
-      )}
+      )} */}
     </div>
   );
 };

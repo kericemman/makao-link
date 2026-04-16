@@ -340,15 +340,7 @@ const LandlordLayout = () => {
                           >
                             Profile
                           </button>
-                          <button
-                            onClick={() => {
-                              navigate("/landlord/settings");
-                              setShowUserMenu(false);
-                            }}
-                            className="w-full text-left p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                          >
-                            Settings
-                          </button>
+                          
                           <hr className="my-2 border-[#A8D8C1]" />
                           <button
                             onClick={() => {

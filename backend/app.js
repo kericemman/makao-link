@@ -14,6 +14,9 @@ const dashboardRoutes = require("./modules/users/dashboard.routes");
 const supportRoutes = require("./modules/support/support.route");
 const serviceRoutes = require("./modules/services/service.routes");
 const contactRoutes = require("./modules/contact/contact.route");
+const userRoutes = require("./modules/users/user.routes");
+const seoRoutes = require("./modules/seo/seo.routes");
+
 
 const app = express();
 
@@ -52,6 +55,8 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/support", supportRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/users", userRoutes)
+app.use("/", seoRoutes);
 
 
 app.use(errorHandler);

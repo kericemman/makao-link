@@ -149,17 +149,7 @@ const AdminLayout = () => {
           {/* Sidebar Header */}
           <div className={`sticky top-0 z-10 p-4 border-b border-[#065A57] bg-gradient-to-r from-[#02BB31]/10 to-transparent backdrop-blur-sm ${!isSidebarOpen && 'lg:p-3'}`}>
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                  <span className="text-xl font-bold text-[#013E43]">M</span>
-                </div>
-                {isSidebarOpen && (
-                  <div className="truncate">
-                    <h2 className="text-xl font-bold text-white">MakaoLink</h2>
-                    <p className="text-xs text-[#A8D8C1]">Admin Panel</p>
-                  </div>
-                )}
-              </div>
+              
               
               {/* Mobile Close Button */}
               <button
@@ -294,7 +284,7 @@ const AdminLayout = () => {
 
               {/* Page Title */}
               <div className="flex-1 ml-4 lg:ml-0">
-                <h1 className="text-2xl font-bold text-[#013E43]">
+                <h1 className="text-xl font-bold text-[#013E43]">
                   {navItems.find(item => isActivePath(item.path))?.label || 'Dashboard'}
                 </h1>
                 <p className="text-sm text-[#065A57]">

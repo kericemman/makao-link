@@ -176,11 +176,9 @@ const AdminSupportPage = () => {
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl">
-              <FiHelpCircle className="text-white text-2xl" />
-            </div>
+            
             <div>
-              <h1 className="text-2xl font-bold text-[#013E43]">Support Oversight</h1>
+              <h1 className="text-xl font-bold text-[#013E43]">Support Oversight</h1>
               <p className="text-sm text-[#065A57]">
                 Receive, follow up, and manage landlord support queries
               </p>
@@ -200,24 +198,24 @@ const AdminSupportPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#013E43]">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Total Tickets</p>
           <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-yellow-400">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Open</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.open}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-blue-400">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">In Progress</p>
           <p className="text-2xl font-bold text-blue-600">{stats.inProgress}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#02BB31]">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Resolved</p>
           <p className="text-2xl font-bold text-[#02BB31]">{stats.resolved}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-gray-400">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Closed</p>
           <p className="text-2xl font-bold text-gray-600">{stats.closed}</p>
         </div>

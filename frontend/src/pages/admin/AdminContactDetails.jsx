@@ -189,11 +189,9 @@ const AdminContactMessageDetailPage = () => {
             >
               <FiArrowLeft className="text-xl text-[#065A57]" />
             </button>
-            <div className="p-3 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl">
-              <FiMail className="text-white text-2xl" />
-            </div>
+            
             <div>
-              <h1 className="text-2xl font-bold text-[#013E43]">Message Details</h1>
+              <h1 className="text-xl font-bold text-[#013E43]">Message Details</h1>
               <p className="text-sm text-[#065A57]">ID: {contactMessage._id.slice(-8)}</p>
             </div>
           </div>

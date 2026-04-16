@@ -127,7 +127,7 @@ const PendingListingsPage = () => {
               <FiClock className="text-white text-2xl" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-[#013E43]">Pending Listings</h1>
+              <h1 className="text-xl font-bold text-[#013E43]">Pending Listings</h1>
               <p className="text-sm text-[#065A57]">
                 Review, approve, or reject newly submitted properties
               </p>

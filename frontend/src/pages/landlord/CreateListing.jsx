@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createListing } from "../../services/listings.service";
 import { useAuth } from "../../context/AuthContext";
@@ -14,12 +14,16 @@ import {
   FiCamera,
   FiUpload,
   FiTrash2,
-  FiArrowLeft
+  FiArrowLeft,
+  FiInfo
 } from "react-icons/fi";
-import { FaBed, FaBath, FaBuilding, FaPhone } from "react-icons/fa";
+import { FaBed, FaBath, FaBuilding, FaPhone, FaUtensils } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const CreateListingPage = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]);
@@ -39,8 +43,18 @@ const CreateListingPage = () => {
     location: "",
     bedrooms: "",
     bathrooms: "",
+    kitchen: true,
     type: "apartment",
-    contactPhone: ""
+    contactPhone: "",
+    amenities: {
+      garden: false,
+      tarmacAccess: false,
+      nearSchools: false,
+      nearShoppingCentre: false,
+      nearHospital: false,
+      waterAvailable: true,
+      electricityAvailable: true
+    }
   });
 
   const propertyTypes = [
@@ -53,15 +67,35 @@ const CreateListingPage = () => {
     { value: "other", label: "Other" }
   ];
 
+  const amenitiesList = [
+    { key: "garden", label: "Garden" },
+    { key: "tarmacAccess", label: "Tarmac Access" },
+    { key: "nearSchools", label: "Near Schools" },
+    { key: "nearShoppingCentre", label: "Near Shopping Centre" },
+    { key: "nearHospital", label: "Near Hospital" },
+    { key: "waterAvailable", label: "Water Available" },
+    { key: "electricityAvailable", label: "Electricity Available" }
+  ];
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === "checkbox" ? checked : value
     }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
+  };
+
+  const handleAmenityChange = (amenity) => {
+    setFormData(prev => ({
+      ...prev,
+      amenities: {
+        ...prev.amenities,
+        [amenity]: !prev.amenities[amenity]
+      }
+    }));
   };
 
   const handleImages = (e) => {
@@ -79,8 +113,8 @@ const CreateListingPage = () => {
       return true;
     });
 
-    if (validFiles.length + images.length > 10) {
-      toast.error("Maximum 10 images allowed");
+    if (validFiles.length + images.length > 5) {
+      toast.error("Maximum 5 images allowed");
       return;
     }
 
@@ -145,10 +179,16 @@ const CreateListingPage = () => {
 
       const payload = new FormData();
 
+      // Add basic fields
       Object.entries(formData).forEach(([key, value]) => {
-        payload.append(key, value);
+        if (key === "amenities") {
+          payload.append(key, JSON.stringify(value));
+        } else {
+          payload.append(key, value);
+        }
       });
 
+      // Add images
       images.forEach((image) => {
         payload.append("images", image);
       });
@@ -189,11 +229,9 @@ const CreateListingPage = () => {
           >
             <FiArrowLeft className="text-xl text-[#065A57]" />
           </button>
-          <div className="p-3 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl">
-            <FiHome className="text-white text-2xl" />
-          </div>
+          
           <div>
-            <h1 className="text-2xl font-bold text-[#013E43]">Add New Listing</h1>
+            <h1 className="text-xl font-bold text-[#013E43]">Add New Listing</h1>
             <p className="text-sm text-[#065A57]">List your property for tenants to find</p>
           </div>
         </div>
@@ -440,6 +478,45 @@ const CreateListingPage = () => {
                 <p className="text-sm text-red-500 mt-1">{errors.contactPhone}</p>
               )}
             </div>
+
+            {/* Kitchen Checkbox */}
+            <div className="md:col-span-2">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="kitchen"
+                  checked={formData.kitchen}
+                  onChange={handleChange}
+                  className="w-5 h-5 text-[#02BB31] border-[#A8D8C1] rounded focus:ring-[#02BB31]"
+                />
+                <span className="text-sm text-[#065A57] flex items-center">
+                  <FaUtensils className="mr-2" />
+                  Kitchen available
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Amenities Card */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
+          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
+            <FiCheckCircle className="mr-2 text-[#02BB31]" />
+            Amenities
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {amenitiesList.map((amenity) => (
+              <label key={amenity.key} className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.amenities[amenity.key]}
+                  onChange={() => handleAmenityChange(amenity.key)}
+                  className="w-5 h-5 text-[#02BB31] border-[#A8D8C1] rounded focus:ring-[#02BB31]"
+                />
+                <span className="text-sm text-[#065A57]">{amenity.label}</span>
+              </label>
+            ))}
           </div>
         </div>
 
@@ -472,7 +549,7 @@ const CreateListingPage = () => {
                   Click to upload or drag and drop
                 </span>
                 <span className="text-xs text-[#065A57] mt-1">
-                  PNG, JPG, GIF up to 5MB (Max 10 images)
+                  PNG, JPG, GIF up to 5MB (Max 5 images)
                 </span>
               </label>
             </div>
@@ -480,12 +557,12 @@ const CreateListingPage = () => {
               <p className="text-sm text-red-500 mt-1">{errors.images}</p>
             )}
             <p className="text-xs text-[#065A57] mt-2">
-              {images.length} image(s) selected
+              {images.length}/5 image(s) selected
             </p>
           </div>
 
           {preview.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
               {preview.map((img, index) => (
                 <div key={index} className="relative group">
                   <img
@@ -517,10 +594,18 @@ const CreateListingPage = () => {
             Cancel
           </button>
           <button
+            type="submit"
             disabled={loading || blocked}
-            className="px-6 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            {loading ? "Submitting..." : "Submit Listing"}
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                Submitting...
+              </>
+            ) : (
+              "Submit Listing"
+            )}
           </button>
         </div>
       </form>

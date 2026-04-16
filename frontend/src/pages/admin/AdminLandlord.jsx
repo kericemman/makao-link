@@ -174,11 +174,9 @@ const AdminLandlordsPage = () => {
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl">
-              <FiUsers className="text-white text-2xl" />
-            </div>
+           
             <div>
-              <h1 className="text-2xl font-bold text-[#013E43]">Landlords</h1>
+              <h1 className="text-xl font-bold text-[#013E43]">Landlords</h1>
               <p className="text-sm text-[#065A57]">
                 View and manage landlord accounts, plans, and listing activity
               </p>
@@ -199,23 +197,23 @@ const AdminLandlordsPage = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#013E43]">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Total Landlords</p>
           <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#02BB31]">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Active</p>
           <p className="text-2xl font-bold text-[#02BB31]">{stats.active}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-yellow-400">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Pending Payment</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-red-400">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Expired</p>
           <p className="text-2xl font-bold text-red-500">{stats.expired}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-purple-400">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Total Listings</p>
           <p className="text-2xl font-bold text-purple-600">{stats.totalListings}</p>
         </div>

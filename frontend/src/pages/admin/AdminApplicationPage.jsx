@@ -186,11 +186,9 @@ const AdminServiceApplicationsPage = () => {
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl">
-              <FiBriefcase className="text-white text-2xl" />
-            </div>
+            
             <div>
-              <h1 className="text-2xl font-bold text-[#013E43]">Service Applications</h1>
+              <h1 className="text-xl font-bold text-[#013E43]">Service Applications</h1>
               <p className="text-sm text-[#065A57]">
                 Review partner applications, confirm payment state, and approve service listings
               </p>
@@ -210,24 +208,24 @@ const AdminServiceApplicationsPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#013E43]">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Total Applications</p>
           <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-yellow-400">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Pending Review</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#02BB31]">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Approved</p>
           <p className="text-2xl font-bold text-[#02BB31]">{stats.approved}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-red-400">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Rejected</p>
           <p className="text-2xl font-bold text-red-500">{stats.rejected}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-green-400">
+        <div className="bg-white rounded-xl shadow-lg p-4 ">
           <p className="text-sm text-[#065A57]">Payment Success</p>
           <p className="text-2xl font-bold text-green-600">{stats.paymentSuccess}</p>
         </div>
