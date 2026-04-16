@@ -210,15 +210,15 @@ const Pricing = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
             <FiDollarSign className="text-[#02BB31]" />
-            <span className="text-xs font-medium">Simple & Transparent Pricing</span>
+            <span className="text-xs font-medium">Transparent Pricing</span>
           </div>
           
-          <h1 className="text-2xl md:text-3xl lg:text-5xl font-bold mb-4">
+          <h1 className="text-xl md:text-3xl lg:text-5xl font-bold mb-4">
             Choose Your Perfect Plan
           </h1>
           
-          <p className="text-xl text-[#A8D8C1] max-w-2xl mx-auto">
-            Start free or pick a paid plan to list more properties and grow your reach.
+          <p className="md:text-xl text-sm text-[#A8D8C1] max-w-2xl mx-auto">
+            Find ready teenants today for free.
           </p>
         </div>
       </div>

@@ -1,51 +1,33 @@
-const express = require("express")
-const router = express.Router()
-
-const auth = require("../../middleware/auth.middleware")
-const role = require("../../middleware/role.middleware")
-const upload = require("../../middleware/upload.middleware")
+const express = require("express");
+const router = express.Router();
 
 const {
-  createBlog,
+  getPublishedBlogs,
+  getPublishedBlogBySlug,
+  subscribeToNewsletter,
   getAdminBlogs,
+  getAdminBlogById,
+  createBlog,
   updateBlog,
   deleteBlog,
-  getBlogs,
-  getBlog
-} = require("./blog.controller")
+  getNewsletterSubscribers
+} = require("./blog.controller");
 
+const { protect } = require("../../middleware/auth.middleware");
+const requireRole = require("../../middleware/role.middleware");
+const upload = require("../../middleware/upload.middleware");
 
-// Admin
-router.post("/", auth, role("admin"), upload.single("coverImage"),
-  createBlog
-);
+// public
+router.get("/", getPublishedBlogs);
+router.get("/:slug", getPublishedBlogBySlug);
+router.post("/subscribe", subscribeToNewsletter);
 
-router.get(
-  "/admin",
-  auth,
-  role("admin"),
-  getAdminBlogs
-)
+// admin
+router.get("/admin/all", protect, requireRole("admin"), getAdminBlogs);
+router.get("/admin/subscribers", protect, requireRole("admin"), getNewsletterSubscribers);
+router.get("/admin/:id", protect, requireRole("admin"), getAdminBlogById);
+router.post("/admin", protect, requireRole("admin"), upload.single("coverImage"), createBlog);
+router.patch("/admin/:id", protect, requireRole("admin"), upload.single("coverImage"), updateBlog);
+router.delete("/admin/:id", protect, requireRole("admin"), deleteBlog);
 
-router.put(
-  "/:id",
-  auth,
-  role("admin"),
-  upload.single("coverImage"),
-  updateBlog
-)
-
-router.delete(
-  "/:id",
-  auth,
-  role("admin"),
-  deleteBlog
-)
-
-
-// Public
-router.get("/", getBlogs)
-
-router.get("/:slug", getBlog)
-
-module.exports = router
+module.exports = router;

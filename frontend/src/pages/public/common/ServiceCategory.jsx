@@ -164,7 +164,7 @@ const ServiceCategoryPage = () => {
               <CategoryIcon className="text-xl text-[#02BB31]" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-4xl font-bold">{categoryTitle}</h1>
+              <h1 className="text-xl md:text-4xl font-bold">{categoryTitle}</h1>
               <p className="text-sm text-[#A8D8C1] mt-1">
                 Browse approved service partners and contact the one that fits your needs
               </p>

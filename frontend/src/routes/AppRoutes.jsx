@@ -10,7 +10,8 @@ import RoleRoute from "../routes/RoleRoute";
 import HomePage from "../pages/public/common/Home";
 import PlansPage from "../pages/public/common/Pricing";
 import LoginPage from "../pages/public/auth/Login";
-
+import BlogPage from "../pages/public/common/Blog";
+import BlogDetailPage from "../pages/public/common/BlogDetails";
 import RegisterLandlordPage from "../pages/public/auth/Register";
 import DashboardHome from "../pages/landlord/Dashboard";
 import Listings from "../pages/landlord/Listings";
@@ -29,8 +30,7 @@ import LandlordSupportPage from "../pages/landlord/Support";
 import LandlordSupportDetailPage from "../pages/landlord/SupportDetails";
 import AdminSupportPage from "../pages/admin/AdminSupport";
 import AdminSupportDetailPage from "../pages/admin/AdminSupportdetails";
-import BlogPage from "../pages/public/common/Blog";
-import BlogDetails from "../pages/public/common/BlogDetails";
+
 import AdminBlogs from "../pages/admin/blog/AdminBlog";
 import CreateBlog from "../pages/admin/blog/CreateBlog";
 import ListingsPage from "../pages/public/common/Listing";
@@ -52,6 +52,9 @@ import ResetPasswordPage from "../pages/public/common/ResetPassword";
 import AdminContactMessagesPage from "../pages/admin/AdminContact";
 import AdminContactMessageDetailPage from "../pages/admin/AdminContactDetails";
 import LandlordProfilePage from "../pages/landlord/LandlordProfile";
+import AdminBlogsPage from "../pages/admin/blog/AdminBlog";
+import AdminBlogEditorPage from "../pages/admin/blog/CreateBlog";
+import AdminNewsletterSubscribersPage from "../pages/admin/AdminSubscribersPage";
 
 
 
@@ -68,8 +71,8 @@ const AppRoutes = () => {
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       
 
-        <Route path="/articles" element={<BlogPage/>}/>
-        <Route path="/articles/:id" element={<BlogDetails/>}/>
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:slug" element={<BlogDetailPage />} />
         <Route path="/about" element={<AboutUs/>}/>
         <Route path="/faqs" element={<FAQ/>}/>
         <Route path="/support" element={<Contact/>}/>
@@ -118,7 +121,10 @@ const AppRoutes = () => {
             <Route path="/admin/services/applications/:id" element={<AdminServiceApplicationDetailPage />} />
             <Route path="/admin/contact" element={<AdminContactMessagesPage />} />
             <Route path="/admin/contact/:id" element={<AdminContactMessageDetailPage />} />
-          
+            <Route path="/admin/blog" element={<AdminBlogsPage />} />
+            <Route path="/admin/blog/new" element={<AdminBlogEditorPage />} />
+            <Route path="/admin/blog/:id" element={<AdminBlogEditorPage />} />
+            <Route path="/admin/blog/subscribers" element={<AdminNewsletterSubscribersPage />} />
           </Route>
         </Route>
       </Route>

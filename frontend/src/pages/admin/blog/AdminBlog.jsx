@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
-import { getAdminBlogs, deleteBlog, updateBlogStatus } from "../../../services/blog.service"
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { deleteBlog, getAdminBlogs, updateBlogStatus } from "../../../services/blog.service";
 import { 
-  FiFileText, 
+  FiPlus, 
   FiEdit2, 
   FiTrash2, 
   FiEye,
@@ -11,164 +11,181 @@ import {
   FiXCircle,
   FiSearch,
   FiFilter,
-  FiPlus,
   FiRefreshCw,
   FiCalendar,
   FiUser,
   FiTag,
-  FiMoreVertical,
   FiArchive,
   FiCopy,
-  FiStar
-} from "react-icons/fi"
-import { FaBlog, FaWordpress, FaMedium } from "react-icons/fa"
-import toast from "react-hot-toast"
+  FiStar,
+  FiTrendingUp
+} from "react-icons/fi";
+import { FaBlog, FaWordpress, FaMedium } from "react-icons/fa";
+import toast from "react-hot-toast";
 
-function AdminBlogs() {
-  const [blogs, setBlogs] = useState([])
-  const [filteredBlogs, setFilteredBlogs] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [categoryFilter, setCategoryFilter] = useState("all")
-  const [selectedBlog, setSelectedBlog] = useState(null)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
+const statusClasses = {
+  draft: "bg-yellow-100 text-yellow-600",
+  published: "bg-[#02BB31]/10 text-[#02BB31]",
+  archived: "bg-gray-100 text-gray-600"
+};
+
+const statusIcons = {
+  draft: <FiClock className="text-yellow-500" />,
+  published: <FiCheckCircle className="text-[#02BB31]" />,
+  archived: <FiArchive className="text-gray-500" />
+};
+
+const AdminBlogsPage = () => {
+  const [blogs, setBlogs] = useState([]);
+  const [filteredBlogs, setFilteredBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateRange, setDateRange] = useState("all");
+  const [error, setError] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedBlog, setSelectedBlog] = useState(null);
 
   const fetchBlogs = async () => {
     try {
-      setLoading(true)
-      const res = await getAdminBlogs()
-      setBlogs(res.data || [])
-    } catch (error) {
+      setLoading(true);
+      setError("");
+      const data = await getAdminBlogs();
+      setBlogs(data.blogs || []);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load blogs");
       toast.error("Failed to load blogs", {
         style: { background: "#013E43", color: "#fff" }
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchBlogs()
-  }, [])
+    fetchBlogs();
+  }, []);
 
   useEffect(() => {
-    filterBlogs()
-  }, [blogs, searchTerm, statusFilter, categoryFilter])
+    filterBlogs();
+  }, [blogs, searchTerm, statusFilter, dateRange]);
 
   const filterBlogs = () => {
-    let filtered = [...blogs]
+    let filtered = [...blogs];
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(b => 
-        b.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        b.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        b.author?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      filtered = filtered.filter(blog => 
+        blog.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        blog.excerpt?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        blog.author?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
     // Status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter(b => b.status === statusFilter)
+      filtered = filtered.filter(blog => blog.status === statusFilter);
     }
 
-    // Category filter
-    if (categoryFilter !== "all") {
-      filtered = filtered.filter(b => b.category === categoryFilter)
+    // Date range filter
+    if (dateRange !== "all") {
+      const now = new Date();
+      const filterDate = new Date();
+      
+      switch(dateRange) {
+        case "today":
+          filterDate.setHours(0, 0, 0, 0);
+          filtered = filtered.filter(blog => new Date(blog.createdAt) >= filterDate);
+          break;
+        case "week":
+          filterDate.setDate(filterDate.getDate() - 7);
+          filtered = filtered.filter(blog => new Date(blog.createdAt) >= filterDate);
+          break;
+        case "month":
+          filterDate.setMonth(filterDate.getMonth() - 1);
+          filtered = filtered.filter(blog => new Date(blog.createdAt) >= filterDate);
+          break;
+      }
     }
 
-    setFilteredBlogs(filtered)
-  }
-
-  const handleDelete = async () => {
-    try {
-      await deleteBlog(selectedBlog._id)
-      toast.success("Blog deleted successfully", {
-        style: { background: "#02BB31", color: "#fff" }
-      })
-      setShowDeleteModal(false)
-      setSelectedBlog(null)
-      fetchBlogs()
-    } catch (error) {
-      toast.error("Failed to delete blog", {
-        style: { background: "#013E43", color: "#fff" }
-      })
-    }
-  }
+    setFilteredBlogs(filtered);
+  };
 
   const handleStatusChange = async (id, status) => {
     try {
-      await updateBlogStatus(id, status)
-      toast.success(`Blog ${status} successfully`, {
+      await updateBlogStatus(id, status);
+      toast.success(`Blog marked as ${status}`, {
         style: { background: "#02BB31", color: "#fff" }
-      })
-      fetchBlogs()
-    } catch (error) {
+      });
+      fetchBlogs();
+    } catch (err) {
       toast.error("Failed to update status", {
         style: { background: "#013E43", color: "#fff" }
-      })
+      });
     }
-  }
+  };
 
-  const getStatusBadge = (status) => {
-    switch(status) {
-      case "published":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#02BB31]/10 text-[#02BB31]">
-            <FiCheckCircle className="mr-1" />
-            Published
-          </span>
-        )
-      case "draft":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600">
-            <FiClock className="mr-1" />
-            Draft
-          </span>
-        )
-      case "archived":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-            <FiArchive className="mr-1" />
-            Archived
-          </span>
-        )
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-            {status}
-          </span>
-        )
+  const handleDelete = async () => {
+    try {
+      setDeletingId(selectedBlog._id);
+      await deleteBlog(selectedBlog._id);
+      toast.success("Blog deleted successfully", {
+        style: { background: "#02BB31", color: "#fff" }
+      });
+      setShowDeleteModal(false);
+      setSelectedBlog(null);
+      fetchBlogs();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete blog", {
+        style: { background: "#013E43", color: "#fff" }
+      });
+    } finally {
+      setDeletingId("");
     }
-  }
+  };
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
-    })
-  }
+    });
+  };
 
   const stats = {
     total: blogs.length,
     published: blogs.filter(b => b.status === "published").length,
     draft: blogs.filter(b => b.status === "draft").length,
     archived: blogs.filter(b => b.status === "archived").length
-  }
-
-  const categories = [...new Set(blogs.map(b => b.category).filter(Boolean))]
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A8D8C1] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading blogs...</p>
+          <p className="text-[#065A57]">Loading blog posts...</p>
         </div>
       </div>
-    )
+    );
+  }
+
+  if (error && blogs.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg p-8 text-center border border-[#A8D8C1]">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <FiAlertCircle className="text-3xl text-red-500" />
+        </div>
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={fetchBlogs}
+          className="px-4 py-2 bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -177,10 +194,12 @@ function AdminBlogs() {
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
-            
+            <div className="p-3 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl">
+              <FaBlog className="text-white text-xl" />
+            </div>
             <div>
               <h1 className="text-xl font-bold text-[#013E43]">Blog Management</h1>
-              <p className="text-sm text-[#065A57]">Create and manage blog posts</p>
+              <p className="text-sm text-[#065A57]">Create, publish, and manage blog posts</p>
             </div>
           </div>
           
@@ -193,11 +212,11 @@ function AdminBlogs() {
               <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
             </button>
             <Link
-              to="/admin/blog/create"
-              className="px-4 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center"
+              to="/admin/blog/new"
+              className="px-4 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-light hover:shadow-lg transition-all flex items-center"
             >
               <FiPlus className="mr-2" />
-              Create Blog
+              New Blog Post
             </Link>
           </div>
         </div>
@@ -206,14 +225,14 @@ function AdminBlogs() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl shadow-lg p-4 ">
-          <p className="text-sm text-[#065A57]">Total Blogs</p>
+          <p className="text-sm text-[#065A57]">Total Posts</p>
           <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
+        <div className="bg-white rounded-xl shadow-lg p-4">
           <p className="text-sm text-[#065A57]">Published</p>
           <p className="text-2xl font-bold text-[#02BB31]">{stats.published}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
+        <div className="bg-white rounded-xl shadow-lg p-4">
           <p className="text-sm text-[#065A57]">Drafts</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.draft}</p>
         </div>
@@ -224,14 +243,14 @@ function AdminBlogs() {
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="bg-white rounded-2xl shadow-lg p-4 border border-[#A8D8C1]">
-        <div className="flex flex-col md:flex-row gap-4">
+      <div className="bg-white rounded-2xl shadow-lg p-4 ">
+        <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#065A57]" />
             <input
               type="text"
-              placeholder="Search by title, content, or author..."
+              placeholder="Search by title, excerpt, or author..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] focus:border-transparent"
@@ -239,8 +258,7 @@ function AdminBlogs() {
           </div>
 
           {/* Filters */}
-          <div className="flex items-center space-x-2">
-            <FiFilter className="text-[#065A57]" />
+          <div className="flex flex-wrap gap-3">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -252,18 +270,16 @@ function AdminBlogs() {
               <option value="archived">Archived</option>
             </select>
 
-            {categories.length > 0 && (
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
-              >
-                <option value="all">All Categories</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            )}
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              className="px-3 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+            >
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">Last 7 Days</option>
+              <option value="month">Last 30 Days</option>
+            </select>
           </div>
         </div>
 
@@ -281,131 +297,121 @@ function AdminBlogs() {
           </div>
           <h3 className="text-lg font-semibold text-[#013E43] mb-2">No blog posts found</h3>
           <p className="text-sm text-[#065A57] mb-4">
-            {searchTerm || statusFilter !== "all" || categoryFilter !== "all"
+            {searchTerm || statusFilter !== "all" || dateRange !== "all"
               ? "Try adjusting your filters"
               : "You haven't created any blog posts yet"}
           </p>
           <Link
-            to="/admin/blog/create"
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+            to="/admin/blog/new"
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-light hover:shadow-lg transition-all"
           >
             <FiPlus className="mr-2" />
             Create Your First Blog
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4">
           {filteredBlogs.map((blog) => (
             <div
               key={blog._id}
-              className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1"
+              className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden hover:shadow-xl transition-all"
             >
-              {/* Blog Image */}
-              {blog.coverImage && (
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={blog.coverImage}
-                    alt={blog.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-3 right-3">
-                    {getStatusBadge(blog.status)}
-                  </div>
-                </div>
-              )}
-
-              {/* Content */}
               <div className="p-5">
-                {/* Title */}
-                <h3 className="text-xl font-bold text-[#013E43] mb-2 line-clamp-2">
-                  {blog.title}
-                </h3>
-
-                {/* Meta Info */}
-                <div className="flex items-center space-x-3 mb-3 text-sm text-[#065A57]">
-                  <span className="flex items-center">
-                    <FiUser className="mr-1 text-[#02BB31]" />
-                    {blog.author?.name || 'Admin'}
-                  </span>
-                  <span className="flex items-center">
-                    <FiCalendar className="mr-1 text-[#02BB31]" />
-                    {formatDate(blog.createdAt)}
-                  </span>
-                </div>
-
-                {/* Category */}
-                {blog.category && (
-                  <div className="mb-3">
-                    <span className="inline-flex items-center px-2 py-1 bg-[#F0F7F4] text-[#065A57] text-xs rounded-full">
-                      <FiTag className="mr-1" />
-                      {blog.category}
-                    </span>
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                      <h2 className="text-lg font-semibold text-[#013E43]">
+                        {blog.title}
+                      </h2>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClasses[blog.status]}`}>
+                        {statusIcons[blog.status]}
+                        <span className="ml-1 capitalize">{blog.status}</span>
+                      </span>
+                    </div>
+                    
+                    <p className="text-sm text-[#065A57] mb-3 line-clamp-2">
+                      {blog.excerpt}
+                    </p>
+                    
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-[#065A57]">
+                      <span className="flex items-center">
+                        <FiUser className="mr-1 text-[#02BB31]" />
+                        {blog.author?.name || 'Admin'}
+                      </span>
+                      <span className="flex items-center">
+                        <FiCalendar className="mr-1 text-[#02BB31]" />
+                        {formatDate(blog.createdAt)}
+                      </span>
+                      {blog.category && (
+                        <span className="flex items-center">
+                          <FiTag className="mr-1 text-[#02BB31]" />
+                          {blog.category}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                )}
 
-                {/* Excerpt */}
-                <p className="text-[#065A57] text-sm mb-4 line-clamp-3">
-                  {blog.excerpt || blog.content?.replace(/<[^>]*>/g, '').slice(0, 150)}...
-                </p>
-
-                {/* Stats */}
-                <div className="flex items-center space-x-4 mb-4 text-xs text-[#065A57]">
-                  <span className="flex items-center">
-                    <FiEye className="mr-1 text-[#02BB31]" />
-                    {blog.views || 0} views
-                  </span>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center justify-between pt-3 border-t border-[#A8D8C1]">
-                  <Link
-                    to={`/admin/blog/edit/${blog._id}`}
-                    className="text-sm text-[#02BB31] hover:text-[#0D915C] flex items-center"
-                  >
-                    <FiEdit2 className="mr-1" />
-                    Edit
-                  </Link>
-
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {blog.status === "draft" && (
                       <button
                         onClick={() => handleStatusChange(blog._id, "published")}
-                        className="p-2 text-[#02BB31] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                        title="Publish"
+                        className="px-3 py-2 text-sm bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors flex items-center"
                       >
-                        <FiCheckCircle />
+                        <FiCheckCircle className="mr-1" />
+                        Publish
                       </button>
                     )}
                     {blog.status === "published" && (
                       <button
                         onClick={() => handleStatusChange(blog._id, "archived")}
-                        className="p-2 text-gray-500 hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                        title="Archive"
+                        className="px-3 py-2 text-sm bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center"
                       >
-                        <FiArchive />
+                        <FiArchive className="mr-1" />
+                        Archive
                       </button>
                     )}
                     {blog.status === "archived" && (
                       <button
                         onClick={() => handleStatusChange(blog._id, "draft")}
-                        className="p-2 text-yellow-500 hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                        title="Move to Draft"
+                        className="px-3 py-2 text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center"
                       >
-                        <FiClock />
+                        <FiClock className="mr-1" />
+                        Move to Draft
                       </button>
                     )}
+                    <Link
+                      to={`/admin/blog/${blog._id}`}
+                      className="px-3 py-2 text-sm border border-[#A8D8C1] text-[#065A57] rounded-lg hover:bg-[#F0F7F4] transition-colors flex items-center"
+                    >
+                      <FiEdit2 className="mr-1" />
+                      Edit
+                    </Link>
                     <button
                       onClick={() => {
-                        setSelectedBlog(blog)
-                        setShowDeleteModal(true)
+                        setSelectedBlog(blog);
+                        setShowDeleteModal(true);
                       }}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete"
+                      className="px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center"
                     >
-                      <FiTrash2 />
+                      <FiTrash2 className="mr-1" />
+                      Delete
                     </button>
                   </div>
                 </div>
+
+                {/* Preview Link */}
+                {blog.status === "published" && (
+                  <div className="mt-4 pt-3 border-t border-[#A8D8C1]">
+                    <Link
+                      to={`/blog/${blog.slug}`}
+                      target="_blank"
+                      className="text-sm text-[#02BB31] hover:text-[#0D915C] flex items-center"
+                    >
+                      <FiEye className="mr-1" />
+                      View Live Post
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -429,8 +435,8 @@ function AdminBlogs() {
             <div className="flex space-x-3">
               <button
                 onClick={() => {
-                  setShowDeleteModal(false)
-                  setSelectedBlog(null)
+                  setShowDeleteModal(false);
+                  setSelectedBlog(null);
                 }}
                 className="flex-1 px-4 py-2 border border-[#A8D8C1] text-[#065A57] rounded-lg hover:bg-[#F0F7F4] transition-colors"
               >
@@ -438,16 +444,17 @@ function AdminBlogs() {
               </button>
               <button
                 onClick={handleDelete}
-                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                disabled={deletingId === selectedBlog._id}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
               >
-                Delete
+                {deletingId === selectedBlog._id ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default AdminBlogs
+export default AdminBlogsPage;

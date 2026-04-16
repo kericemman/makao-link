@@ -37,6 +37,7 @@ const Footer = () => {
   const tenantLinks = [
     { name: "Find Homes", path: "/properties" },
     { name: "FAQs", path: "/faqs" },
+    { name: "Articles", path: "/blog"}
   ];
 
   const legalLinks = [

@@ -1,195 +1,227 @@
-import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
-import { createBlog } from "../../../services/blog.service"
-import BlogEditor from "../../../components/editor/RichTextEditor"
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import {
+  createBlog,
+  getAdminBlogById,
+  updateBlog
+} from "../../../services/blog.service";
 import { 
-  FiFileText, 
-  FiType, 
+  FiBold, 
+  FiItalic, 
+  FiList, 
   FiAlignLeft, 
-  FiImage,
-  FiTag,
-  FiEye,
-  FiSave,
-  FiX,
+  FiAlignCenter, 
+  FiAlignRight,
+  FiAlignJustify,
+  FiType,
+  FiCode,
+  FiMinus,
   FiClock,
   FiGlobe,
+  FiTag,
+  FiChevronDown,
+  FiEye,
+  FiSave,
   FiArrowLeft,
-  FiCheckCircle,
-  FiAlertCircle,
-  FiUpload,
-  FiTrash2,
-  FiCalendar,
-  FiUser
-} from "react-icons/fi"
-import { FaBlog, FaWordpress } from "react-icons/fa"
-import toast from "react-hot-toast"
+  FiImage,
+  FiLink,
+  FiRotateCcw,
+  FiRotateCw
+} from "react-icons/fi";
+import { FaHeading, FaQuoteRight, FaListUl, FaListOl } from "react-icons/fa";
+import { MdCode } from "react-icons/md";
+import toast from "react-hot-toast";
 
-function CreateBlog() {
-  const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
-  const [previewMode, setPreviewMode] = useState(false)
-  const [coverImageFile, setCoverImageFile] = useState(null)
-  const [coverImagePreview, setCoverImagePreview] = useState("")
-  const [publishDate, setPublishDate] = useState("")
+const AdminBlogEditorPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const isEdit = Boolean(id);
 
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     title: "",
     excerpt: "",
     content: "",
     status: "draft",
     category: "",
     tags: "",
-    coverImage: "",
     metaTitle: "",
-    metaDescription: "",
-    slug: "",
-    publishedAt: null
-  })
+    metaDescription: ""
+  });
+  const [coverImage, setCoverImage] = useState(null);
+  const [existingCover, setExistingCover] = useState("");
+  const [loading, setLoading] = useState(isEdit);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [previewMode, setPreviewMode] = useState(false);
 
-  const [errors, setErrors] = useState({})
+  const editor = useEditor({
+    extensions: [StarterKit.configure({
+      heading: { levels: [1, 2, 3] }
+    })],
+    content: formData.content || "",
+    onUpdate: ({ editor }) => {
+      setFormData(prev => ({ ...prev, content: editor.getHTML() }));
+    }
+  });
+
+  const preview = useMemo(() => {
+    if (coverImage) return URL.createObjectURL(coverImage);
+    return existingCover;
+  }, [coverImage, existingCover]);
+
+  const fetchBlog = async () => {
+    try {
+      setLoading(true);
+      const data = await getAdminBlogById(id);
+      const blog = data.blog;
+
+      setFormData({
+        title: blog?.title || "",
+        excerpt: blog?.excerpt || "",
+        content: blog?.content || "",
+        status: blog?.status || "draft",
+        category: blog?.category || "",
+        tags: blog?.tags?.join(", ") || "",
+        metaTitle: blog?.metaTitle || "",
+        metaDescription: blog?.metaDescription || ""
+      });
+      setExistingCover(blog?.coverImage || "");
+      
+      if (editor && blog?.content) {
+        editor.commands.setContent(blog.content);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load blog");
+      toast.error("Failed to load blog", {
+        style: { background: "#013E43", color: "#fff" }
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isEdit) {
+      fetchBlog();
+    }
+  }, [id]);
+
+  useEffect(() => {
+    return () => {
+      if (preview && coverImage) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setForm({
-      ...form,
-      [name]: value
-    })
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" })
-    }
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-    // Auto-generate slug from title
-    if (name === "title") {
-      const generatedSlug = value
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-      
-      setForm(prev => ({
-        ...prev,
-        title: value,
-        slug: generatedSlug
-      }))
-    }
-  }
-
-  const handleCoverImageChange = (e) => {
-    const file = e.target.files[0]
+  const handleCover = (e) => {
+    const file = e.target.files?.[0] || null;
     if (file) {
-      // Validate file type
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Image must be less than 2MB", {
+          style: { background: "#013E43", color: "#fff" }
+        });
+        return;
+      }
       if (!file.type.startsWith("image/")) {
         toast.error("Please upload an image file", {
           style: { background: "#013E43", color: "#fff" }
-        })
-        return
+        });
+        return;
       }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image must be less than 5MB", {
-          style: { background: "#013E43", color: "#fff" }
-        })
-        return
-      }
-
-      setCoverImageFile(file)
-      const previewUrl = URL.createObjectURL(file)
-      setCoverImagePreview(previewUrl)
-      
-      // Clear any URL input
-      setForm(prev => ({ ...prev, coverImage: "" }))
+      setCoverImage(file);
     }
-  }
-
-  const removeCoverImage = () => {
-    setCoverImageFile(null)
-    setCoverImagePreview("")
-    if (coverImagePreview) {
-      URL.revokeObjectURL(coverImagePreview)
-    }
-  }
-
-  const validateForm = () => {
-    const newErrors = {}
-
-    if (!form.title.trim()) newErrors.title = "Title is required"
-    if (!form.content.trim()) newErrors.content = "Content is required"
-    if (!form.slug.trim()) newErrors.slug = "Slug is required"
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!validateForm()) {
-      toast.error("Please fill in all required fields", {
+    if (!formData.title.trim()) {
+      toast.error("Please enter a title", {
         style: { background: "#013E43", color: "#fff" }
-      })
-      return
+      });
+      return;
+    }
+
+    if (!formData.content.trim()) {
+      toast.error("Please enter content", {
+        style: { background: "#013E43", color: "#fff" }
+      });
+      return;
     }
 
     try {
-      setLoading(true)
+      setSaving(true);
+      setError("");
 
-      const formData = new FormData()
+      const payload = new FormData();
+      payload.append("title", formData.title);
+      payload.append("excerpt", formData.excerpt);
+      payload.append("content", formData.content);
+      payload.append("status", formData.status);
+      payload.append("category", formData.category);
+      payload.append("tags", formData.tags);
+      payload.append("metaTitle", formData.metaTitle);
+      payload.append("metaDescription", formData.metaDescription);
 
-      // Parse tags from comma-separated string
-      const tagsArray = form.tags.split(',').map(tag => tag.trim()).filter(Boolean)
-      
-      // Append all form fields
-      Object.keys(form).forEach(key => {
-        if (key === 'tags') {
-          formData.append('tags', JSON.stringify(tagsArray))
-        } else if (key === 'publishedAt') {
-          // Handle published date
-          if (form.status === 'published') {
-            formData.append('publishedAt', publishDate || new Date().toISOString())
-          }
-        } else {
-          formData.append(key, form[key])
-        }
-      })
-
-      // Append cover image if uploaded
-      if (coverImageFile) {
-        formData.append("coverImage", coverImageFile)
+      if (coverImage) {
+        payload.append("coverImage", coverImage);
       }
 
-      await createBlog(formData)
-
-      toast.success("Blog created successfully!", {
-        style: {
-          background: "#02BB31",
-          color: "#fff",
-        },
-        duration: 3000
-      })
-
-      // Clean up object URLs
-      if (coverImagePreview) {
-        URL.revokeObjectURL(coverImagePreview)
+      if (isEdit) {
+        await updateBlog(id, payload);
+        toast.success("Blog updated successfully", {
+          style: { background: "#02BB31", color: "#fff" }
+        });
+      } else {
+        await createBlog(payload);
+        toast.success("Blog created successfully", {
+          style: { background: "#02BB31", color: "#fff" }
+        });
       }
 
-      // Redirect to blogs list
-      setTimeout(() => {
-        navigate("/admin/blogs")
-      }, 2000)
-
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to create blog",
-        {
-          style: {
-            background: "#013E43",
-            color: "#fff",
-          }
-        }
-      )
+      navigate("/admin/blog");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save blog");
+      toast.error("Failed to save blog", {
+        style: { background: "#013E43", color: "#fff" }
+      });
     } finally {
-      setLoading(false)
+      setSaving(false);
     }
+  };
+
+  const ToolbarButton = ({ onClick, isActive, children, title }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`p-2 rounded-lg transition-all ${
+        isActive 
+          ? 'bg-[#02BB31] text-white shadow-md' 
+          : 'text-[#065A57] hover:bg-[#F0F7F4] hover:text-[#013E43]'
+      }`}
+    >
+      {children}
+    </button>
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A8D8C1] border-t-[#02BB31] mx-auto mb-4"></div>
+          <p className="text-[#065A57]">Loading blog editor...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -198,18 +230,20 @@ function CreateBlog() {
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <Link
-              to="/admin/blogs"
+            <button
+              onClick={() => navigate("/admin/blog")}
               className="p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
             >
               <FiArrowLeft className="text-xl text-[#065A57]" />
-            </Link>
-            <div className="p-3 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl">
-              <FaBlog className="text-white text-2xl" />
-            </div>
+            </button>
+            
             <div>
-              <h1 className="text-2xl font-bold text-[#013E43]">Create Blog Post</h1>
-              <p className="text-sm text-[#065A57]">Write and publish a new blog article</p>
+              <h1 className="text-xl font-bold text-[#013E43]">
+                {isEdit ? "Edit Blog Post" : "Create Blog Post"}
+              </h1>
+              <p className="text-sm text-[#065A57]">
+                {isEdit ? "Edit your existing blog post" : "Write and publish a new blog article"}
+              </p>
             </div>
           </div>
           
@@ -226,8 +260,7 @@ function CreateBlog() {
         </div>
       </div>
 
-      {/* Main Form */}
-      <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -237,45 +270,14 @@ function CreateBlog() {
                 <FiType className="mr-2 text-[#02BB31]" />
                 Article Title
               </h2>
-              <div className="space-y-4">
-                <div>
-                  <input
-                    name="title"
-                    value={form.title}
-                    onChange={handleChange}
-                    placeholder="Enter blog title"
-                    className={`w-full px-4 py-3 text-xl border-2 rounded-lg outline-none transition-colors ${
-                      errors.title
-                        ? 'border-red-400 focus:border-red-500 bg-red-50'
-                        : 'border-[#A8D8C1] focus:border-[#02BB31]'
-                    }`}
-                  />
-                  {errors.title && (
-                    <p className="text-xs text-red-500 mt-1">{errors.title}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">
-                    Slug <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    name="slug"
-                    value={form.slug}
-                    onChange={handleChange}
-                    placeholder="url-friendly-version-of-title"
-                    className={`w-full px-4 py-2 border-2 rounded-lg outline-none transition-colors ${
-                      errors.slug
-                        ? 'border-red-400 focus:border-red-500 bg-red-50'
-                        : 'border-[#A8D8C1] focus:border-[#02BB31]'
-                    }`}
-                  />
-                  {errors.slug && (
-                    <p className="text-xs text-red-500 mt-1">{errors.slug}</p>
-                  )}
-                  <p className="text-xs text-[#065A57] mt-1">URL-friendly version of the title (auto-generated)</p>
-                </div>
-              </div>
+              <input
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                placeholder="Enter blog title"
+                className="w-full px-4 py-3 text-xl border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                required
+              />
             </div>
 
             {/* Excerpt Card */}
@@ -286,7 +288,7 @@ function CreateBlog() {
               </h2>
               <textarea
                 name="excerpt"
-                value={form.excerpt}
+                value={formData.excerpt}
                 onChange={handleChange}
                 rows="3"
                 placeholder="Short description of the blog post (optional)"
@@ -297,30 +299,159 @@ function CreateBlog() {
               </p>
             </div>
 
-            {/* Content Card */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-              <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-                <FiFileText className="mr-2 text-[#02BB31]" />
-                Content
-              </h2>
-              <BlogEditor
-                value={form.content}
-                onChange={(content) =>
-                  setForm({ ...form, content })
-                }
-              />
-              {errors.content && (
-                <p className="text-xs text-red-500 mt-2">{errors.content}</p>
-              )}
+            {/* Content Card with TipTap Editor */}
+            <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden">
+              <div className="bg-[#F0F7F4] p-3 border-b border-[#A8D8C1]">
+                <div className="flex flex-wrap items-center gap-1">
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().toggleBold().run()}
+                    isActive={editor?.isActive('bold')}
+                    title="Bold"
+                  >
+                    <FiBold className="text-lg" />
+                  </ToolbarButton>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().toggleItalic().run()}
+                    isActive={editor?.isActive('italic')}
+                    title="Italic"
+                  >
+                    <FiItalic className="text-lg" />
+                  </ToolbarButton>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().toggleStrike().run()}
+                    isActive={editor?.isActive('strike')}
+                    title="Strikethrough"
+                  >
+                    <span className="text-lg line-through">S</span>
+                  </ToolbarButton>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().toggleCode().run()}
+                    isActive={editor?.isActive('code')}
+                    title="Code"
+                  >
+                    <FiCode className="text-lg" />
+                  </ToolbarButton>
+
+                  <div className="w-px h-6 bg-[#A8D8C1] mx-1"></div>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
+                    isActive={editor?.isActive('heading', { level: 1 })}
+                    title="Heading 1"
+                  >
+                    <FaHeading className="text-lg" />
+                    <span className="text-xs ml-0.5">1</span>
+                  </ToolbarButton>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+                    isActive={editor?.isActive('heading', { level: 2 })}
+                    title="Heading 2"
+                  >
+                    <FaHeading className="text-lg" />
+                    <span className="text-xs ml-0.5">2</span>
+                  </ToolbarButton>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
+                    isActive={editor?.isActive('heading', { level: 3 })}
+                    title="Heading 3"
+                  >
+                    <FaHeading className="text-lg" />
+                    <span className="text-xs ml-0.5">3</span>
+                  </ToolbarButton>
+
+                  <div className="w-px h-6 bg-[#A8D8C1] mx-1"></div>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().toggleBulletList().run()}
+                    isActive={editor?.isActive('bulletList')}
+                    title="Bullet List"
+                  >
+                    <FaListUl className="text-lg" />
+                  </ToolbarButton>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+                    isActive={editor?.isActive('orderedList')}
+                    title="Numbered List"
+                  >
+                    <FaListOl className="text-lg" />
+                  </ToolbarButton>
+
+                  <div className="w-px h-6 bg-[#A8D8C1] mx-1"></div>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+                    isActive={editor?.isActive('blockquote')}
+                    title="Quote"
+                  >
+                    <FaQuoteRight className="text-lg" />
+                  </ToolbarButton>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
+                    isActive={editor?.isActive('codeBlock')}
+                    title="Code Block"
+                  >
+                    <MdCode className="text-lg" />
+                  </ToolbarButton>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().setHorizontalRule().run()}
+                    title="Horizontal Rule"
+                  >
+                    <FiMinus className="text-lg" />
+                  </ToolbarButton>
+
+                  <div className="w-px h-6 bg-[#A8D8C1] mx-1"></div>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().undo().run()}
+                    title="Undo"
+                  >
+                    <FiRotateCcw className="text-lg" />
+                  </ToolbarButton>
+
+                  <ToolbarButton
+                    onClick={() => editor?.chain().focus().redo().run()}
+                    title="Redo"
+                  >
+                    <FiRotateCw className="text-lg" />
+                  </ToolbarButton>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <EditorContent editor={editor} className="min-h-[400px] prose prose-lg max-w-none focus:outline-none" />
+              </div>
+
+              <div className="bg-[#F0F7F4] px-4 py-2 border-t border-[#A8D8C1] flex justify-between text-sm">
+                <div className="flex items-center space-x-4">
+                  <span className="text-[#065A57]">
+                    Words: <span className="font-medium text-[#013E43]">
+                      {formData.content?.replace(/<[^>]*>/g, '').split(/\s+/).length || 0}
+                    </span>
+                  </span>
+                  <span className="text-[#065A57]">
+                    Characters: <span className="font-medium text-[#013E43]">
+                      {formData.content?.replace(/<[^>]*>/g, '').length || 0}
+                    </span>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Right Column - Settings */}
           <div className="space-y-6">
-            {/* Publish Settings Card */}
+            {/* Publish Settings */}
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
               <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-                <FiGlobe className="mr-2 text-[#02BB31]" />
+                <FiSave className="mr-2 text-[#02BB31]" />
                 Publish Settings
               </h2>
               
@@ -332,12 +463,9 @@ function CreateBlog() {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
-                      onClick={() => {
-                        setForm({ ...form, status: "draft", publishedAt: null })
-                        setPublishDate("")
-                      }}
+                      onClick={() => setFormData(prev => ({ ...prev, status: "draft" }))}
                       className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center space-x-2 ${
-                        form.status === "draft"
+                        formData.status === "draft"
                           ? 'border-[#02BB31] bg-[#02BB31]/10 text-[#02BB31]'
                           : 'border-[#A8D8C1] text-[#065A57] hover:border-[#02BB31]'
                       }`}
@@ -347,14 +475,9 @@ function CreateBlog() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        setForm({ ...form, status: "published" })
-                        if (!publishDate) {
-                          setPublishDate(new Date().toISOString().split('T')[0])
-                        }
-                      }}
+                      onClick={() => setFormData(prev => ({ ...prev, status: "published" }))}
                       className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center space-x-2 ${
-                        form.status === "published"
+                        formData.status === "published"
                           ? 'border-[#02BB31] bg-[#02BB31]/10 text-[#02BB31]'
                           : 'border-[#A8D8C1] text-[#065A57] hover:border-[#02BB31]'
                       }`}
@@ -364,30 +487,40 @@ function CreateBlog() {
                     </button>
                   </div>
                 </div>
-
-                {form.status === "published" && (
-                  <div>
-                    <label className="block text-sm font-medium text-[#013E43] mb-1">
-                      Publish Date
-                    </label>
-                    <div className="relative">
-                      <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#02BB31]" />
-                      <input
-                        type="date"
-                        value={publishDate}
-                        onChange={(e) => setPublishDate(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
-                      />
-                    </div>
-                    <p className="text-xs text-[#065A57] mt-1">
-                      Set a future date to schedule publication
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Category & Tags Card */}
+            {/* Cover Image */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
+              <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
+                <FiImage className="mr-2 text-[#02BB31]" />
+                Cover Image
+              </h2>
+              
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCover}
+                  className="w-full px-4 py-2 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                />
+                <p className="text-xs text-[#065A57] mt-1">
+                  PNG, JPG up to 2MB
+                </p>
+              </div>
+
+              {preview && (
+                <div className="mt-4">
+                  <img
+                    src={preview}
+                    alt="Cover preview"
+                    className="w-full h-32 object-cover rounded-lg border-2 border-[#A8D8C1]"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Category & Tags */}
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
               <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
                 <FiTag className="mr-2 text-[#02BB31]" />
@@ -401,7 +534,7 @@ function CreateBlog() {
                   </label>
                   <select
                     name="category"
-                    value={form.category}
+                    value={formData.category}
                     onChange={handleChange}
                     className="w-full px-4 py-2 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
                   >
@@ -420,7 +553,7 @@ function CreateBlog() {
                   </label>
                   <input
                     name="tags"
-                    value={form.tags}
+                    value={formData.tags}
                     onChange={handleChange}
                     placeholder="property, rental, tips (comma separated)"
                     className="w-full px-4 py-2 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
@@ -432,93 +565,7 @@ function CreateBlog() {
               </div>
             </div>
 
-            {/* Cover Image Card */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-              <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-                <FiImage className="mr-2 text-[#02BB31]" />
-                Cover Image
-              </h2>
-              
-              <div className="space-y-4">
-                {/* Local Image Upload */}
-                <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-2">
-                    Upload from Computer
-                  </label>
-                  <div className={`border-2 border-dashed rounded-xl p-4 text-center transition-colors ${
-                    coverImagePreview ? 'border-[#02BB31] bg-[#02BB31]/5' : 'border-[#A8D8C1] hover:border-[#02BB31]'
-                  }`}>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCoverImageChange}
-                      className="hidden"
-                      id="cover-image-upload"
-                    />
-                    <label
-                      htmlFor="cover-image-upload"
-                      className="cursor-pointer flex flex-col items-center"
-                    >
-                      <FiUpload className="text-2xl text-[#065A57] mb-2" />
-                      <span className="text-sm text-[#065A57]">
-                        Click to upload cover image
-                      </span>
-                      <span className="text-xs text-[#065A57] mt-1">
-                        PNG, JPG, GIF up to 5MB
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Image Preview */}
-                {coverImagePreview && (
-                  <div className="relative">
-                    <img
-                      src={coverImagePreview}
-                      alt="Cover preview"
-                      className="w-full h-32 object-cover rounded-lg border-2 border-[#A8D8C1]"
-                    />
-                    <button
-                      type="button"
-                      onClick={removeCoverImage}
-                      className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                    >
-                      <FiTrash2 size={16} />
-                    </button>
-                  </div>
-                )}
-
-                {/* OR Separator */}
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-[#A8D8C1]"></div>
-                  </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="px-2 bg-white text-[#065A57]">OR</span>
-                  </div>
-                </div>
-
-                {/* Image URL Input */}
-                <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">
-                    Image URL
-                  </label>
-                  <input
-                    name="coverImage"
-                    value={form.coverImage}
-                    onChange={handleChange}
-                    placeholder="https://example.com/image.jpg"
-                    className="w-full px-4 py-2 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
-                    disabled={!!coverImageFile}
-                  />
-                  <p className="text-xs text-[#065A57] mt-1">
-                    Enter a URL or upload from your computer
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* SEO Settings Card */}
+            {/* SEO Settings */}
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
               <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
                 <FiEye className="mr-2 text-[#02BB31]" />
@@ -532,7 +579,7 @@ function CreateBlog() {
                   </label>
                   <input
                     name="metaTitle"
-                    value={form.metaTitle}
+                    value={formData.metaTitle}
                     onChange={handleChange}
                     placeholder="SEO title (optional)"
                     className="w-full px-4 py-2 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
@@ -545,7 +592,7 @@ function CreateBlog() {
                   </label>
                   <textarea
                     name="metaDescription"
-                    value={form.metaDescription}
+                    value={formData.metaDescription}
                     onChange={handleChange}
                     rows="3"
                     placeholder="SEO description (optional)"
@@ -554,46 +601,33 @@ function CreateBlog() {
                 </div>
               </div>
             </div>
-
-            {/* Author Info Card */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-              <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-                <FiUser className="mr-2 text-[#02BB31]" />
-                Author Information
-              </h2>
-              
-              <div className="p-4 bg-[#F0F7F4] rounded-lg">
-                <p className="text-sm text-[#065A57]">
-                  The currently logged-in user will be set as the author automatically.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
 
         {/* Form Actions */}
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
           <div className="flex justify-end space-x-3">
-            <Link
-              to="/admin/blogs"
+            <button
+              type="button"
+              onClick={() => navigate("/admin/blog")}
               className="px-6 py-3 text-[#065A57] border border-[#A8D8C1] rounded-lg hover:bg-[#F0F7F4] transition-colors"
             >
               Cancel
-            </Link>
+            </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="px-8 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              {loading ? (
+              {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
-                  Creating...
+                  Saving...
                 </>
               ) : (
                 <>
                   <FiSave className="mr-2" />
-                  {form.status === "published" ? "Publish Blog" : "Save Draft"}
+                  {isEdit ? "Update Blog" : "Publish Blog"}
                 </>
               )}
             </button>
@@ -611,52 +645,87 @@ function CreateBlog() {
                 onClick={() => setPreviewMode(false)}
                 className="p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
               >
-                <FiX className="text-xl text-[#065A57]" />
+                <FiXCircle className="text-xl text-[#065A57]" />
               </button>
             </div>
             <div className="p-6">
-              {/* Preview Cover Image */}
-              {(coverImagePreview || form.coverImage) && (
+              {preview && (
                 <img
-                  src={coverImagePreview || form.coverImage}
-                  alt={form.title}
+                  src={preview}
+                  alt={formData.title}
                   className="w-full h-64 object-cover rounded-lg mb-6"
                 />
               )}
-              <h1 className="text-3xl font-bold text-[#013E43] mb-4">{form.title || "Blog Title"}</h1>
-              
-              {/* Meta Info */}
-              <div className="flex items-center space-x-4 mb-4 text-sm text-[#065A57]">
-                <span className="flex items-center">
-                  <FiCalendar className="mr-1 text-[#02BB31]" />
-                  {publishDate || new Date().toLocaleDateString()}
-                </span>
-                <span className="flex items-center">
-                  <FiUser className="mr-1 text-[#02BB31]" />
-                  Current User
-                </span>
-                {form.category && (
-                  <span className="px-2 py-1 bg-[#02BB31]/10 text-[#02BB31] rounded-full text-xs">
-                    {form.category}
-                  </span>
-                )}
-              </div>
-
-              {form.excerpt && (
-                <p className="text-lg text-[#065A57] mb-6 italic border-l-4 border-[#02BB31] pl-4">
-                  {form.excerpt}
-                </p>
+              <h1 className="text-3xl font-bold text-[#013E43] mb-4">{formData.title || "Blog Title"}</h1>
+              {formData.excerpt && (
+                <p className="text-lg text-[#065A57] mb-6 italic">{formData.excerpt}</p>
               )}
               <div 
                 className="prose prose-lg max-w-none"
-                dangerouslySetInnerHTML={{ __html: form.content || "<p>No content yet...</p>" }}
+                dangerouslySetInnerHTML={{ __html: formData.content || "<p>No content yet...</p>" }}
               />
             </div>
           </div>
         </div>
       )}
-    </div>
-  )
-}
 
-export default CreateBlog
+      <style jsx global>{`
+        .ProseMirror {
+          outline: none;
+          min-height: 400px;
+        }
+        .ProseMirror p {
+          margin: 0.5em 0;
+          color: #065A57;
+        }
+        .ProseMirror h1 {
+          font-size: 2em;
+          font-weight: bold;
+          margin: 0.5em 0;
+          color: #013E43;
+        }
+        .ProseMirror h2 {
+          font-size: 1.5em;
+          font-weight: bold;
+          margin: 0.5em 0;
+          color: #013E43;
+        }
+        .ProseMirror h3 {
+          font-size: 1.25em;
+          font-weight: bold;
+          margin: 0.5em 0;
+          color: #013E43;
+        }
+        .ProseMirror ul, .ProseMirror ol {
+          padding-left: 1.5em;
+          margin: 0.5em 0;
+          color: #065A57;
+        }
+        .ProseMirror blockquote {
+          border-left: 4px solid #02BB31;
+          padding-left: 1em;
+          margin: 1em 0;
+          color: #065A57;
+          font-style: italic;
+        }
+        .ProseMirror code {
+          background: #F0F7F4;
+          color: #02BB31;
+          padding: 0.2em 0.4em;
+          border-radius: 0.25em;
+          font-family: monospace;
+        }
+        .ProseMirror pre {
+          background: #013E43;
+          color: #F0F7F4;
+          padding: 1em;
+          border-radius: 0.5em;
+          font-family: monospace;
+          overflow-x: auto;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default AdminBlogEditorPage;

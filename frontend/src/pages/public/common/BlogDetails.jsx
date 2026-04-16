@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react"
-import { useParams, Link } from "react-router-dom"
-import { getBlog } from "../../../services/blog.service"
+import { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { getPublishedBlogBySlug } from "../../../services/blog.service";
 import { 
   FiCalendar, 
   FiUser, 
@@ -14,372 +14,318 @@ import {
   FiLink,
   FiArrowLeft,
   FiChevronRight,
-  FiChevronLeft
-} from "react-icons/fi"
-import { FaWhatsapp } from "react-icons/fa"
-import toast from "react-hot-toast"
+  FiChevronLeft,
+  FiMessageSquare,
+  FiTag,
+  FiEye
+} from "react-icons/fi";
+import { FaWhatsapp } from "react-icons/fa";
+import toast from "react-hot-toast";
 
-function BlogDetails() {
+const BlogDetailPage = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  const { slug } = useParams()
-  const [blog, setBlog] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [activeHeading, setActiveHeading] = useState("")
-  const [showShareMenu, setShowShareMenu] = useState(false)
-  const [headings, setHeadings] = useState([])
-  const [scrollProgress, setScrollProgress] = useState(0)
-
-  useEffect(() => {
-    fetchBlog()
-  }, [slug])
-
-  useEffect(() => {
-    if (blog?.content) {
-      extractHeadings()
-    }
-  }, [blog])
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const headingElements = document.querySelectorAll('h1, h2, h3')
-      const scrollPosition = window.scrollY + 100
-
-      for (let i = headingElements.length - 1; i >= 0; i--) {
-        const element = headingElements[i]
-        if (element.offsetTop <= scrollPosition) {
-          setActiveHeading(element.id)
-          break
-        }
-      }
-
-      // Calculate scroll progress
-      const totalScroll = document.documentElement.scrollHeight - window.innerHeight
-      const progress = (window.scrollY / totalScroll) * 100
-      setScrollProgress(Math.min(100, progress))
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [headings])
+  
+  const { slug } = useParams();
+  const [blog, setBlog] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [activeHeading, setActiveHeading] = useState("");
+  const [headings, setHeadings] = useState([]);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   const fetchBlog = async () => {
     try {
-      setLoading(true)
-      const res = await getBlog(slug)
-      setBlog(res.data)
+      setLoading(true);
+      const data = await getPublishedBlogBySlug(slug);
+      setBlog(data.blog);
     } catch (error) {
       toast.error("Failed to load blog post", {
         style: { background: "#013E43", color: "#fff" }
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  useEffect(() => {
+    fetchBlog();
+  }, [slug]);
+
+  useEffect(() => {
+    if (blog?.content) {
+      extractHeadings();
+    }
+  }, [blog]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = (window.scrollY / totalScroll) * 100;
+      setScrollProgress(Math.min(100, progress));
+
+      const headingElements = document.querySelectorAll('h1, h2, h3');
+      const scrollPosition = window.scrollY + 100;
+
+      for (let i = headingElements.length - 1; i >= 0; i--) {
+        const element = headingElements[i];
+        if (element.offsetTop <= scrollPosition) {
+          setActiveHeading(element.id);
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [headings]);
 
   const extractHeadings = () => {
-    const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = blog.content
-    const headingElements = tempDiv.querySelectorAll('h1, h2, h3')
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = blog.content;
+    const headingElements = tempDiv.querySelectorAll('h1, h2, h3');
     
-    const extractedHeadings = []
+    const extractedHeadings = [];
     headingElements.forEach((element, index) => {
-      const text = element.textContent || ''
-      const level = element.tagName.toLowerCase()
-      const id = `heading-${index}-${text.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+      const text = element.textContent || '';
+      const level = element.tagName.toLowerCase();
+      const id = `heading-${index}-${text.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
       
-      extractedHeadings.push({ id, text, level })
-    })
+      extractedHeadings.push({ id, text, level });
+    });
     
-    setHeadings(extractedHeadings)
-  }
+    setHeadings(extractedHeadings);
+  };
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
-    })
-  }
+    });
+  };
 
   const calculateReadingTime = () => {
-    if (!blog?.content) return 1
-    const wordsPerMinute = 200
-    const wordCount = blog.content.replace(/<[^>]*>/g, '').split(/\s+/).length
-    return Math.ceil(wordCount / wordsPerMinute)
-  }
+    if (!blog?.content) return 1;
+    const wordsPerMinute = 200;
+    const wordCount = blog.content.replace(/<[^>]*>/g, '').split(/\s+/).length;
+    return Math.ceil(wordCount / wordsPerMinute);
+  };
 
-  const shareUrl = window.location.href
-  const shareTitle = blog?.title || "Check out this article"
+  const shareUrl = window.location.href;
+  const shareTitle = blog?.title || "Check out this article";
 
   const handleShare = (platform) => {
-    let url = ""
+    let url = "";
     switch(platform) {
       case "facebook":
-        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`
-        break
+        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+        break;
       case "twitter":
-        url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`
-        break
+        url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`;
+        break;
       case "linkedin":
-        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`
-        break
+        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
+        break;
       case "whatsapp":
-        url = `https://wa.me/?text=${encodeURIComponent(shareTitle + ' ' + shareUrl)}`
-        break
+        url = `https://wa.me/?text=${encodeURIComponent(shareTitle + ' ' + shareUrl)}`;
+        break;
       case "copy":
-        navigator.clipboard.writeText(shareUrl)
+        navigator.clipboard.writeText(shareUrl);
         toast.success("Link copied to clipboard!", {
           style: { background: "#02BB31", color: "#fff" }
-        })
-        return
+        });
+        return;
     }
-    if (url) window.open(url, "_blank")
-    setShowShareMenu(false)
-  }
+    if (url) window.open(url, "_blank");
+    setShowShareMenu(false);
+  };
 
   const scrollToHeading = (id) => {
-    const element = document.getElementById(id)
+    const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
+      element.scrollIntoView({ behavior: 'smooth' });
     }
-  }
+  };
 
-  // Process content to add IDs to headings
   const processContent = () => {
-    if (!blog?.content) return ""
+    if (!blog?.content) return "";
     
-    const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = blog.content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = blog.content;
     
     headings.forEach((heading, index) => {
-      const elements = tempDiv.querySelectorAll(`${heading.level}`)
+      const elements = tempDiv.querySelectorAll(`${heading.level}`);
       if (elements[index]) {
-        elements[index].id = heading.id
+        elements[index].id = heading.id;
       }
-    })
+    });
     
-    return tempDiv.innerHTML
-  }
+    return tempDiv.innerHTML;
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#A8D8C1] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57] text-lg">Loading article...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A8D8C1] border-t-[#02BB31] mx-auto mb-4"></div>
+          <p className="text-[#065A57]">Loading article...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!blog) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FiAlertCircle className="text-3xl text-red-500" />
+          </div>
           <h2 className="text-2xl font-bold text-[#013E43] mb-2">Article not found</h2>
           <p className="text-[#065A57] mb-4">The article you're looking for doesn't exist.</p>
           <Link
-            to="/blogs"
-            className="inline-flex items-center px-6 py-3 bg-[#02BB31] text-white rounded-lg font-semibold hover:bg-[#0D915C] transition-colors"
+            to="/blog"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all"
           >
-            <FiArrowLeft className="mr-2" />
-            Back to Blogs
+            <FiArrowLeft />
+            Back to Blog
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
-  const processedContent = processContent()
+  const processedContent = processContent();
 
   return (
     <div className="min-h-screen bg-[#F0F7F4]">
-      {/* Back Button */}
-      <div className="bg-white border-b border-[#A8D8C1] sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      {/* Hero Section with White Background */}
+      <div className="bg-white border-b border-[#A8D8C1]">
+        <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
           <Link
-            to="/blogs"
-            className="inline-flex items-center text-[#065A57] hover:text-[#013E43] transition-colors"
+            to="/blog"
+            className="inline-flex items-center gap-2 text-[#065A57] hover:text-[#013E43] transition-colors mb-6"
           >
-            <FiArrowLeft className="mr-2" />
-            Back to Blogs
+            <FiArrowLeft />
+            Back to Blog
           </Link>
-        </div>
-      </div>
-
-      {/* Hero Section - Image Left, Title Right */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-          {/* Left Column - Cover Image */}
-          <div className="relative">
-            {blog.coverImage?.url ? (
-              <img
-                src={blog.coverImage.url}
-                alt={blog.title}
-                className="w-full h-[300px] lg:h-[400px] object-cover rounded-2xl shadow-xl"
-              />
-            ) : (
-              <div className="w-full h-[300px] lg:h-[400px] bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-2xl shadow-xl flex items-center justify-center">
-                <span className="text-6xl text-white opacity-30">📝</span>
-              </div>
-            )}
-            
-            {/* Category Badge */}
-            {blog.category && (
-              <div className="absolute top-4 left-4">
-                <span className="px-4 py-2 bg-[#02BB31] text-white text-sm font-medium rounded-full">
-                  {blog.category}
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left Column - Title and Excerpt */}
+            <div>
+              {blog.category && (
+                <div className="inline-flex items-center gap-2 bg-[#02BB31]/10 px-3 py-1 rounded-full mb-4">
+                  <FiTag className="text-[#02BB31] text-sm" />
+                  <span className="text-sm font-medium text-[#02BB31]">{blog.category}</span>
+                </div>
+              )}
+              
+              <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-[#013E43] mb-4">
+                {blog.title}
+              </h1>
+              
+              {blog.excerpt && (
+                <p className="text-lg text-[#065A57] mb-6 leading-relaxed">
+                  {blog.excerpt}
+                </p>
+              )}
+              
+              <div className="flex flex-wrap items-center gap-6 text-sm text-[#065A57]">
+                <span className="flex items-center gap-2">
+                  <FiUser className="text-[#02BB31]" />
+                  {blog.author?.name || 'RendaHomes'}
                 </span>
-              </div>
-            )}
-          </div>
-
-          {/* Right Column - Title and Description */}
-          <div className="space-y-4">
-            <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-[#013E43] leading-tight">
-              {blog.title}
-            </h1>
-            
-            {blog.excerpt && (
-              <p className="text-lg text-[#065A57] leading-relaxed">
-                {blog.excerpt}
-              </p>
-            )}
-
-            {/* Meta Info */}
-            <div className="flex flex-wrap items-center gap-4 pt-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-full flex items-center justify-center text-white font-bold">
-                  {blog.author?.name?.charAt(0) || 'M'}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-[#013E43]">
-                    {blog.author?.name || 'MakaoLink'}
-                  </p>
-                  <p className="text-xs text-[#065A57]">Author</p>
-                </div>
-              </div>
-              
-              <div className="h-8 w-px bg-[#A8D8C1]"></div>
-              
-              <div className="flex items-center space-x-4 text-sm text-[#065A57]">
-                <span className="flex items-center">
-                  <FiCalendar className="mr-1 text-[#02BB31]" />
+                <span className="flex items-center gap-2">
+                  <FiCalendar className="text-[#02BB31]" />
                   {formatDate(blog.publishedAt || blog.createdAt)}
                 </span>
-                <span className="flex items-center">
-                  <FiClock className="mr-1 text-[#02BB31]" />
+                <span className="flex items-center gap-2">
+                  <FiClock className="text-[#02BB31]" />
                   {calculateReadingTime()} min read
                 </span>
               </div>
             </div>
 
-            {/* Share Button */}
-            <div className="relative pt-4">
-              <button
-                onClick={() => setShowShareMenu(!showShareMenu)}
-                className="inline-flex items-center px-4 py-2 border border-[#A8D8C1] rounded-lg text-[#065A57] hover:bg-[#F0F7F4] transition-colors"
-              >
-                <FiShare2 className="mr-2" />
-                Share Article
-              </button>
-
-              {/* Share Menu */}
-              {showShareMenu && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowShareMenu(false)}
-                  />
-                  <div className="absolute left-0 mt-2 bg-white rounded-xl shadow-xl border border-[#A8D8C1] p-2 z-50 w-48">
-                    <button
-                      onClick={() => handleShare("facebook")}
-                      className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                    >
-                      <FiFacebook className="text-[#1877F2]" />
-                      <span className="text-sm text-[#013E43]">Facebook</span>
-                    </button>
-                    <button
-                      onClick={() => handleShare("twitter")}
-                      className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                    >
-                      <FiTwitter className="text-[#1DA1F2]" />
-                      <span className="text-sm text-[#013E43]">Twitter</span>
-                    </button>
-                    <button
-                      onClick={() => handleShare("linkedin")}
-                      className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                    >
-                      <FiLinkedin className="text-[#0A66C2]" />
-                      <span className="text-sm text-[#013E43]">LinkedIn</span>
-                    </button>
-                    <button
-                      onClick={() => handleShare("whatsapp")}
-                      className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                    >
-                      <FaWhatsapp className="text-[#25D366]" />
-                      <span className="text-sm text-[#013E43]">WhatsApp</span>
-                    </button>
-                    <div className="border-t border-[#A8D8C1] my-1"></div>
-                    <button
-                      onClick={() => handleShare("copy")}
-                      className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                    >
-                      <FiLink className="text-[#065A57]" />
-                      <span className="text-sm text-[#013E43]">Copy Link</span>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+            {/* Right Column - Cover Image */}
+            {blog.coverImage && (
+              <div className="rounded-2xl overflow-hidden shadow-xl">
+                <img
+                  src={blog.coverImage}
+                  alt={blog.title}
+                  className="w-full h-[280px] md:h-[320px] object-cover hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Main Content with Table of Contents */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      <div className="max-w-9xl mx-auto px-2 sm:px-6 lg:px-8 py-5">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main Content - 70% - Properly formatted */}
+          {/* Main Content */}
           <div className="lg:w-[70%]">
-            <div 
-              className="prose prose-lg max-w-none
-                prose-headings:text-[#013E43] prose-headings:font-bold prose-headings:mt-8 prose-headings:mb-4
-                prose-h1:text-3xl prose-h1:lg:text-4xl
-                prose-h2:text-2xl prose-h2:lg:text-3xl
-                prose-h3:text-xl prose-h3:lg:text-2xl
-                prose-p:text-[#065A57] prose-p:leading-relaxed prose-p:my-4
-                prose-strong:text-[#013E43] prose-strong:font-bold
-                prose-em:text-[#065A57] prose-em:italic
-                prose-ul:list-disc prose-ul:my-4 prose-ul:pl-6
-                prose-ol:list-decimal prose-ol:my-4 prose-ol:pl-6
-                prose-li:text-[#065A57] prose-li:my-1
-                prose-blockquote:border-l-4 prose-blockquote:border-[#02BB31] prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-[#065A57] prose-blockquote:my-6
-                prose-code:bg-[#F0F7F4] prose-code:text-[#02BB31] prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-                prose-pre:bg-[#013E43] prose-pre:text-white prose-pre:p-4 prose-pre:rounded-xl prose-pre:my-6
-                prose-a:text-[#02BB31] prose-a:no-underline hover:prose-a:underline
-                prose-img:rounded-xl prose-img:shadow-lg prose-img:my-8
-                prose-hr:border-[#A8D8C1] prose-hr:my-8
-                [&_p]:text-[#065A57] [&_p]:leading-relaxed [&_p]:my-4
-                [&_h1]:text-[#013E43] [&_h1]:font-bold [&_h1]:mt-8 [&_h1]:mb-4
-                [&_h2]:text-[#013E43] [&_h2]:font-bold [&_h2]:mt-8 [&_h2]:mb-4
-                [&_h3]:text-[#013E43] [&_h3]:font-bold [&_h3]:mt-6 [&_h3]:mb-3
-                [&_ul]:list-disc [&_ul]:my-4 [&_ul]:pl-6
-                [&_ol]:list-decimal [&_ol]:my-4 [&_ol]:pl-6
-                [&_li]:text-[#065A57] [&_li]:my-1
-                [&_blockquote]:border-l-4 [&_blockquote]:border-[#02BB31] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-[#065A57] [&_blockquote]:my-6
-                [&_code]:bg-[#F0F7F4] [&_code]:text-[#02BB31] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded
-                [&_pre]:bg-[#013E43] [&_pre]:text-white [&_pre]:p-4 [&_pre]:rounded-xl [&_pre]:my-6 [&_pre]:overflow-x-auto
-                [&_a]:text-[#02BB31] [&_a]:no-underline hover:[&_a]:underline
-                [&_img]:rounded-xl [&_img]:shadow-lg [&_img]:my-8
-                [&_hr]:border-[#A8D8C1] [&_hr]:my-8
-                space-y-4"
-              dangerouslySetInnerHTML={{ __html: processedContent }}
-            />
+            <div className="overflow-hidden">
+              <div className="p-3 md:p-8">
+                <div 
+                  className="blog-content"
+                  dangerouslySetInnerHTML={{ __html: processedContent }}
+                />
+              </div>
+            </div>
+
+            {/* Share Section */}
+            <div className="mt-8 flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-[#065A57]">Share this article:</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleShare("facebook")}
+                    className="p-2 bg-[#1877F2]/10 text-[#1877F2] rounded-lg hover:bg-[#1877F2] hover:text-white transition-all"
+                  >
+                    <FiFacebook />
+                  </button>
+                  <button
+                    onClick={() => handleShare("twitter")}
+                    className="p-2 bg-[#1DA1F2]/10 text-[#1DA1F2] rounded-lg hover:bg-[#1DA1F2] hover:text-white transition-all"
+                  >
+                    <FiTwitter />
+                  </button>
+                  <button
+                    onClick={() => handleShare("linkedin")}
+                    className="p-2 bg-[#0A66C2]/10 text-[#0A66C2] rounded-lg hover:bg-[#0A66C2] hover:text-white transition-all"
+                  >
+                    <FiLinkedin />
+                  </button>
+                  <button
+                    onClick={() => handleShare("whatsapp")}
+                    className="p-2 bg-[#25D366]/10 text-[#25D366] rounded-lg hover:bg-[#25D366] hover:text-white transition-all"
+                  >
+                    <FaWhatsapp />
+                  </button>
+                  <button
+                    onClick={() => handleShare("copy")}
+                    className="p-2 bg-[#F0F7F4] text-[#065A57] rounded-lg hover:bg-[#A8D8C1] transition-all"
+                  >
+                    <FiLink />
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button className="flex items-center gap-2 px-4 py-2 text-[#065A57] hover:text-[#02BB31] transition-colors">
+                  <FiHeart />
+                  <span className="text-sm">Like</span>
+                </button>
+                <button className="flex items-center gap-2 px-4 py-2 text-[#065A57] hover:text-[#02BB31] transition-colors">
+                  <FiBookmark />
+                  <span className="text-sm">Save</span>
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* Table of Contents - 30% (Sticky) */}
+          {/* Sidebar - Table of Contents */}
           <div className="lg:w-[30%]">
             <div className="sticky top-24 bg-white rounded-2xl shadow-lg border border-[#A8D8C1] p-6">
               <h3 className="text-lg font-bold text-[#013E43] mb-4 flex items-center">
@@ -395,7 +341,7 @@ function BlogDetails() {
                       onClick={() => scrollToHeading(heading.id)}
                       className={`w-full text-left px-3 py-2 rounded-lg transition-all text-sm ${
                         activeHeading === heading.id
-                          ? 'bg-[#02BB31] text-white'
+                          ? 'bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white'
                           : 'text-[#065A57] hover:bg-[#F0F7F4] hover:text-[#013E43]'
                       }`}
                       style={{ 
@@ -432,33 +378,167 @@ function BlogDetails() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Navigation between posts */}
-        <div className="mt-12 flex items-center justify-between">
-          <Link
-            to="/blogs"
-            className="flex items-center space-x-2 px-4 py-2 text-[#065A57] hover:text-[#013E43] transition-colors"
-          >
-            <FiChevronLeft />
-            <span>Back to all articles</span>
-          </Link>
+            {/* Author Bio */}
+            {blog.author && (
+              <div className="mt-6 bg-white rounded-2xl shadow-lg border border-[#A8D8C1] p-6">
+                <h3 className="text-lg font-bold text-[#013E43] mb-4 flex items-center">
+                  <FiUser className="mr-2 text-[#02BB31]" />
+                  Author
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-full flex items-center justify-center text-white font-bold text-2xl">
+                    {blog.author.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-xl text=[#065a57 font-semibold">Renda Admin</p> 
+                    <p className="text-sm text-[#065A57]">Content Writer</p>
+                  </div>
+                </div>
+                
+              </div>
+        
+            )}
+
+            </div>
           
-          <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-2 px-4 py-2 text-[#065A57] hover:text-[#013E43] transition-colors">
-              <FiHeart />
-              <span>Like</span>
-            </button>
-            <button className="flex items-center space-x-2 px-4 py-2 text-[#065A57] hover:text-[#013E43] transition-colors">
-              <FiBookmark />
-              <span>Save</span>
-            </button>
-          </div>
         </div>
       </div>
-    </div>
-  )
-}
 
-export default BlogDetails
+      {/* Custom Styles for Blog Content */}
+      <style jsx global>{`
+        .blog-content {
+          color: #065A57;
+          line-height: 1.8;
+        }
+        
+        .blog-content h1 {
+          font-size: 2em;
+          font-weight: bold;
+          margin: 1.5em 0 0.75em;
+          color: #013E43;
+        }
+        
+        .blog-content h1:first-child {
+          margin-top: 0;
+        }
+        
+        .blog-content h2 {
+          font-size: 1.5em;
+          font-weight: bold;
+          margin: 1.25em 0 0.75em;
+          color: #013E43;
+          padding-bottom: 0.5em;
+          border-bottom: 2px solid #A8D8C1;
+        }
+        
+        .blog-content h3 {
+          font-size: 1.25em;
+          font-weight: bold;
+          margin: 1em 0 0.5em;
+          color: #013E43;
+        }
+        
+        .blog-content p {
+          margin: 1em 0;
+          line-height: 1.8;
+        }
+        
+        .blog-content ul, .blog-content ol {
+          margin: 1em 0;
+          padding-left: 2em;
+        }
+        
+        .blog-content li {
+          margin: 0.5em 0;
+        }
+        
+        .blog-content blockquote {
+          border-left: 4px solid #02BB31;
+          margin: 1.5em 0;
+          padding: 0.5em 0 0.5em 1.5em;
+          font-style: italic;
+          color: #065A57;
+          background: #F0F7F4;
+          border-radius: 0 8px 8px 0;
+        }
+        
+        .blog-content code {
+          background: #F0F7F4;
+          color: #02BB31;
+          padding: 0.2em 0.4em;
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 0.9em;
+        }
+        
+        .blog-content pre {
+          background: #013E43;
+          color: #F0F7F4;
+          padding: 1em;
+          border-radius: 8px;
+          overflow-x: auto;
+          margin: 1.5em 0;
+        }
+        
+        .blog-content pre code {
+          background: transparent;
+          color: inherit;
+          padding: 0;
+        }
+        
+        .blog-content a {
+          color: #02BB31;
+          text-decoration: none;
+        }
+        
+        .blog-content a:hover {
+          text-decoration: underline;
+        }
+        
+        .blog-content img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 12px;
+          margin: 1.5em 0;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .blog-content hr {
+          border: none;
+          border-top: 2px solid #A8D8C1;
+          margin: 2em 0;
+        }
+        
+        .blog-content table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 1.5em 0;
+        }
+        
+        .blog-content th,
+        .blog-content td {
+          border: 1px solid #A8D8C1;
+          padding: 0.75em;
+          text-align: left;
+        }
+        
+        .blog-content th {
+          background: #F0F7F4;
+          font-weight: bold;
+        }
+        
+        .blog-content strong {
+          font-weight: bold;
+          color: #013E43;
+        }
+        
+        .blog-content em {
+          font-style: italic;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default BlogDetailPage;
