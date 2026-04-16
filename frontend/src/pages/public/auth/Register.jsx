@@ -263,7 +263,7 @@ const RegisterLandlordPage = () => {
             <div className="mb-6">
               <h1 className="text-2xl font-bold text-[#013E43]">Create Account</h1>
               <p className="text-sm text-[#065A57] mt-1">
-                Join MakaoLink as a landlord
+                Join RendaHomes as a landlord
               </p>
             </div>
 

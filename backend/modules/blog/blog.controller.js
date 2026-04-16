@@ -1,5 +1,5 @@
 const Blog = require("./blog.model");
-const NewsletterSubscriber = require("./newsletterSubscriber.model");
+const NewsletterSubscriber = require("./NewsletterSubscriber.model");
 const sendEmail = require("../../utils/sendEmail");
 
 const slugify = (text) =>
