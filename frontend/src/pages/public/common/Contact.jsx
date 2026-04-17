@@ -23,7 +23,6 @@ function Contact() {
     window.scrollTo(0, 0);
   }, []);
 
-
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({
@@ -85,7 +84,6 @@ function Contact() {
         duration: 5000
       })
 
-      // Reset form
       setForm({
         name: "",
         email: "",
@@ -113,7 +111,7 @@ function Contact() {
     {
       icon: FiMail,
       title: "Email Us",
-      
+   
       link: "mailto:info@rendahomes.com",
       bgColor: "bg-[#02BB31]/10",
       textColor: "text-[#02BB31]"
@@ -121,7 +119,7 @@ function Contact() {
     {
       icon: FiPhone,
       title: "Call Us",
-   
+      
       link: "tel:+254729353537",
       bgColor: "bg-[#25D366]/10",
       textColor: "text-[#25D366]"
@@ -129,31 +127,27 @@ function Contact() {
     {
       icon: FaWhatsapp,
       title: "WhatsApp",
-    
+     
       link: "https://wa.me/254729353537",
       bgColor: "bg-[#25D366]/10",
       textColor: "text-[#25D366]"
     },
-
     {
       icon: FaCalendar,
       title: "Book a Session",
+     
       link: "https://calendly.com/info-rendahomes/30min",
       bgColor: "bg-[#25D366]/10",
       textColor: "text-[#25D366]"
-
-
     }
-   
   ]
 
   const socialLinks = [
-    { icon: FaFacebook, link: "https://www.facebook.com/share/1CYY4uVPTy/", color: "text-[#25D366]" },
-    { icon: FaLinkedin, link: "https://www.linkedin.com/company/renda-homes/", color: "text-[#25D366]" },
-    
-    { icon: FaInstagram, link: "https://www.instagram.com/renda.homes?igsh=MW5hM2s3dHMyeHZlaQ==", color: "text-[#25D366]" },
-    { icon: FaTiktok, link: "https://www.tiktok.com/@rendahomes", color: "text-[#25D366]" },
-    { icon: FaTwitter, link: "https://x.com/RendaHomes" }
+    { icon: FaFacebook, link: "https://www.facebook.com/share/1CYY4uVPTy/", color: "hover:text-[#1877F2]" },
+    { icon: FaLinkedin, link: "https://www.linkedin.com/company/renda-homes/", color: "hover:text-[#0A66C2]" },
+    { icon: FaInstagram, link: "https://www.instagram.com/renda.homes?igsh=MW5hM2s3dHMyeHZlaQ==", color: "hover:text-[#E4405F]" },
+    { icon: FaTiktok, link: "https://www.tiktok.com/@rendahomes", color: "hover:text-[#000000]" },
+    { icon: FaTwitter, link: "https://x.com/RendaHomes", color: "hover:text-[#1DA1F2]" }
   ]
 
   const faqs = [
@@ -173,83 +167,59 @@ function Contact() {
 
   return (
     <div className="min-h-screen bg-[#F0F7F4]">
-      {/* Hero Section with Background Image */}
-      <div className="relative h-[200px] md:h-[250px] lg:h-[300px] overflow-hidden">
-        {/* Background Image */}
+      {/* Hero Section */}
+      <div className="relative h-[300px] sm:h-[350px] md:h-[400px] overflow-hidden">
         <div className="absolute inset-0">
           <img
             src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
             alt="Contact us background"
             className="w-full h-full object-cover"
           />
-          
-          {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#013E43]/95 to-[#005C57]/90"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
         </div>
 
-        {/* Centered Hero Content */}
-        <div className="relative h-full flex flex-col items-center justify-center text-center text-white px-4 sm:px-6 lg:px-8">
-          {/* Badge */}
-          <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-full mb-4 sm:mb-6">
-            <FiMessageSquare className="text-[#02BB31] text-sm sm:text-base" />
-            <span className="text-xs sm:text-sm font-medium">Get in Touch</span>
+        <div className="relative h-full flex flex-col items-center justify-center text-center text-white px-4">
+          <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
+            <FiMessageSquare className="text-[#02BB31] text-sm" />
+            <span className="text-sm font-medium">Get in Touch</span>
           </div>
-
           
-
-          {/* Description */}
-          <p className="text-base sm:text-lg md:text-xl text-[#A8D8C1] max-w-2xl mb-6 sm:mb-8 px-4">
-            RendaHomes team is here to help.
+          <p className="text-base sm:text-lg text-[#A8D8C1] max-w-2xl">
+            We'd love to hear from you. Our team is here to help.
           </p>
-
-          {/* Quick Contact Stats */}
-          <div className="hidden sm:flex items-center space-x-6 mt-4 text-sm text-[#A8D8C1]">
-            <span className="flex items-center">
-              <FiClock className="mr-2 text-[#02BB31]" />
+          <div className="flex flex-wrap items-center justify-center gap-4 mt-6 text-sm text-[#A8D8C1]">
+            <span className="flex items-center gap-2">
+              <FiClock className="text-[#02BB31]" />
               Response within 24h
             </span>
-            <span className="flex items-center">
-              <FiCheckCircle className="mr-2 text-[#02BB31]" />
+            <span className="flex items-center gap-2">
+              <FiCheckCircle className="text-[#02BB31]" />
               Dedicated support
             </span>
-            
           </div>
         </div>
-
-        
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Contact Info Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 mb-12">
+      <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Contact Info Cards - Responsive Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
           {contactInfo.map((info, index) => {
             const Icon = info.icon
-            return info.link ? (
+            return (
               <a
                 key={index}
                 href={info.link}
                 target={info.link.startsWith('http') ? '_blank' : undefined}
                 rel={info.link.startsWith('http') ? 'noopener noreferrer' : undefined}
-                className="bg-white rounded-xl shadow-lg border border-[#A8D8C1] p-3 md:p-6 hover:shadow-xl transition-all transform hover:-translate-y-1 group"
+                className="bg-white rounded-xl shadow-lg border border-[#A8D8C1] p-4 hover:shadow-xl transition-all transform hover:-translate-y-1 group"
               >
-                <div className={`w-8 h-8 md:w-12 md:h12 ${info.bgColor} rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                  <Icon className={`text-sm md:text-xl ${info.textColor}`} />
-                </div>
-                <p className="text-sm text-[#065A57]">{info.title}</p>
-                <p className="font-semibold text-[#013E43]">{info.value}</p>
-              </a>
-            ) : (
-              <div
-                key={index}
-                className="bg-white rounded-xl shadow-lg border border-[#A8D8C1] p-6"
-              >
-                <div className={`w-12 h-12 ${info.bgColor} rounded-lg flex items-center justify-center mb-3`}>
+                <div className={`w-10 h-10 ${info.bgColor} rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
                   <Icon className={`text-xl ${info.textColor}`} />
                 </div>
-                <p className="text-sm text-[#065A57]">{info.title}</p>
-                
-              </div>
+                <p className="text-xs text-[#065A57]">{info.title}</p>
+                <p className="text-sm font-semibold text-[#013E43] truncate">{info.value}</p>
+              </a>
             )
           })}
         </div>
@@ -454,10 +424,10 @@ function Contact() {
               </Link>
             </div>
 
-            {/* Social Media */}
+            {/* Social Media - Responsive */}
             <div className="bg-white rounded-2xl shadow-xl border border-[#A8D8C1] p-6">
               <h3 className="text-lg font-bold text-[#013E43] mb-4">Follow Us</h3>
-              <div className="flex space-x-4">
+              <div className="flex flex-wrap gap-3">
                 {socialLinks.map((social, index) => {
                   const Icon = social.icon
                   return (
@@ -466,17 +436,18 @@ function Contact() {
                       href={social.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center text-[#013E43] transition-all transform hover:scale-110`}
+                      className={`w-10 h-10 bg-[#F0F7F4] rounded-full flex items-center justify-center text-[#065A57] transition-all transform hover:scale-110 ${social.color}`}
                     >
-                      <Icon className="text-xl" />
+                      <Icon className="text-lg" />
                     </a>
                   )
                 })}
               </div>
             </div>
 
-            </div>
-       </div>
+            
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -88,7 +88,7 @@ function Navbar() {
 
                 <Link
                   to="/pricing"
-                  className="ml-2 px-5 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-light hover:shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2"
+                  className="ml-2 px-5 py-2 bg-white text-[#02BB31] border border-[#02BB31] rounded-lg font-light hover:shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2"
                 >
                   <FiUserPlus className="text-sm" />
                   <span>List Property</span>
@@ -177,7 +177,7 @@ function Navbar() {
             {!user && (
               <Link
                 to="/pricing"
-                className="flex mr-2 px-3 py-1.5 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg text-sm font-light hover:shadow-lg transition-all transform hover:scale-105 whitespace-nowrap"
+                className="flex mr-2 px-3 py-1.5 bg-white text-[#02BB31] border border-[#02BB31] rounded-lg text-sm font-light hover:shadow-lg transition-all transform hover:scale-105 whitespace-nowrap"
               >
                 <FiUserPlus className="text-lg mr-1" />
                   <span>List Property</span>

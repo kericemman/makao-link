@@ -72,13 +72,13 @@ const Footer = () => {
       
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
           
           {/* Brand Column */}
           <div className="lg:col-span-1 space-y-4">
             <Link to="/" className="flex items-center space-x-2 group">
               
-              <span className="text-2xl font-bold text-white group-hover:text-[#02BB31] transition-colors">
+              <span className="text-xl font-bold text-white group-hover:text-[#02BB31] transition-colors">
                 RendaHomes
               </span>
             </Link>
@@ -119,7 +119,7 @@ const Footer = () => {
                 <li key={link.path}>
                   <Link
                     to={link.path}
-                    className="text-[#A8D8C1] hover:text-white transition-colors flex items-center group"
+                    className="text-[#A8D8C1] text-sm md:text-lg hover:text-white transition-colors flex items-center group"
                   >
                     <FiChevronRight className="text-[#02BB31] mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                     {link.name}
@@ -140,7 +140,7 @@ const Footer = () => {
                 <li key={link.path}>
                   <Link
                     to={link.path}
-                    className="text-[#A8D8C1] hover:text-white transition-colors flex items-center group"
+                    className="text-[#A8D8C1] text-sm md:text-lg hover:text-white transition-colors flex items-center group"
                   >
                     <FiChevronRight className="text-[#02BB31] mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                     {link.name}
@@ -161,7 +161,7 @@ const Footer = () => {
                 <li key={link.path}>
                   <Link
                     to={link.path}
-                    className="text-[#A8D8C1] hover:text-white transition-colors flex items-center group"
+                    className="text-[#A8D8C1] hover:text-white transition-colors flex items-center text-sm md:text-lg group"
                   >
                     <FiChevronRight className="text-[#02BB31] mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                     {link.name}
@@ -219,7 +219,7 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Newsletter */}
+            {/* Newsletter
             <div className="flex-1 max-w-md">
               <form className="flex items-center" onSubmit={(e) => e.preventDefault()}>
                 <input
@@ -234,7 +234,7 @@ const Footer = () => {
                   Subscribe
                 </button>
               </form>
-            </div>
+            </div> */}
 
             {/* Download App */}
             <div className="flex items-center space-x-3">
@@ -276,7 +276,7 @@ const Footer = () => {
             <span className="flex items-center ml-2">
               Made with <FiHeart className="text-red-500 mx-1" /> by 
               <a href="https://thedigitalagame.com" target="_blank" rel="noopener noreferrer" className="text-[#A8D8C1] hover:text-white underline transition-colors ml-2">
-                The Digital A-Game
+                TDAG
               </a>
             </span>
           </p>
