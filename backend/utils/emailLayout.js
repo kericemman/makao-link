@@ -11,7 +11,7 @@ const buildEmailLayout = ({
   highlightColor = "#02BB31",
   // New options
   preheader = "",
-  logo = "",
+  logo = "https://res.cloudinary.com/dhlz0p70t/image/upload/v1776431303/Renda_Homes_Logo_rmf8hj.jpg",
   secondaryCtaText = "",
   secondaryCtaUrl = "",
   showSocialLinks = true,
@@ -47,16 +47,14 @@ const buildEmailLayout = ({
                 
                 <!-- Header with Logo -->
                 <tr>
-                  <td style="background:linear-gradient(135deg, ${accentColor}, #005C57); padding:40px 28px; text-align:center;">
-                    ${logo ? `<img src="${logo}" alt="${brandName}" style="width:60px; height:auto; margin-bottom:16px;" />` : ""}
-                    <h1 style="margin:0; font-size:32px; color:#ffffff; font-weight:800; letter-spacing:-0.5px;">${brandName}</h1>
-                    <p style="margin:12px 0 0; font-size:14px; color:#d1fae5; font-weight:400;">Helping people move, settle, and manage property better.</p>
-                  </td>
+                  <td style="padding:20px 28px; text-align:center;">
+                    ${logo ? `<img src="${logo}" alt="${brandName}" style="width:120px; height:auto;" />` : ""}
+                    </td>
                 </tr>
 
                 <!-- Main Content -->
                 <tr>
-                  <td style="padding:40px 32px;">
+                  <td style="padding:10px 32px;">
                     ${recipientName ? `<p style="margin:0 0 24px; font-size:14px; color:#6b7280;">Dear ${recipientName},</p>` : ""}
                     
                     ${greeting ? `<h2 style="margin:0 0 16px; font-size:26px; line-height:1.3; color:${accentColor}; font-weight:700;">${greeting}</h2>` : ""}
