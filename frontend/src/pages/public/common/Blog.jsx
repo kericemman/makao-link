@@ -238,8 +238,8 @@ const BlogPage = () => {
                 className="group bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1"
               >
                 {/* Blog Image */}
-                <div className="relative h-52 overflow-hidden">
-                  {blog.coverImage ? (
+                <div className="relative overflow-hidden">
+                  {/* {blog.coverImage ? (
                     <img
                       src={blog.coverImage}
                       alt={blog.title}
@@ -249,7 +249,7 @@ const BlogPage = () => {
                     <div className="w-full h-full bg-gradient-to-r from-[#013E43] to-[#005C57] flex items-center justify-center">
                       <FaBlog className="text-5xl text-white opacity-50" />
                     </div>
-                  )}
+                  )} */}
                   
                   {blog.category && (
                     <div className="absolute top-4 left-4">
@@ -284,14 +284,9 @@ const BlogPage = () => {
                   </p>
 
                   {/* Author and Read More */}
-                  <div className="flex items-center justify-between pt-3 border-t border-[#A8D8C1]">
+                  <div className="flex items-center justify-between ">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-full flex items-center justify-center text-white font-bold text-xs">
-                        {blog.author?.name?.charAt(0) || 'R'}
-                      </div>
-                      <span className="text-xs text-[#013E43] font-medium">
-                        {blog.author?.name || 'RendaHomes'}
-                      </span>
+                      
                     </div>
                     <span className="text-[#02BB31] text-sm font-medium flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                       Read More
@@ -354,6 +349,10 @@ const BlogPage = () => {
             <a href="https://www.linkedin.com/company/renda-homes/" className="w-10 h-10 bg-[#F0F7F4] rounded-full flex items-center justify-center text-[#065A57] hover:bg-[#02BB31] hover:text-white transition-all">
               <FaLinkedinIn />
             </a>
+            <a href="https://x.com/RendaHomes" className="w-10 h-10 bg-[#F0F7F4] rounded-full flex items-center justify-center text-[#065A57] hover:bg-[#02BB31] hover:text-white transition-all">
+              <FaTwitter />
+            </a>
+
           </div>
         </div>
       </div>

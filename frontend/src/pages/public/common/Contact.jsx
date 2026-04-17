@@ -15,7 +15,7 @@ import {
   FiArrowRight,
   FiHelpCircle
 } from "react-icons/fi"
-import { FaWhatsapp, FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaTiktok } from "react-icons/fa"
+import { FaWhatsapp, FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaTiktok, FaCalendar } from "react-icons/fa"
 import toast from "react-hot-toast"
 
 function Contact() {
@@ -123,8 +123,8 @@ function Contact() {
       title: "Call Us",
    
       link: "tel:+254729353537",
-      bgColor: "bg-[#013E43]/10",
-      textColor: "text-[#013E43]"
+      bgColor: "bg-[#25D366]/10",
+      textColor: "text-[#25D366]"
     },
     {
       icon: FaWhatsapp,
@@ -134,6 +134,16 @@ function Contact() {
       bgColor: "bg-[#25D366]/10",
       textColor: "text-[#25D366]"
     },
+
+    {
+      icon: FaCalendar,
+      title: "Book a Session",
+      link: "https://calendly.com/info-rendahomes/30min",
+      bgColor: "bg-[#25D366]/10",
+      textColor: "text-[#25D366]"
+
+
+    }
    
   ]
 
@@ -142,7 +152,8 @@ function Contact() {
     { icon: FaLinkedin, link: "https://www.linkedin.com/company/renda-homes/", color: "text-[#25D366]" },
     
     { icon: FaInstagram, link: "https://www.instagram.com/renda.homes?igsh=MW5hM2s3dHMyeHZlaQ==", color: "text-[#25D366]" },
-    { icon: FaTiktok, link: "https://www.tiktok.com/@rendahomes", color: "text-[#25D366]" }
+    { icon: FaTiktok, link: "https://www.tiktok.com/@rendahomes", color: "text-[#25D366]" },
+    { icon: FaTwitter, link: "https://x.com/RendaHomes" }
   ]
 
   const faqs = [
@@ -211,7 +222,7 @@ function Contact() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Contact Info Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4 mb-12">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 mb-12">
           {contactInfo.map((info, index) => {
             const Icon = info.icon
             return info.link ? (
@@ -220,10 +231,10 @@ function Contact() {
                 href={info.link}
                 target={info.link.startsWith('http') ? '_blank' : undefined}
                 rel={info.link.startsWith('http') ? 'noopener noreferrer' : undefined}
-                className="bg-white rounded-xl shadow-lg border border-[#A8D8C1] p-6 hover:shadow-xl transition-all transform hover:-translate-y-1 group"
+                className="bg-white rounded-xl shadow-lg border border-[#A8D8C1] p-3 md:p-6 hover:shadow-xl transition-all transform hover:-translate-y-1 group"
               >
-                <div className={`w-12 h-12 ${info.bgColor} rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                  <Icon className={`text-xl ${info.textColor}`} />
+                <div className={`w-8 h-8 md:w-12 md:h12 ${info.bgColor} rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                  <Icon className={`text-sm md:text-xl ${info.textColor}`} />
                 </div>
                 <p className="text-sm text-[#065A57]">{info.title}</p>
                 <p className="font-semibold text-[#013E43]">{info.value}</p>

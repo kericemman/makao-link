@@ -1,6 +1,8 @@
 const SupportTicket = require("./support.model");
 const User = require("../users/user.model");
 const sendEmail = require("../../utils/sendEmail");
+const { supportReplyEmail } = require("../../utils/emailTemplates");
+
 
 // landlord creates ticket
 exports.createTicket = async (req, res, next) => {
@@ -197,18 +199,14 @@ exports.replyAsAdmin = async (req, res, next) => {
     await ticket.save();
 
     await sendEmail({
-      to: ticket.landlord.email,
-      subject: `Update on your support ticket: ${ticket.subject}`,
-      html: `
-        <h2>Support Ticket Update</h2>
-        <p>Hello ${ticket.landlord.name},</p>
-        <p>Our team has replied to your support ticket.</p>
-        <p><strong>Subject:</strong> ${ticket.subject}</p>
-        <p><strong>Reply:</strong></p>
-        <p>${message}</p>
-        <p>Please log in to your dashboard to continue the conversation if needed.</p>
-      `
-    });
+        to: ticket.landlord.email,
+        subject: `Update on your support ticket: ${ticket.subject}`,
+        html: supportReplyEmail({
+          name: ticket.landlord.name,
+          subject: ticket.subject,
+          reply: message
+        })
+      });
 
     const populatedTicket = await SupportTicket.findById(ticket._id)
       .populate("landlord", "name email phone")

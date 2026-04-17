@@ -30,7 +30,7 @@ const Footer = () => {
     { name: "List Property", path: "/pricing" },
     { name: "Landlord Login", path: "/login" },
     { name: "Pricing", path: "/pricing" },
-    { name: "Resources", path: "/articles" },
+    { name: "Resources", path: "/blog" },
     { name: "Support", path: "/support" },
   ];
 
@@ -77,7 +77,7 @@ const Footer = () => {
           {/* Brand Column */}
           <div className="lg:col-span-1 space-y-4">
             <Link to="/" className="flex items-center space-x-2 group">
-              <FiHome className="text-[#02BB31] text-2xl" />
+              
               <span className="text-2xl font-bold text-white group-hover:text-[#02BB31] transition-colors">
                 RendaHomes
               </span>

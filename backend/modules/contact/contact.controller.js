@@ -1,5 +1,9 @@
 const ContactMessage = require("./contact.model");
 const sendEmail = require("../../utils/sendEmail");
+const {
+  contactReceivedEmail,
+  adminContactNotificationEmail
+} = require("../../utils/emailTemplates");
 
 exports.createContactMessage = async (req, res, next) => {
   try {
@@ -20,32 +24,27 @@ exports.createContactMessage = async (req, res, next) => {
     });
 
     if (process.env.ADMIN_EMAIL) {
-      await sendEmail({
+     await sendEmail({
         to: process.env.ADMIN_EMAIL,
         subject: `New Contact Message: ${subject}`,
-        html: `
-          <h2>New Contact Message</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Phone:</strong> ${phone}</p>
-          <p><strong>Subject:</strong> ${subject}</p>
-          <p><strong>Message:</strong></p>
-          <p>${message}</p>
-        `
+        html: adminContactNotificationEmail({
+          name,
+          email,
+          phone,
+          subject,
+          message
+        })
       });
     }
 
     await sendEmail({
       to: email,
       subject: "We received your message",
-      html: `
-        <h2>Thanks for contacting RendaHomes</h2>
-        <p>Hello ${name},</p>
-        <p>We have received your message and our team will get back to you soon.</p>
-        <p><strong>Subject:</strong> ${subject}</p>
-      `
+      html: contactReceivedEmail({
+        name,
+        subject
+      })
     });
-
     res.status(201).json({
       success: true,
       message: "Your message has been sent successfully",

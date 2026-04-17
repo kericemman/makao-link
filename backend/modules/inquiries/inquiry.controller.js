@@ -1,6 +1,10 @@
 const Inquiry = require("./inquiry.model");
 const Listing = require("../listings/listings.model");
 const sendEmail = require("../../utils/sendEmail");
+const {
+  inquiryReceivedEmail,
+  inquiryConfirmationEmail
+} = require("../../utils/emailTemplates");
 
 exports.createInquiry = async (req, res, next) => {
   try {
@@ -29,23 +33,23 @@ exports.createInquiry = async (req, res, next) => {
     await sendEmail({
       to: listing.landlord.email,
       subject: "New Property Inquiry",
-      html: `
-        <h2>New Inquiry Received</h2>
-        <p>Hello ${listing.landlord.name}, you have received a new inquiry for <strong>${listing.title}</strong>.</p>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Phone:</strong> ${phone || "N/A"}</p>
-        <p><strong>Message:</strong><br/>${message}</p>
-      `
+      html: inquiryReceivedEmail({
+        landlordName: listing.landlord.name,
+        listingTitle: listing.title,
+        senderName: name,
+        senderEmail: email,
+        senderPhone: phone,
+        message
+      })
     });
 
     await sendEmail({
       to: email,
       subject: "Your Inquiry Was Sent",
-      html: `
-        <h2>Inquiry Sent Successfully</h2>
-        <p>Hello ${name}, your inquiry for <strong>${listing.title}</strong> has been sent to the landlord.</p>
-      `
+      html: inquiryConfirmationEmail({
+        name,
+        listingTitle: listing.title
+      })
     });
 
     res.status(201).json({

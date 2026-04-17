@@ -139,7 +139,7 @@ const LoginPage = () => {
                 <img src="/assets/logo.png" alt="Renda Homes Logo" className="w-10 h-10 object-contain" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold">Renda Homes</h1>
+                <h1 className="text-3xl font-bold">Renda Homes</h1>
                 <p className="text-[#A8D8C1] text-lg">Connecting You to Your Perfect Home</p>
               </div>
             </div>
@@ -179,10 +179,8 @@ const LoginPage = () => {
         <div className="w-full max-w-md">
           {/* Mobile Logo (visible only on small screens) */}
           <div className="lg:hidden text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl mb-4">
-              <span className="text-3xl font-bold text-white">M</span>
-            </div>
-            <h1 className="text-2xl font-bold text-[#013E43]">Welcome Back</h1>
+            
+            <h1 className="text-xl md:text-2xl font-bold text-[#013E43]">Welcome Back</h1>
             <p className="text-[#065A57]">Sign in to continue</p>
           </div>
 

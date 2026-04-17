@@ -336,6 +336,13 @@ const {
   restoreListingsAfterRenewal,
   markExpiredAndUnlist,
 } = require("../subscriptions/subscription.service");
+const {
+  subscriptionActivatedEmail,
+  gracePeriodEmail,
+  subscriptionExpiredEmail,
+  partnerPaymentConfirmedEmail
+} = require("../../utils/emailTemplates");
+
 
 exports.initializeSubscriptionPayment = async (req, res, next) => {
   try {
@@ -524,15 +531,15 @@ const handleChargeSuccess = async (data) => {
   const user = await User.findById(userId);
 
   if (user) {
-    await sendEmail({
-      to: user.email,
-      subject: "Subscription Activated",
-      html: `
-        <h2>Subscription Activated</h2>
-        <p>Hello ${user.name}, your ${plan.toUpperCase()} plan is now active.</p>
-        <p>Your billing period ends on <strong>${nextBilling.toDateString()}</strong>.</p>
-      `,
-    });
+   await sendEmail({
+        to: user.email,
+        subject: "Subscription Activated",
+        html: subscriptionActivatedEmail({
+          name: user.name,
+          plan,
+          billingEndDate: nextBilling.toDateString()
+        })
+      });
   }
 
   if (type === "partner_application" && applicationId) {
@@ -545,12 +552,12 @@ const handleChargeSuccess = async (data) => {
       if (application.email) {
         await sendEmail({
           to: application.email,
-          subject: "Payment Successful",
-          html: `
-            <h2>Payment Successful</h2>
-            <p>Hello ${application.name}, your payment has been processed successfully.</p>
-            <p>Your application is under review. Upon approval, your company will be activated.</p>
-          `,
+          subject: "Partner Application Payment Confirmed",
+          html: partnerPaymentConfirmedEmail({
+            contactPerson: application.contactPerson,
+            companyName: application.companyName,
+            category: application.category
+          })
         });
       }
     }
@@ -581,15 +588,13 @@ const handlePaymentFailure = async (data) => {
 
   if (subscription.user?.email) {
     await sendEmail({
-      to: subscription.user.email,
-      subject: "Payment Failed - Grace Period Started",
-      html: `
-        <h2>Payment Failed</h2>
-        <p>Hello ${subscription.user.name}, we could not process your subscription payment.</p>
-        <p>You have a grace period until <strong>${graceEnd.toDateString()}</strong>.</p>
-        <p>Your current listings remain visible for now, but you cannot add new ones until you renew.</p>
-      `,
-    });
+        to: subscription.user.email,
+        subject: "Payment Failed - Grace Period Started",
+        html: gracePeriodEmail({
+          name: subscription.user.name,
+          graceEndDate: graceEnd.toDateString()
+        })
+      });
   }
 };
 
@@ -609,11 +614,9 @@ exports.runExpiryCheck = async (req, res, next) => {
         await sendEmail({
           to: user.email,
           subject: "Subscription Expired - Listings Unlisted",
-          html: `
-            <h2>Subscription Expired</h2>
-            <p>Hello ${user.name}, your subscription grace period has ended.</p>
-            <p>Your public listings have been temporarily removed until you renew your plan.</p>
-          `,
+          html: subscriptionExpiredEmail({
+            name: user.name
+          })
         });
       }
     }

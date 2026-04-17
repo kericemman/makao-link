@@ -1,5 +1,11 @@
 const Listing = require("../listings/listings.model");
 const sendEmail = require("../../utils/sendEmail");
+const {
+  listingApprovedEmail,
+  listingRejectedEmail,
+  partnerApprovedEmail,
+ 
+} = require("../../utils/emailTemplates");
 const User = require("../users/user.model");
 const Payment = require("../payments/payment.model");
 const plans = require("../payments/plan.config");
@@ -36,13 +42,13 @@ exports.approveListing = async (req, res, next) => {
     await listing.save();
 
     await sendEmail({
-      to: listing.landlord.email,
-      subject: "Listing Approved",
-      html: `
-        <h2>Listing Approved</h2>
-        <p>Hello ${listing.landlord.name}, your property <strong>${listing.title}</strong> has been approved and is now live.</p>
-      `
-    });
+        to: listing.landlord.email,
+        subject: "Listing Approved",
+        html: listingApprovedEmail({
+          name: listing.landlord.name,
+          listingTitle: listing.title
+        })
+      });
 
     res.json({
       success: true,
@@ -66,14 +72,14 @@ exports.rejectListing = async (req, res, next) => {
     listing.isActive = false;
     await listing.save();
 
-    await sendEmail({
-      to: listing.landlord.email,
-      subject: "Listing Rejected",
-      html: `
-        <h2>Listing Rejected</h2>
-        <p>Hello ${listing.landlord.name}, your property <strong>${listing.title}</strong> was not approved.</p>
-      `
-    });
+     await sendEmail({
+        to: listing.landlord.email,
+        subject: "Listing Rejected",
+        html: listingRejectedEmail({
+          name: listing.landlord.name,
+          listingTitle: listing.title
+        })
+      });
 
     res.json({
       success: true,
@@ -418,15 +424,14 @@ exports.approveServiceApplication = async (req, res, next) => {
     await application.save();
 
     await sendEmail({
-      to: application.email,
-      subject: "Your Makao Partner Application Has Been Approved",
-      html: `
-        <h2>Application Approved</h2>
-        <p>Hello ${application.contactPerson},</p>
-        <p>Your company <strong>${application.companyName}</strong> has been approved as a Makao service partner.</p>
-        <p>Your details can now be displayed under the <strong>${application.category}</strong> service category.</p>
-      `
-    });
+        to: application.email,
+        subject: "Your RendaHomes Partner Application Has Been Approved",
+        html: partnerApprovedEmail({
+          contactPerson: application.contactPerson,
+          companyName: application.companyName,
+          category: application.category
+        })
+      });
 
     res.json({
       success: true,
@@ -461,7 +466,7 @@ exports.rejectServiceApplication = async (req, res, next) => {
 
     await sendEmail({
       to: application.email,
-      subject: "Update on Your Makao Partner Application",
+      subject: "Update on Your Renda Partner Application",
       html: `
         <h2>Application Update</h2>
         <p>Hello ${application.contactPerson},</p>
@@ -479,3 +484,6 @@ exports.rejectServiceApplication = async (req, res, next) => {
     next(error);
   }
 };
+
+
+

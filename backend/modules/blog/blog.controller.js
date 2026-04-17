@@ -1,6 +1,10 @@
 const Blog = require("./blog.model");
 const NewsletterSubscriber = require("./NewsletterSubscriber.model");
 const sendEmail = require("../../utils/sendEmail");
+const {
+  blogPublishedEmail,
+  newsletterWelcomeEmail
+} = require("../../utils/emailTemplates");
 
 const slugify = (text) =>
   text
@@ -21,16 +25,12 @@ const sendBlogNotificationToSubscribers = async (blog) => {
     try {
       await sendEmail({
         to: subscriber.email,
-        subject: `New on Makao Blog: ${blog.title}`,
-        html: `
-          <h2>${blog.title}</h2>
-          <p>${blog.excerpt}</p>
-          <p>
-            <a href="${blogUrl}" target="_blank" rel="noreferrer">
-              Read the full article
-            </a>
-          </p>
-        `
+        subject: `New on RendaHomes Insights: ${blog.title}`,
+        html: blogPublishedEmail({
+          title: blog.title,
+          excerpt: blog.excerpt,
+          slug: blog.slug
+        })
       });
     } catch (error) {
       console.error(`Failed to send blog email to ${subscriber.email}:`, error.message);
@@ -103,12 +103,8 @@ exports.subscribeToNewsletter = async (req, res, next) => {
 
     await sendEmail({
       to: email,
-      subject: "Welcome to Makao Blog Updates",
-      html: `
-        <h2>Subscription Confirmed</h2>
-        <p>Thanks for subscribing to Makao blog updates.</p>
-        <p>You’ll receive an email whenever we publish a new article.</p>
-      `
+      subject: "Welcome to RendaHomes Updates",
+      html: newsletterWelcomeEmail()
     });
 
     res.status(201).json({

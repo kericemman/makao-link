@@ -2,6 +2,9 @@ const Listing = require("./listings.model");
 const sendEmail = require("../../utils/sendEmail");
 const { canCreateListing } = require("../subscriptions/subscription.service");
 const uploadToCloudinary = require("../../utils/uploadToCloudinary");
+const {
+  listingSubmittedEmail
+} = require("../../utils/emailTemplates");
 
 exports.getPublicListings = async (req, res, next) => {
   try {
@@ -121,11 +124,10 @@ exports.createListing = async (req, res, next) => {
     await sendEmail({
       to: req.user.email,
       subject: "Listing Submitted for Review",
-      html: `
-        <h2>Listing Submitted</h2>
-        <p>Hello ${req.user.name}, your property <strong>${listing.title}</strong> has been submitted for review.</p>
-        <p>You will be notified once it is approved.</p>
-      `
+      html: listingSubmittedEmail({
+        name: req.user.name,
+        listingTitle: listing.title
+      })
     });
 
     res.status(201).json({

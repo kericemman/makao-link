@@ -3,6 +3,10 @@ const User = require("../users/user.model");
 const Listing = require("../listings/listings.model");
 const generateToken = require("../../utils/generateToken");
 const sendEmail = require("../../utils/sendEmail");
+const {
+  welcomeEmail,
+  passwordResetEmail
+} = require("../../utils/emailTemplates");
 const plans = require("../payments/plan.config");
 const { createInitialSubscription } = require("../subscriptions/subscription.service");
 
@@ -40,19 +44,14 @@ exports.registerLandlord = async (req, res, next) => {
     const token = generateToken(user);
 
     await sendEmail({
-      to: user.email,
-      subject: "Welcome to Makao",
-      html: `
-        <h2>Welcome to Makao</h2>
-        <p>Hello ${user.name}, your landlord account has been created successfully.</p>
-        <p>Selected plan: <strong>${plans[plan].name}</strong></p>
-        ${
-          plan === "normal"
-            ? "<p>You can now log in and list your first property immediately.</p>"
-            : "<p>Your account is ready. Complete payment to activate your plan and begin listing properties.</p>"
-        }
-      `
-    });
+        to: user.email,
+        subject: "Welcome to RendaHomes",
+        html: welcomeEmail({
+          name: user.name,
+          planName: plans[plan].name,
+          isFreePlan: plan === "normal"
+        })
+      });
 
     res.status(201).json({
       success: true,
@@ -189,19 +188,11 @@ exports.forgotPassword = async (req, res, next) => {
 
     await sendEmail({
       to: user.email,
-      subject: "Reset Your Makao Password",
-      html: `
-        <h2>Password Reset Request</h2>
-        <p>Hello ${user.name},</p>
-        <p>We received a request to reset your password.</p>
-        <p>
-          <a href="${resetUrl}" target="_blank" rel="noreferrer">
-            Click here to reset your password
-          </a>
-        </p>
-        <p>This link will expire in 30 minutes.</p>
-        <p>If you did not request this, you can ignore this email.</p>
-      `
+      subject: "Reset Your RendaHomes Password",
+      html: passwordResetEmail({
+        name: user.name,
+        resetUrl
+      })
     });
 
     res.json(genericResponse);

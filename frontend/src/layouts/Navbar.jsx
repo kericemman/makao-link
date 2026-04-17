@@ -37,15 +37,12 @@ function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
           
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
-            
-            <img src="/assets/rend.jpeg" alt="MakaoLink Logo" className="h-10 w-full" />
-            
-            
+          {/* Logo - Left on all screens */}
+          <Link to="/" className="flex items-center space-x-2 group flex-shrink-0">
+            <img src="/assets/rend.jpeg" alt="RendaHomes Logo" className="h-10 w-auto" />
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Center */}
           <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
             <Link
               to="/"
@@ -64,14 +61,12 @@ function Navbar() {
             </Link>
 
             <Link 
-            to="/services"
-            className="px-4 py-2 text-[#065A57] hover:text-[#013E43] hover:bg-[#F0F7F4] rounded-lg transition-all flex items-center space-x-2"
+              to="/services"
+              className="px-4 py-2 text-[#065A57] hover:text-[#013E43] hover:bg-[#F0F7F4] rounded-lg transition-all flex items-center space-x-2"
             >
               <FaBuilding className="text-lg" />
               <span>Services</span>
             </Link>
-
-
 
             <Link
               to="/pricing"
@@ -92,11 +87,11 @@ function Navbar() {
                 </Link>
 
                 <Link
-                  to="/landlord/register"
-                  className="ml-2 px-5 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2"
+                  to="/pricing"
+                  className="ml-2 px-5 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-light hover:shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2"
                 >
-                  <FiUserPlus className="text-lg" />
-                  <span>Register</span>
+                  <FiUserPlus className="text-sm" />
+                  <span>List Property</span>
                 </Link>
               </>
             )}
@@ -176,25 +171,45 @@ function Navbar() {
             )}
           </nav>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-[#F0F7F4] transition-colors"
-          >
-            {isOpen ? (
-              <FiX className="text-2xl text-[#013E43]" />
-            ) : (
-              <FiMenu className="text-2xl text-[#013E43]" />
+          {/* Mobile Right Section - Register/List Property & Menu Button */}
+          <div className="flex items-center space-x-3 md:hidden">
+            {/* Mobile Register/List Property Button */}
+            {!user && (
+              <Link
+                to="/pricing"
+                className="flex mr-2 px-3 py-1.5 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg text-sm font-light hover:shadow-lg transition-all transform hover:scale-105 whitespace-nowrap"
+              >
+                <FiUserPlus className="text-lg mr-1" />
+                  <span>List Property</span>
+              </Link>
             )}
-          </button>
+
+            {user && (
+              <div className="w-8 h-8 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-full flex items-center justify-center text-white font-bold text-sm">
+                {user.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="p-2 rounded-lg hover:bg-[#F0F7F4] transition-colors"
+            >
+              {isOpen ? (
+                <FiX className="text-2xl text-[#013E43]" />
+              ) : (
+                <FiMenu className="text-2xl text-[#013E43]" />
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation Menu */}
         <div 
           className={`md:hidden fixed inset-x-0 top-16 bg-white border-b border-[#A8D8C1] shadow-lg transition-all duration-300 ${
             isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
           }`}
-          style={{ maxHeight: isOpen ? 'calc(100vh - 64px)' : '0', overflow: 'hidden' }}
+          style={{ maxHeight: isOpen ? 'calc(100vh - 64px)' : '0', overflow: 'auto' }}
         >
           <div className="p-4 space-y-2">
             <Link
@@ -215,7 +230,7 @@ function Navbar() {
               <span>Properties</span>
             </Link>
 
-              <Link
+            <Link
               to="/services"
               className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
               onClick={() => setIsOpen(false)}
@@ -243,15 +258,6 @@ function Navbar() {
                   <FiLogIn className="text-xl" />
                   <span>Login</span>
                 </Link>
-
-                <Link
-                  to="/pricing"
-                  className="flex items-center space-x-3 px-4 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <FiUserPlus className="text-xl" />
-                  <span>Register</span>
-                </Link>
               </>
             )}
 
@@ -263,15 +269,13 @@ function Navbar() {
                 </div>
 
                 <Link
-                  to={user.role === "admin" ? "/admin" : "/admin/dashboard"}
+                  to={user.role === "admin" || user.role === "landlord" ? "/landlord/dashboard" : "/admin/dashboard"}
                   className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
                   onClick={() => setIsOpen(false)}
                 >
                   <FiUser />
                   <span>Dashboard</span>
                 </Link>
-
-                
 
                 <Link
                   to="/support"
@@ -282,6 +286,7 @@ function Navbar() {
                   <span>Help & Support</span>
                 </Link>
 
+                <hr className="my-2 border-[#A8D8C1]" />
                 <button
                   onClick={() => {
                     handleLogout()

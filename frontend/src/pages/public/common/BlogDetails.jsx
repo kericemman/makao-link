@@ -222,12 +222,12 @@ const BlogDetailPage = () => {
                 </div>
               )}
               
-              <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-[#013E43] mb-4">
+              <h1 className="text-xl md:text-4xl lg:text-5xl font-bold text-[#013E43] mb-4">
                 {blog.title}
               </h1>
               
               {blog.excerpt && (
-                <p className="text-lg text-[#065A57] mb-6 leading-relaxed">
+                <p className="text-l text-[#065A57] mb-6 leading-relaxed">
                   {blog.excerpt}
                 </p>
               )}
@@ -379,7 +379,7 @@ const BlogDetailPage = () => {
               </div>
             </div>
 
-            {/* Author Bio */}
+            {/* Author Bio
             {blog.author && (
               <div className="mt-6 bg-white rounded-2xl shadow-lg border border-[#A8D8C1] p-6">
                 <h3 className="text-lg font-bold text-[#013E43] mb-4 flex items-center">
@@ -398,7 +398,7 @@ const BlogDetailPage = () => {
                 
               </div>
         
-            )}
+            )} */}
 
             </div>
           

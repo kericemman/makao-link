@@ -87,7 +87,7 @@ function ForgotPassword() {
                                 <div className="flex items-center space-x-3">
                                     
                                     <div>
-                                        <h1 className="text-4xl font-bold">MakaoLink</h1>
+                                        <h1 className="text-4xl font-bold">RendaHomes</h1>
                                         <p className="text-[#A8D8C1] text-lg">Property Management Platform</p>
                                     </div>
                                 </div>
