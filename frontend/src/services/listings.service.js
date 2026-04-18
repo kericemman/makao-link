@@ -34,6 +34,14 @@ export const markListingAvailable = async (id) => {
   return response.data;
 };
 
+
+// get one listing (owner)
+export const getMyListingById = async (id) => {
+  const response = await api.get(`/listings/${id}`);
+  return response.data;
+};  
+
+
 export const updateListing = async (id, formData) => {
   const response = await api.put(`/listings/${id}`, formData, {
     headers: {
@@ -47,3 +55,7 @@ export const deleteListing = async (id) => {
   const response = await api.delete(`/listings/${id}`);
   return response.data;
 };
+
+
+
+

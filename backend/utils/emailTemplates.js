@@ -1,20 +1,25 @@
 const buildEmailLayout = require("./emailLayout");
 
 const appName = "Makao";
-const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+const clientUrl = process.env.CLIENT_URL || "https://rendahomes.com";
 
 exports.welcomeEmail = ({ name, planName, isFreePlan }) => {
   return buildEmailLayout({
-    title: "Welcome to Makao",
+    title: "Welcome to RendaHomes",
     greeting: `Hello ${name},`,
-    intro: "Your account has been created successfully.",
+    intro: `
+      Finding the right tenants shouldn't feel like a gamble.
+
+      RendaHomes is built to help landlords like you list properties faster, reach serious tenants, and reduce the time your units stay vacant. 
+      Instead of relying on agents and uncertain referrals, you now have a direct platform to showcase your property and stay in control.
+    `,
     body: `
       <p><strong>Selected plan:</strong> ${planName}</p>
       <p>
         ${
           isFreePlan
-            ? "You can now log in and list your first property immediately."
-            : "Your account is ready. Complete payment to activate your plan and begin listing properties."
+            ? "You can now log in and list your first property immediately. Start getting inquiries from potential tenants without delays."
+            : "Your account is ready. Complete payment to activate your plan and unlock full access to list and manage your properties."
         }
       </p>
     `,
@@ -240,10 +245,11 @@ exports.partnerRejectedEmail = ({ contactPerson, companyName }) => {
 exports.blogPublishedEmail = ({ title, excerpt, slug }) => {
   return buildEmailLayout({
     title: "New Blog Post on RendaHomes",
-    greeting: "Hello,",
+    greeting: "Hi there,",
     intro: `We just published a new article: <strong>${title}</strong>.`,
     body: `
       <p>${excerpt}</p>
+      <
     `,
     ctaText: "Read Article",
     ctaUrl: `${clientUrl}/blog/${slug}`

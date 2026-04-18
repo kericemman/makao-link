@@ -55,6 +55,8 @@ import LandlordProfilePage from "../pages/landlord/LandlordProfile";
 import AdminBlogsPage from "../pages/admin/blog/AdminBlog";
 import AdminBlogEditorPage from "../pages/admin/blog/CreateBlog";
 import AdminNewsletterSubscribersPage from "../pages/admin/AdminSubscribersPage";
+import EditListingPage from "../pages/landlord/EditProperty";
+
 
 
 
@@ -92,6 +94,7 @@ const AppRoutes = () => {
           <Route element={<LandlordLayout />}>
             <Route path="landlord/dashboard" element={<DashboardHome/>} />
             <Route path="landlord/listings" element={<Listings />} />
+            <Route path="landlord/listings/:id/edit" element={<EditListingPage/>}/>
             <Route path="/landlord/support" element={<LandlordSupportPage />} />
             <Route path="/landlord/support/:id" element={<LandlordSupportDetailPage />} />
             <Route path="/landlord/profile" element={<LandlordProfilePage />} />

@@ -387,7 +387,7 @@ const LandlordListings = () => {
                 {/* Action Buttons */}
                 <div className="flex items-center justify-between pt-3 border-t border-[#A8D8C1]">
                   <Link
-                    to={`/landlord/listings/${listing._id}`}
+                    to={`/properties/${listing._id}`}
                     className="text-sm text-[#02BB31] hover:text-[#0D915C] flex items-center"
                   >
                     <FiEye className="mr-1" />
@@ -396,7 +396,7 @@ const LandlordListings = () => {
                   
                   <div className="flex items-center space-x-2">
                     <Link
-                      to={`/landlord/listings/edit/${listing._id}`}
+                      to={`/landlord/listings/${listing._id}/edit`}
                       className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
                       title="Edit"
                     >

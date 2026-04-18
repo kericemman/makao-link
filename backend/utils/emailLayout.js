@@ -57,7 +57,7 @@ const buildEmailLayout = ({
                   <td style="padding:10px 32px;">
                     ${recipientName ? `<p style="margin:0 0 24px; font-size:14px; color:#6b7280;">Dear ${recipientName},</p>` : ""}
                     
-                    ${greeting ? `<h2 style="margin:0 0 16px; font-size:26px; line-height:1.3; color:${accentColor}; font-weight:700;">${greeting}</h2>` : ""}
+                    ${greeting ? `<h2 style="margin:0 0 10px; font-size:20px; line-height:1.3; color:${accentColor}; font-weight:700;">${greeting}</h2>` : ""}
 
                     ${title && !greeting ? `<h2 style="margin:0 0 16px; font-size:24px; line-height:1.3; color:${accentColor}; font-weight:700;">${title}</h2>` : ""}
 
@@ -76,7 +76,7 @@ const buildEmailLayout = ({
 
                     <!-- Secondary CTA Button -->
                     ${secondaryCtaText && secondaryCtaUrl ? `
-                      <div style="margin:0 0 24px; text-align:center;">
+                      <div style="margin:0 0 16px; text-align:center;">
                         <a href="${secondaryCtaUrl}" target="_blank" rel="noreferrer" style="display:inline-block; padding:12px 24px; border-radius:12px; background:transparent; border:2px solid ${highlightColor}; color:${highlightColor}; text-decoration:none; font-size:14px; font-weight:600;">
                           ${secondaryCtaText}
                         </a>
@@ -123,7 +123,7 @@ const buildEmailLayout = ({
                       © ${year} ${brandName}. All rights reserved.
                     </p>
                     <p style="margin:0 0 16px; font-size:12px; color:#6b7280;">
-                      Helping tenants find homes and landlords manage properties.
+                      FIND. LIVE. RENT
                     </p>
                     ${unsubscribeUrl ? `
                       <div style="margin-top:12px;">
