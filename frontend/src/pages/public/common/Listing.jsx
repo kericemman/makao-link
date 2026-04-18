@@ -18,9 +18,10 @@ import {
   FiChevronDown,
   FiEye,
   FiChevronLeft,
-  FiChevronRight
+  FiChevronRight,
+  FiTag
 } from "react-icons/fi";
-import { FaBath, FaBed, FaBuilding } from "react-icons/fa";
+import { FaBath, FaBed, FaBuilding, FaHome as FaHomeIcon, FaSellcast } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const propertyTypes = [
@@ -30,7 +31,14 @@ const propertyTypes = [
   { value: "studio", label: "Studios", icon: FiHome },
   { value: "bungalow", label: "Bungalows", icon: FaBuilding },
   { value: "townhouse", label: "Townhouses", icon: FaBuilding },
+  { value: "office", label: "Office Space", icon: FaBuilding },
   { value: "other", label: "Other", icon: FiHome }
+];
+
+const purposes = [
+  // { value: "all", label: "All", icon: FiTag },
+  { value: "rent", label: "Rent a Property", icon: FiHome },
+  { value: "sale", label: "Buy a Property", icon: FaSellcast }
 ];
 
 // Helper function to get image URL
@@ -100,6 +108,15 @@ const ListingCard = ({ listing }) => {
           )}
         </div>
         
+        {/* Purpose Badge
+        <div className="absolute top-2 sm:top-3 left-16 sm:left-20">
+          <span className={`rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-xs font-medium text-white shadow-lg ${
+            listing.purpose === "sale" ? "bg-purple-600" : "bg-blue-600"
+          }`}>
+            {listing.purpose === "sale" ? "For Sale" : "For Rent"}
+          </span>
+        </div> */}
+        
         {/* Favorite Button - Smaller on mobile */}
         <button
           onClick={(e) => {
@@ -120,7 +137,9 @@ const ListingCard = ({ listing }) => {
         <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3">
           <div className="rounded-lg bg-[#013E43]/90 px-1.5 sm:px-3 py-0.5 sm:py-1.5 backdrop-blur-sm">
             <p className="text-[10px] sm:text-sm md:text-base lg:text-lg font-bold text-white">{formatPrice(listing.price)}</p>
-            <p className="text-[8px] sm:text-xs text-[#A8D8C1] hidden sm:block">/month</p>
+            <p className="text-[8px] sm:text-xs text-[#A8D8C1] hidden sm:block">
+              {listing.purpose === "sale" ? "/total" : "/month"}
+            </p>
           </div>
         </div>
         
@@ -166,7 +185,7 @@ const ListingCard = ({ listing }) => {
   );
 };
 
-// Category Tabs Component with smooth sliding
+// Category Tabs Component with smooth sliding - Sticky
 const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
   const scrollContainerRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -200,15 +219,6 @@ const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
 
   return (
     <div className="relative">
-      {/* {showLeftArrow && (
-        <button
-          onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-lg border border-[#A8D8C1] hover:bg-[#F0F7F4] transition-all"
-        >
-          <FiChevronLeft className="text-[#013E43]" />
-        </button>
-      )} */}
-
       <div
         ref={scrollContainerRef}
         onScroll={checkScrollPosition}
@@ -235,15 +245,6 @@ const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
           );
         })}
       </div>
-
-      {/* {showRightArrow && (
-        <button
-          onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-lg border border-[#A8D8C1] hover:bg-[#F0F7F4] transition-all"
-        >
-          <FiChevronRight className="text-[#013E43]" />
-        </button>
-      )} */}
     </div>
   );
 };
@@ -255,6 +256,7 @@ const ListingsPage = () => {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedType = searchParams.get("type") || "All";
+  const selectedPurpose = searchParams.get("purpose") || "all";
   const locationParam = searchParams.get("location") || "";
   const minPriceParam = searchParams.get("minPrice") || "";
   const maxPriceParam = searchParams.get("maxPrice") || "";
@@ -268,7 +270,8 @@ const ListingsPage = () => {
     minPrice: minPriceParam,
     maxPrice: maxPriceParam,
     bedrooms: bedroomsParam,
-    type: selectedType !== "All" ? selectedType : ""
+    type: selectedType !== "All" ? selectedType : "",
+    purpose: selectedPurpose
   });
 
   const fetchListings = async () => {
@@ -280,6 +283,7 @@ const ListingsPage = () => {
       if (filters.minPrice) params.minPrice = filters.minPrice;
       if (filters.maxPrice) params.maxPrice = filters.maxPrice;
       if (filters.bedrooms) params.bedrooms = filters.bedrooms;
+      if (filters.purpose && filters.purpose !== "all") params.purpose = filters.purpose;
       const data = await getPublicListings(params);
       setListings(data.listings || []);
     } catch (error) {
@@ -308,19 +312,31 @@ const ListingsPage = () => {
     if (filters.maxPrice) params.set("maxPrice", filters.maxPrice);
     if (filters.bedrooms) params.set("bedrooms", filters.bedrooms);
     if (filters.type) params.set("type", filters.type);
+    if (filters.purpose && filters.purpose !== "all") params.set("purpose", filters.purpose);
     setSearchParams(params);
     setShowMobileFilters(false);
   };
 
   const handleTypeChange = (type) => {
     setFilters(prev => ({ ...prev, type: type === "All" ? "" : type }));
+    const params = new URLSearchParams(searchParams);
     if (type === "All") {
-      const params = new URLSearchParams(searchParams);
       params.delete("type");
-      setSearchParams(params);
     } else {
-      setSearchParams({ ...Object.fromEntries(searchParams), type });
+      params.set("type", type);
     }
+    setSearchParams(params);
+  };
+
+  const handlePurposeChange = (purpose) => {
+    setFilters(prev => ({ ...prev, purpose }));
+    const params = new URLSearchParams(searchParams);
+    if (purpose === "all") {
+      params.delete("purpose");
+    } else {
+      params.set("purpose", purpose);
+    }
+    setSearchParams(params);
   };
 
   const handleReset = () => {
@@ -329,14 +345,15 @@ const ListingsPage = () => {
       minPrice: "",
       maxPrice: "",
       bedrooms: "",
-      type: ""
+      type: "",
+      purpose: "all"
     });
     setSearchParams({});
     setShowMobileFilters(false);
   };
 
   const hasActiveFilters = () => {
-    return filters.location || filters.minPrice || filters.maxPrice || filters.bedrooms || filters.type;
+    return filters.location || filters.minPrice || filters.maxPrice || filters.bedrooms || filters.type || (filters.purpose && filters.purpose !== "all");
   };
 
   const getActiveFiltersCount = () => {
@@ -346,25 +363,55 @@ const ListingsPage = () => {
     if (filters.maxPrice) count++;
     if (filters.bedrooms) count++;
     if (filters.type) count++;
+    if (filters.purpose && filters.purpose !== "all") count++;
     return count;
   };
 
   return (
     <div className="min-h-screen bg-[#F0F7F4]">
-      <div className="max-w-9xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
-        {/* Category Tabs */}
-        <div className="mb-4 sm:mb-6 md:mb-8">
-          <CategoryTabs 
-            categories={propertyTypes}
-            activeCategory={filters.type || "All"}
-            onCategoryChange={handleTypeChange}
-          />
-        </div>
+      {/* Sticky Filters Container */}
+      <div className="sticky top-0 z-20 bg-[#F0F7F4] pt-4 pb-2">
+        <div className="max-w-9xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+          {/* Purpose Tabs - Rent/Sale */}
+          <div className="mb-3">
+            <div className="flex gap-2 sm:gap-3">
+              {purposes.map((purpose) => {
+                const Icon = purpose.icon;
+                const isActive = filters.purpose === purpose.value;
+                return (
+                  <button
+                    key={purpose.value}
+                    onClick={() => handlePurposeChange(purpose.value)}
+                    className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full font-medium whitespace-nowrap transition-all text-xs sm:text-sm ${
+                      isActive
+                        ? "bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white shadow-md"
+                        : "bg-white text-[#065A57] border border-[#A8D8C1] hover:bg-[#F0F7F4]"
+                    }`}
+                  >
+                    <Icon className="text-xs sm:text-sm" />
+                    <span>{purpose.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
+          {/* Category Tabs - Property Types */}
+          <div className="mb-2">
+            <CategoryTabs 
+              categories={propertyTypes}
+              activeCategory={filters.type || "All"}
+              onCategoryChange={handleTypeChange}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-9xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pb-8">
         <div className="grid gap-4 sm:gap-6 md:gap-8 lg:grid-cols-[340px_1fr]">
           {/* Desktop Filters Sidebar */}
           <aside className="hidden lg:block h-fit">
-            <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] p-6 sticky top-24">
+            <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] p-6 sticky top-40">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-[#013E43] flex items-center">
                   <FiSliders className="mr-2 text-[#02BB31]" />

@@ -196,9 +196,9 @@ function Navbar() {
               className="p-2 rounded-lg hover:bg-[#F0F7F4] transition-colors"
             >
               {isOpen ? (
-                <FiX className="text-2xl text-[#013E43]" />
+                <FiX className="text-2xl text-[#02BB31]" />
               ) : (
-                <FiMenu className="text-2xl text-[#013E43]" />
+                <FiMenu className="text-2xl text-[#02BB31]" />
               )}
             </button>
           </div>

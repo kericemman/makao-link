@@ -15,21 +15,25 @@ import {
   FiUpload,
   FiTrash2,
   FiArrowLeft,
-  FiInfo
+  FiInfo,
+  FiVideo,
+  FiMaximize2,
+  FiTarget
 } from "react-icons/fi";
-import { FaBed, FaBath, FaBuilding, FaPhone, FaUtensils } from "react-icons/fa";
+import { FaBed, FaBath, FaBuilding, FaPhone, FaUtensils, FaRulerCombined } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const CreateListingPage = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+  
   const navigate = useNavigate();
+  const { subscription, usage } = useAuth();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]);
   const [preview, setPreview] = useState([]);
   const [errors, setErrors] = useState({});
-  const { subscription, usage } = useAuth();
 
   const blocked =
     !subscription ||
@@ -39,12 +43,16 @@ const CreateListingPage = () => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    purpose: "rent",
     price: "",
     location: "",
+    type: "apartment",
     bedrooms: "",
     bathrooms: "",
     kitchen: true,
-    type: "apartment",
+    size: "",
+    sizeUnit: "sqft",
+    video: "",
     contactPhone: "",
     amenities: {
       garden: false,
@@ -64,7 +72,13 @@ const CreateListingPage = () => {
     { value: "studio", label: "Studio" },
     { value: "bungalow", label: "Bungalow" },
     { value: "townhouse", label: "Townhouse" },
+    { value: "office", label: "Office" },
     { value: "other", label: "Other" }
+  ];
+
+  const purposes = [
+    { value: "rent", label: "For Rent" },
+    { value: "sale", label: "For Sale" }
   ];
 
   const amenitiesList = [
@@ -140,10 +154,20 @@ const CreateListingPage = () => {
     if (!formData.price) newErrors.price = "Price is required";
     if (formData.price && formData.price < 0) newErrors.price = "Price must be positive";
     if (!formData.location.trim()) newErrors.location = "Location is required";
-    if (!formData.bedrooms) newErrors.bedrooms = "Number of bedrooms is required";
-    if (!formData.bathrooms) newErrors.bathrooms = "Number of bathrooms is required";
     if (!formData.contactPhone.trim()) newErrors.contactPhone = "Contact phone is required";
     if (images.length === 0) newErrors.images = "At least one image is required";
+
+    // Residential type validations
+    const residentialTypes = ["apartment", "bedsitter", "maisonette", "studio", "bungalow", "townhouse"];
+    if (residentialTypes.includes(formData.type)) {
+      if (!formData.bedrooms && formData.bedrooms !== 0) newErrors.bedrooms = "Number of bedrooms is required";
+      if (!formData.bathrooms && formData.bathrooms !== 0) newErrors.bathrooms = "Number of bathrooms is required";
+    }
+
+    // Office type validation
+    if (formData.type === "office") {
+      if (!formData.size) newErrors.size = "Office listings must include size in square feet";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -179,11 +203,11 @@ const CreateListingPage = () => {
 
       const payload = new FormData();
 
-      // Add basic fields
+      // Add all form fields
       Object.entries(formData).forEach(([key, value]) => {
         if (key === "amenities") {
           payload.append(key, JSON.stringify(value));
-        } else {
+        } else if (value !== undefined && value !== null && value !== "") {
           payload.append(key, value);
         }
       });
@@ -218,6 +242,9 @@ const CreateListingPage = () => {
     }
   };
 
+  const isResidential = ["apartment", "bedsitter", "maisonette", "studio", "bungalow", "townhouse"].includes(formData.type);
+  const isOffice = formData.type === "office";
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -238,8 +265,13 @@ const CreateListingPage = () => {
       </div>
 
       {blocked ? (
-        <div className="mb-6 rounded-xl bg-amber-50 p-4 text-sm text-amber-700">
-          You cannot create a new listing right now. Please review your subscription status first.
+        <div className="mb-6 rounded-xl bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200">
+          <div className="flex items-start gap-3">
+            <FiInfo className="text-amber-500 mt-0.5" />
+            <div>
+              You cannot create a new listing right now. Please review your subscription status first.
+            </div>
+          </div>
         </div>
       ) : null}
 
@@ -312,6 +344,29 @@ const CreateListingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-[#013E43] mb-1">
+                Purpose <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiTarget className="h-5 w-5 text-[#0D915C]" />
+                </div>
+                <select
+                  name="purpose"
+                  value={formData.purpose}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none appearance-none bg-white"
+                >
+                  {purposes.map(purpose => (
+                    <option key={purpose.value} value={purpose.value}>
+                      {purpose.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#013E43] mb-1">
                 Price (KES) <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -337,7 +392,7 @@ const CreateListingPage = () => {
               )}
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-[#013E43] mb-1">
                 Location <span className="text-red-500">*</span>
               </label>
@@ -375,62 +430,6 @@ const CreateListingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-[#013E43] mb-1">
-                Bedrooms <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaBed className="h-5 w-5 text-[#0D915C]" />
-                </div>
-                <input
-                  name="bedrooms"
-                  type="number"
-                  value={formData.bedrooms}
-                  onChange={handleChange}
-                  placeholder="e.g., 2"
-                  min="0"
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                    errors.bedrooms 
-                      ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                      : 'border-[#A8D8C1] focus:border-[#02BB31]'
-                  }`}
-                  disabled={loading}
-                />
-              </div>
-              {errors.bedrooms && (
-                <p className="text-sm text-red-500 mt-1">{errors.bedrooms}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
-                Bathrooms <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaBath className="h-5 w-5 text-[#0D915C]" />
-                </div>
-                <input
-                  name="bathrooms"
-                  type="number"
-                  value={formData.bathrooms}
-                  onChange={handleChange}
-                  placeholder="e.g., 2"
-                  min="0"
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                    errors.bathrooms 
-                      ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                      : 'border-[#A8D8C1] focus:border-[#02BB31]'
-                  }`}
-                  disabled={loading}
-                />
-              </div>
-              {errors.bathrooms && (
-                <p className="text-sm text-red-500 mt-1">{errors.bathrooms}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
                 Property Type <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -452,6 +451,96 @@ const CreateListingPage = () => {
                 </select>
               </div>
             </div>
+
+            {isResidential && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-[#013E43] mb-1">
+                    Bedrooms <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaBed className="h-5 w-5 text-[#0D915C]" />
+                    </div>
+                    <input
+                      name="bedrooms"
+                      type="number"
+                      value={formData.bedrooms}
+                      onChange={handleChange}
+                      placeholder="e.g., 2"
+                      min="0"
+                      className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
+                        errors.bedrooms 
+                          ? 'border-red-400 focus:border-red-500 bg-red-50' 
+                          : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                      }`}
+                      disabled={loading}
+                    />
+                  </div>
+                  {errors.bedrooms && (
+                    <p className="text-sm text-red-500 mt-1">{errors.bedrooms}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#013E43] mb-1">
+                    Bathrooms <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaBath className="h-5 w-5 text-[#0D915C]" />
+                    </div>
+                    <input
+                      name="bathrooms"
+                      type="number"
+                      value={formData.bathrooms}
+                      onChange={handleChange}
+                      placeholder="e.g., 2"
+                      min="0"
+                      className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
+                        errors.bathrooms 
+                          ? 'border-red-400 focus:border-red-500 bg-red-50' 
+                          : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                      }`}
+                      disabled={loading}
+                    />
+                  </div>
+                  {errors.bathrooms && (
+                    <p className="text-sm text-red-500 mt-1">{errors.bathrooms}</p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {isOffice && (
+              <div>
+                <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  Size (sq ft) <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaRulerCombined className="h-5 w-5 text-[#0D915C]" />
+                  </div>
+                  <input
+                    name="size"
+                    type="number"
+                    value={formData.size}
+                    onChange={handleChange}
+                    placeholder="e.g., 1200"
+                    min="0"
+                    className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
+                      errors.size 
+                        ? 'border-red-400 focus:border-red-500 bg-red-50' 
+                        : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                    }`}
+                    disabled={loading}
+                  />
+                </div>
+                {errors.size && (
+                  <p className="text-sm text-red-500 mt-1">{errors.size}</p>
+                )}
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-[#013E43] mb-1">
@@ -495,6 +584,36 @@ const CreateListingPage = () => {
                 </span>
               </label>
             </div>
+          </div>
+        </div>
+
+        {/* Video URL Card */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
+          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
+            <FiVideo className="mr-2 text-[#02BB31]" />
+            Virtual Tour (Optional)
+          </h2>
+          
+          <div>
+            <label className="block text-sm font-medium text-[#013E43] mb-1">
+              Video URL
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiVideo className="h-5 w-5 text-[#0D915C]" />
+              </div>
+              <input
+                name="video"
+                value={formData.video}
+                onChange={handleChange}
+                placeholder="https://youtube.com/watch?v=..."
+                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none transition-colors"
+                disabled={loading}
+              />
+            </div>
+            <p className="text-xs text-[#065A57] mt-1">
+              Add a YouTube or Vimeo link for a virtual tour of your property
+            </p>
           </div>
         </div>
 

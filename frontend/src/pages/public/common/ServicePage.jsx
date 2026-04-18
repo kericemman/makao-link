@@ -112,11 +112,11 @@ const ServicesPage = () => {
             </h1>
 
             <p className="text-lg text-[#A8D8C1] leading-relaxed mb-8 max-w-2xl mx-auto">
-              RendaHomes connects tenants with trusted movers, cleaners, repair experts,
+              Get trusted movers, cleaners, repair experts,
               furniture suppliers, and internet providers so settling in becomes easier.
             </p>
 
-            <div className="flex flex-wrap gap-4 justify-center">
+            {/* <div className="flex flex-wrap gap-4 justify-center">
               <Link
                 to="/services/apply"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105"
@@ -124,7 +124,7 @@ const ServicesPage = () => {
                 Apply as a Partner
                 <FiArrowRight />
               </Link>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>
@@ -136,7 +136,7 @@ const ServicesPage = () => {
             <FiHome className="text-sm" />
             <span className="text-sm font-medium">Service Categories</span>
           </div>
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#013E43] mb-3">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-[#013E43] mb-3">
             Explore Services
           </h2>
         </div>
@@ -211,7 +211,7 @@ const ServicesPage = () => {
                     </p>
                     <div className="flex items-center justify-between pt-3 border-t border-[#A8D8C1]">
                       <span className="text-sm font-medium text-[#02BB31] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                        View Partners
+                        Explore
                         <FiArrowRight className="text-sm" />
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${colorClass}`}></div>
@@ -227,13 +227,13 @@ const ServicesPage = () => {
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-r from-[#013E43] to-[#005C57]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl font-bold text-white mb-4">
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-4">
             Are you a service provider?
           </h2>
-          <p className="text-lg text-[#A8D8C1] mb-8 max-w-2xl mx-auto">
+          <p className="text-sm md:text-lg text-[#A8D8C1] mb-8 max-w-2xl mx-auto">
             Join our network of trusted partners and connect with thousands of potential customers.
           </p>
-          <div className="flex flex-wrap gap-4 justify-center">
+          <div className="flex gap-2 justify-center">
             <Link
               to="/services/apply"
               className="px-8 py-3 bg-white text-[#013E43] rounded-xl font-light hover:shadow-lg transition-all transform hover:scale-105"
@@ -241,8 +241,8 @@ const ServicesPage = () => {
               Partner with Us
             </Link>
             <Link
-              to="/contact"
-              className="px-8 py-3 bg-[#02BB31] text-white rounded-xl font-light hover:bg-[#0D915C] transition-all transform hover:scale-105"
+              to="/support"
+              className="px-8 py-3 text-sm bg-[#02BB31] text-white rounded-xl font-light hover:bg-[#0D915C] transition-all transform hover:scale-105"
             >
               Contact Sales
             </Link>

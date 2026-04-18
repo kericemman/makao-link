@@ -17,6 +17,14 @@ const listingSchema = new mongoose.Schema(
       required: true
     },
 
+    purpose: {
+      type: String,
+      enum: ["rent", "sale"],
+      required: true,
+      default: "rent",
+      index: true
+    },
+
     price: {
       type: Number,
       required: true,
@@ -29,16 +37,32 @@ const listingSchema = new mongoose.Schema(
       index: true
     },
 
+    type: {
+      type: String,
+      enum: [
+        "apartment",
+        "bedsitter",
+        "maisonette",
+        "studio",
+        "bungalow",
+        "townhouse",
+        "office",
+        "other"
+      ],
+      required: true,
+      index: true
+    },
+
     bedrooms: {
       type: Number,
-      required: true,
-      min: 0
+      min: 0,
+      default: null
     },
 
     bathrooms: {
       type: Number,
-      required: true,
-      min: 0
+      min: 0,
+      default: null
     },
 
     kitchen: {
@@ -46,10 +70,16 @@ const listingSchema = new mongoose.Schema(
       default: true
     },
 
-    type: {
+    size: {
+      type: Number,
+      min: 0,
+      default: null
+    },
+
+    sizeUnit: {
       type: String,
-      enum: ["apartment", "bedsitter", "maisonette", "studio", "bungalow", "townhouse", "other"],
-      required: true
+      enum: ["sqft"],
+      default: null
     },
 
     images: {
@@ -114,4 +144,37 @@ const listingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+listingSchema.pre("validate", function () {
+  // Office listings should have size in square feet
+  if (this.type === "office") {
+    if (!this.size) {
+      throw new Error("Office listings must include size in square feet");
+    }
+
+    if (!this.sizeUnit) {
+      this.sizeUnit = "sqft";
+    }
+  }
+
+  // Residential types should usually have bedrooms and bathrooms
+  const residentialTypes = [
+    "apartment",
+    "bedsitter",
+    "maisonette",
+    "studio",
+    "bungalow",
+    "townhouse"
+  ];
+
+  if (residentialTypes.includes(this.type)) {
+    if (this.bedrooms === null || this.bedrooms === undefined) {
+      throw new Error("Residential listings must include bedrooms");
+    }
+
+    if (this.bathrooms === null || this.bathrooms === undefined) {
+      throw new Error("Residential listings must include bathrooms");
+    }
+  }
+});
 module.exports = mongoose.model("Listing", listingSchema);
+

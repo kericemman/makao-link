@@ -66,6 +66,18 @@ const categories = [
     bgColor: "bg-teal-100",
     textColor: "text-teal-600",
     badgeColor: "bg-teal-600"
+  },
+
+  {
+    title: "Office Space",
+    description: "Get ready to move in office for your daily business.",
+    type: "office",
+    image: "https://res.cloudinary.com/dhlz0p70t/image/upload/v1776497974/modern-office-space-interior_nmiv3k.jpg",
+    icon: FiGrid,
+    color: "from-teal-400 to-teal-500",
+    bgColor: "bg-teal-100",
+    textColor: "text-teal-600",
+    badgeColor: "bg-teal-600"
   }
 ];
 

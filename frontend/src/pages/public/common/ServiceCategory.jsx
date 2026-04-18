@@ -19,7 +19,7 @@ import {
   FiRefreshCw,
   FiEye
 } from "react-icons/fi";
-import { FaWhatsapp, FaBuilding, FaHandshake, FaToolbox, FaChair, FaIntercom } from "react-icons/fa";
+import { FaWhatsapp, FaBuilding, FaHandshake, FaToolbox, FaChair, FaIntercom, FaSquarespace } from "react-icons/fa";
 import { MdCleaningServices } from "react-icons/md";
 import toast from "react-hot-toast";
 
@@ -28,7 +28,8 @@ const categoryTitles = {
   cleaning: "Cleaning Companies",
   handyman: "Handyman & Repair Services",
   furniture: "Furniture & Appliances",
-  internet: "Internet & WiFi Providers"
+  internet: "Internet & WiFi Providers", 
+ 
 };
 
 const categoryIcons = {
@@ -36,7 +37,8 @@ const categoryIcons = {
   cleaning: MdCleaningServices,
   handyman: FaToolbox,
   furniture: FaChair,
-  internet: FaIntercom
+  internet: FaIntercom,
+ 
 };
 
 const categoryImages = {
@@ -44,7 +46,8 @@ const categoryImages = {
   cleaning: "https://res.cloudinary.com/dhlz0p70t/image/upload/v1775806311/hands-holding-cleaning-tools-solutions_1_xw0sgd.jpg",
   handyman: "https://res.cloudinary.com/dhlz0p70t/image/upload/v1775806028/37691_ugndsp.jpg",
   furniture: "https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  internet: "https://res.cloudinary.com/dhlz0p70t/image/upload/v1775805841/wifi-internet-wireless-connection-communication-technology-graphic_r2njne.jpg"
+  internet: "https://res.cloudinary.com/dhlz0p70t/image/upload/v1775805841/wifi-internet-wireless-connection-communication-technology-graphic_r2njne.jpg",
+  office: ""
 };
 
 const categoryColors = {
@@ -160,9 +163,9 @@ const ServiceCategoryPage = () => {
             >
               <FiArrowLeft className="text-xl" />
             </Link>
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+            {/* <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
               <CategoryIcon className="text-xl text-[#02BB31]" />
-            </div>
+            </div> */}
             <div>
               <h1 className="text-xl md:text-4xl font-bold">{categoryTitle}</h1>
               <p className="text-sm text-[#A8D8C1] mt-1">
