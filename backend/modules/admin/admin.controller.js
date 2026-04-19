@@ -7,11 +7,14 @@ const {
  
 } = require("../../utils/emailTemplates");
 const User = require("../users/user.model");
+const Subscription = require("../subscriptions/subscription.model");
 const Payment = require("../payments/payment.model");
 const plans = require("../payments/plan.config");
 const Inquiry = require("../inquiries/inquiry.model");
+const SupportTicket = require("../support/support.model");
 const PartnerApplication = require("../services/partnerApplication.model");
 const ServicePartner = require("../services/servicePartner.model");
+
 
 exports.getPendingListings = async (req, res, next) => {
   try {
@@ -93,17 +96,108 @@ exports.rejectListing = async (req, res, next) => {
 
 exports.getAdminSummary = async (req, res, next) => {
   try {
-    const [pendingListings, landlords] = await Promise.all([
+    const [
+      pendingListings,
+      approvedListings,
+      rejectedListings,
+      totalListings,
+      landlords,
+      tenants,
+      totalInquiries,
+      activeSubscriptions,
+      pendingPayments,
+      totalSupportTickets,
+      openSupportTickets,
+      successfulPayments
+    ] = await Promise.all([
       Listing.countDocuments({ status: "pending" }),
-      User.countDocuments({ role: "landlord" })
+      Listing.countDocuments({ status: "approved" }),
+      Listing.countDocuments({ status: "rejected" }),
+      Listing.countDocuments(),
+      User.countDocuments({ role: "landlord" }),
+      User.countDocuments({ role: "tenant" }), // if you actually have tenants
+      Inquiry.countDocuments(),
+      Subscription.countDocuments({ status: "active" }),
+      Subscription.countDocuments({ status: "pending_payment" }),
+      SupportTicket.countDocuments(),
+      SupportTicket.countDocuments({ status: { $in: ["open", "in_progress"] } }),
+      Payment.aggregate([
+        { $match: { status: "success", paymentType: "subscription" } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$amount" }
+          }
+        }
+      ])
     ]);
+
+    const totalRevenue = successfulPayments?.[0]?.total || 0;
 
     res.json({
       success: true,
       summary: {
         pendingListings,
-        landlords
+        approvedListings,
+        rejectedListings,
+        landlords,
+        tenants,
+        totalListings,
+        totalInquiries,
+        totalRevenue,
+        activeSubscriptions,
+        pendingPayments,
+        totalSupportTickets,
+        openSupportTickets
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+exports.getRecentActivity = async (req, res, next) => {
+  try {
+    const [recentListings, recentPayments, recentInquiries, recentSupport] = await Promise.all([
+      Listing.find().sort({ createdAt: -1 }).limit(5).populate("landlord", "name"),
+      Payment.find({ status: "success" }).sort({ createdAt: -1 }).limit(5),
+      Inquiry.find().sort({ createdAt: -1 }).limit(5),
+      SupportTicket.find().sort({ updatedAt: -1 }).limit(5).populate("landlord", "name")
+    ]);
+
+    const activities = [
+      ...recentListings.map((item) => ({
+        type: "listing_submission",
+        description: "New listing submitted",
+        details: `${item.title} by ${item.landlord?.name || "Unknown landlord"}`,
+        createdAt: item.createdAt
+      })),
+      ...recentPayments.map((item) => ({
+        type: "payment_received",
+        description: "Payment received",
+        details: `KES ${item.amount.toLocaleString()} • ${item.reference}`,
+        createdAt: item.createdAt
+      })),
+      ...recentInquiries.map((item) => ({
+        type: "inquiry_sent",
+        description: "New inquiry received",
+        details: `${item.name} sent an inquiry`,
+        createdAt: item.createdAt
+      })),
+      ...recentSupport.map((item) => ({
+        type: "support_ticket",
+        description: "Support ticket updated",
+        details: `${item.subject} • ${item.landlord?.name || "Unknown landlord"}`,
+        createdAt: item.updatedAt
+      }))
+    ]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10);
+
+    res.json({
+      success: true,
+      activities
     });
   } catch (error) {
     next(error);
@@ -486,4 +580,111 @@ exports.rejectServiceApplication = async (req, res, next) => {
 };
 
 
+exports.getAllListings = async (req, res, next) => {
+  try {
+    const { status, availability, purpose } = req.query;
 
+    const filter = {};
+
+    if (status && ["pending", "approved", "rejected"].includes(status)) {
+      filter.status = status;
+    }
+
+    if (availability && ["available", "taken"].includes(availability)) {
+      filter.availability = availability;
+    }
+
+    if (purpose && ["rent", "sale"].includes(purpose)) {
+      filter.purpose = purpose;
+    }
+
+    const listings = await Listing.find(filter)
+      .populate("landlord", "name email phone")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      listings
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getAdminSubscriptions = async (req, res, next) => {
+  try {
+    const { status, plan } = req.query;
+
+    const filter = {};
+
+    if (status && ["free", "pending_payment", "active", "grace", "expired", "cancelled"].includes(status)) {
+      filter.status = status;
+    }
+
+    if (plan && ["normal", "basic", "premium", "pro"].includes(plan)) {
+      filter.plan = plan;
+    }
+
+    const subscriptions = await Subscription.find(filter)
+      .populate("user", "name email phone")
+      .sort({ createdAt: -1 });
+
+    const records = await Promise.all(
+      subscriptions.map(async (subscription) => {
+        const activeListings = await Listing.countDocuments({
+          landlord: subscription.user?._id,
+          isActive: true,
+          availability: "available"
+        });
+
+        return {
+          _id: subscription._id,
+          user: subscription.user
+            ? {
+                _id: subscription.user._id,
+                name: subscription.user.name,
+                email: subscription.user.email,
+                phone: subscription.user.phone
+              }
+            : null,
+          plan: subscription.plan,
+          status: subscription.status,
+          currentPeriodStart: subscription.currentPeriodStart,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          gracePeriodEnd: subscription.gracePeriodEnd,
+          lastPaymentDate: subscription.lastPaymentDate,
+          activeListings
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      subscriptions: records
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+exports.getPlatformHealth = async (req, res, next) => {
+  try {
+    const start = Date.now();
+
+    await Promise.resolve(); // replace with a quick DB ping if needed
+
+    const responseTime = Date.now() - start;
+
+    res.json({
+      apiStatus: "operational",
+      databaseStatus: "connected",
+      responseTime,
+      storageUsed: 45, // replace with actual storage logic later
+      uptime: 99.9
+    });
+  } catch (error) {
+    next(error);
+  }
+};

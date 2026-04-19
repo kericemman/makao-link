@@ -1,23 +1,25 @@
 import { useEffect, useState } from "react";
-import { getNewsletterSubscribers} from "../../services/blog.service";
+import { getNewsletterSubscribers, unsubscribeSubscriber, deleteSubscriber } from "../../services/blog.service";
 import { 
   FiMail, 
   FiUsers, 
-  FiDownload, 
-  FiTrash2,
+  FiCalendar, 
   FiSearch,
   FiFilter,
   FiRefreshCw,
-  FiCalendar,
   FiCheckCircle,
   FiXCircle,
+  FiTrash2,
+  FiDownload,
+  FiEye,
+  FiEyeOff,
   FiAlertCircle,
   FiUserCheck,
   FiUserX,
   FiChevronDown,
   FiArrowRight
 } from "react-icons/fi";
-import { FaEnvelope, FaUserPlus } from "react-icons/fa";
+import { FaEnvelope } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const AdminNewsletterSubscribersPage = () => {
@@ -27,20 +29,17 @@ const AdminNewsletterSubscribersPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState("all");
-  const [error, setError] = useState("");
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedSubscriber, setSelectedSubscriber] = useState(null);
-  const [deletingId, setDeletingId] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showUnsubscribeModal, setShowUnsubscribeModal] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const fetchSubscribers = async () => {
     try {
       setLoading(true);
-      setError("");
       const data = await getNewsletterSubscribers();
       setSubscribers(data.subscribers || []);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to load subscribers");
+    } catch (error) {
       toast.error("Failed to load subscribers", {
         style: { background: "#013E43", color: "#fff" }
       });
@@ -82,64 +81,81 @@ const AdminNewsletterSubscribersPage = () => {
       switch(dateRange) {
         case "today":
           filterDate.setHours(0, 0, 0, 0);
-          filtered = filtered.filter(sub => new Date(sub.createdAt) >= filterDate);
+          filtered = filtered.filter(sub => new Date(sub.subscribedAt || sub.createdAt) >= filterDate);
           break;
         case "week":
           filterDate.setDate(filterDate.getDate() - 7);
-          filtered = filtered.filter(sub => new Date(sub.createdAt) >= filterDate);
+          filtered = filtered.filter(sub => new Date(sub.subscribedAt || sub.createdAt) >= filterDate);
           break;
         case "month":
           filterDate.setMonth(filterDate.getMonth() - 1);
-          filtered = filtered.filter(sub => new Date(sub.createdAt) >= filterDate);
+          filtered = filtered.filter(sub => new Date(sub.subscribedAt || sub.createdAt) >= filterDate);
           break;
       }
     }
 
+    // Sort by date (newest first)
+    filtered.sort((a, b) => new Date(b.subscribedAt || b.createdAt) - new Date(a.subscribedAt || a.createdAt));
+    
     setFilteredSubscribers(filtered);
   };
 
   const handleUnsubscribe = async () => {
     try {
-      setDeletingId(selectedSubscriber._id);
       await unsubscribeSubscriber(selectedSubscriber._id);
-      toast.success("Subscriber removed successfully", {
+      toast.success("Subscriber unsubscribed successfully", {
         style: { background: "#02BB31", color: "#fff" }
       });
-      setShowDeleteModal(false);
-      setSelectedSubscriber(null);
       fetchSubscribers();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to remove subscriber", {
+      setShowUnsubscribeModal(false);
+      setSelectedSubscriber(null);
+    } catch (error) {
+      toast.error("Failed to unsubscribe", {
         style: { background: "#013E43", color: "#fff" }
       });
-    } finally {
-      setDeletingId("");
     }
   };
 
-  const handleExport = async () => {
+  const handleDelete = async () => {
+    try {
+      await deleteSubscriber(selectedSubscriber._id);
+      toast.success("Subscriber deleted successfully", {
+        style: { background: "#02BB31", color: "#fff" }
+      });
+      fetchSubscribers();
+      setShowDeleteModal(false);
+      setSelectedSubscriber(null);
+    } catch (error) {
+      toast.error("Failed to delete subscriber", {
+        style: { background: "#013E43", color: "#fff" }
+      });
+    }
+  };
+
+  const exportToCSV = () => {
     try {
       setExporting(true);
-      const data = await exportSubscribers();
       
-      // Create CSV content
-      const csvContent = "Email,Status,Subscribed At\n" + 
-        subscribers.map(sub => 
-          `${sub.email},${sub.isActive ? "Active" : "Inactive"},${new Date(sub.createdAt).toLocaleString()}`
-        ).join("\n");
+      const headers = ["Email", "Status", "Subscribed At"];
+      const rows = filteredSubscribers.map(sub => [
+        sub.email,
+        sub.isActive ? "Active" : "Inactive",
+        new Date(sub.subscribedAt || sub.createdAt).toLocaleString()
+      ]);
       
+      const csvContent = [headers, ...rows].map(row => row.join(",")).join("\n");
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `subscribers_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `newsletter-subscribers-${new Date().toISOString().split("T")[0]}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       
       toast.success("Subscribers exported successfully", {
         style: { background: "#02BB31", color: "#fff" }
       });
-    } catch (err) {
+    } catch (error) {
       toast.error("Failed to export subscribers", {
         style: { background: "#013E43", color: "#fff" }
       });
@@ -162,10 +178,10 @@ const AdminNewsletterSubscribersPage = () => {
     total: subscribers.length,
     active: subscribers.filter(s => s.isActive).length,
     inactive: subscribers.filter(s => !s.isActive).length,
-    newThisMonth: subscribers.filter(s => {
-      const monthAgo = new Date();
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      return new Date(s.createdAt) >= monthAgo;
+    newThisWeek: subscribers.filter(s => {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return new Date(s.subscribedAt || s.createdAt) >= weekAgo;
     }).length
   };
 
@@ -180,23 +196,6 @@ const AdminNewsletterSubscribersPage = () => {
     );
   }
 
-  if (error && subscribers.length === 0) {
-    return (
-      <div className="bg-white rounded-2xl shadow-lg p-8 text-center border border-[#A8D8C1]">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <FiAlertCircle className="text-3xl text-red-500" />
-        </div>
-        <p className="text-red-600 mb-4">{error}</p>
-        <button
-          onClick={fetchSubscribers}
-          className="px-4 py-2 bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
-        >
-          Try Again
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -207,9 +206,9 @@ const AdminNewsletterSubscribersPage = () => {
               <FiMail className="text-white text-2xl" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-[#013E43]">Newsletter Subscribers</h1>
+              <h1 className="text-2xl font-bold text-[#013E43]">Newsletter Subscribers</h1>
               <p className="text-sm text-[#065A57]">
-                Manage and export your email subscriber list
+                Manage everyone who receives blog email notifications
               </p>
             </div>
           </div>
@@ -223,9 +222,9 @@ const AdminNewsletterSubscribersPage = () => {
               <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button
-              onClick={handleExport}
-              disabled={exporting || subscribers.length === 0}
-              className="px-4 py-2 bg-[#013E43] text-white rounded-lg hover:bg-[#005C57] transition-colors flex items-center gap-2 disabled:opacity-50"
+              onClick={exportToCSV}
+              disabled={exporting || filteredSubscribers.length === 0}
+              className="px-4 py-2 bg-[#013E43] text-white rounded-lg hover:bg-[#005C57] transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FiDownload />
               <span>{exporting ? "Exporting..." : "Export CSV"}</span>
@@ -235,22 +234,22 @@ const AdminNewsletterSubscribersPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#013E43]">
           <p className="text-sm text-[#065A57]">Total Subscribers</p>
           <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
+        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-[#02BB31]">
           <p className="text-sm text-[#065A57]">Active</p>
           <p className="text-2xl font-bold text-[#02BB31]">{stats.active}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
+        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-red-400">
           <p className="text-sm text-[#065A57]">Inactive</p>
           <p className="text-2xl font-bold text-red-500">{stats.inactive}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
-          <p className="text-sm text-[#065A57]">New This Month</p>
-          <p className="text-2xl font-bold text-purple-600">{stats.newThisMonth}</p>
+        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-purple-400">
+          <p className="text-sm text-[#065A57]">New This Week</p>
+          <p className="text-2xl font-bold text-purple-600">{stats.newThisWeek}</p>
         </div>
       </div>
 
@@ -304,9 +303,9 @@ const AdminNewsletterSubscribersPage = () => {
       {filteredSubscribers.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-[#A8D8C1]">
           <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-            <FiMail className="text-3xl text-[#A8D8C1]" />
+            <FiUsers className="text-3xl text-[#A8D8C1]" />
           </div>
-          <h3 className="text-lg font-semibold text-[#013E43] mb-2">No subscribers found</h3>
+          <h2 className="text-lg font-semibold text-[#013E43] mb-2">No subscribers found</h2>
           <p className="text-sm text-[#065A57]">
             {searchTerm || statusFilter !== "all" || dateRange !== "all"
               ? "Try adjusting your filters"
@@ -335,7 +334,6 @@ const AdminNewsletterSubscribersPage = () => {
                         </div>
                         <div>
                           <p className="font-medium text-[#013E43]">{subscriber.email}</p>
-                          <p className="text-xs text-[#065A57]">ID: {subscriber._id.slice(-8)}</p>
                         </div>
                       </div>
                     </td>
@@ -354,24 +352,35 @@ const AdminNewsletterSubscribersPage = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <p className="text-sm text-[#013E43]">{formatDate(subscriber.createdAt)}</p>
-                        <p className="text-xs text-[#065A57] flex items-center mt-0.5">
-                          <FiCalendar className="mr-1 text-[#02BB31]" />
-                          {new Date(subscriber.createdAt).toLocaleDateString()}
-                        </p>
+                        <p className="text-sm text-[#013E43]">{formatDate(subscriber.subscribedAt || subscriber.createdAt)}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedSubscriber(subscriber);
-                          setShowDeleteModal(true);
-                        }}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Remove Subscriber"
-                      >
-                        <FiTrash2 />
-                      </button>
+                      <div className="flex items-center justify-end space-x-2">
+                        {subscriber.isActive ? (
+                          <button
+                            onClick={() => {
+                              setSelectedSubscriber(subscriber);
+                              setShowUnsubscribeModal(true);
+                            }}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Unsubscribe"
+                          >
+                            <FiUserX />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSelectedSubscriber(subscriber);
+                              setShowDeleteModal(true);
+                            }}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -399,6 +408,42 @@ const AdminNewsletterSubscribersPage = () => {
         </div>
       )}
 
+      {/* Unsubscribe Confirmation Modal */}
+      {showUnsubscribeModal && selectedSubscriber && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 flex items-center justify-center">
+                <FiUserX className="text-3xl text-yellow-600" />
+              </div>
+              <h3 className="text-xl font-bold text-[#013E43] mb-2">Unsubscribe Subscriber</h3>
+              <p className="text-sm text-[#065A57]">
+                Are you sure you want to unsubscribe "{selectedSubscriber.email}"? 
+                They will no longer receive newsletter emails.
+              </p>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowUnsubscribeModal(false);
+                  setSelectedSubscriber(null);
+                }}
+                className="flex-1 px-4 py-2 border border-[#A8D8C1] text-[#065A57] rounded-lg hover:bg-[#F0F7F4] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUnsubscribe}
+                className="flex-1 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+              >
+                Unsubscribe
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedSubscriber && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -407,9 +452,9 @@ const AdminNewsletterSubscribersPage = () => {
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
                 <FiTrash2 className="text-3xl text-red-500" />
               </div>
-              <h3 className="text-xl font-bold text-[#013E43] mb-2">Remove Subscriber</h3>
+              <h3 className="text-xl font-bold text-[#013E43] mb-2">Delete Subscriber</h3>
               <p className="text-sm text-[#065A57]">
-                Are you sure you want to remove "{selectedSubscriber.email}" from the newsletter list? 
+                Are you sure you want to permanently delete "{selectedSubscriber.email}"? 
                 This action cannot be undone.
               </p>
             </div>
@@ -425,11 +470,10 @@ const AdminNewsletterSubscribersPage = () => {
                 Cancel
               </button>
               <button
-                onClick={handleUnsubscribe}
-                disabled={deletingId === selectedSubscriber._id}
-                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+                onClick={handleDelete}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
               >
-                {deletingId === selectedSubscriber._id ? "Removing..." : "Remove"}
+                Delete
               </button>
             </div>
           </div>

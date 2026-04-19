@@ -12,7 +12,10 @@ const {
   getServiceApplications,
   getServiceApplicationById,
   approveServiceApplication,
-  rejectServiceApplication
+  rejectServiceApplication,
+  getAllListings,
+  getAdminSubscriptions,
+  getRecentActivity
 } = require("./admin.controller");
 const { protect } = require("../../middleware/auth.middleware");
 const requireRole = require("../../middleware/role.middleware");
@@ -31,4 +34,7 @@ router.get("/service-applications", protect, requireRole("admin"), getServiceApp
 router.get("/service-applications/:id", protect, requireRole("admin"), getServiceApplicationById);
 router.patch("/service-applications/:id/approve", protect, requireRole("admin"), approveServiceApplication);
 router.patch("/service-applications/:id/reject", protect, requireRole("admin"), rejectServiceApplication);
+router.get("/activity", protect, requireRole("admin"), getRecentActivity);
+router.get("/listings", protect, requireRole("admin"), getAllListings);
+router.get("/subscriptions", protect, requireRole("admin"), getAdminSubscriptions);
 module.exports = router;

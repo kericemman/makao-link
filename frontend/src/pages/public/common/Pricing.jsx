@@ -86,9 +86,10 @@ const plans = [
     description: "For professional property managers",
     features: [
       "List up to 50 properties",
+      "Feathured listings",
       "Top marketplace visibility",
       "Dedicated dashboard with insights",
-      "Custom listing options",
+      
       "Instant tenant matching",
       "Bulk property import",
       "Receive tenant applications directly to your email" ,
@@ -301,7 +302,7 @@ const Pricing = () => {
             <div className="bg-white rounded-xl shadow-lg border border-[#A8D8C1] p-6">
               <h3 className="font-semibold text-[#013E43] mb-2">Is there a free trial?</h3>
               <p className="text-sm text-[#065A57]">
-                Yes! All paid plans come with a 14-day free trial. No credit card required.
+                No, but we offer a normal package where you can list up-to 2 properties for free.
               </p>
             </div>
             

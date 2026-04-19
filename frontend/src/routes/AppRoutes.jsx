@@ -31,6 +31,10 @@ import LandlordSupportDetailPage from "../pages/landlord/SupportDetails";
 import AdminSupportPage from "../pages/admin/AdminSupport";
 import AdminSupportDetailPage from "../pages/admin/AdminSupportdetails";
 
+
+import AdminAllListingsPage from "../pages/admin/AdminListingPage";
+import AdminSubscriptionsPage from "../pages/admin//AdminSubscriptionPage";
+
 import AdminBlogs from "../pages/admin/blog/AdminBlog";
 import CreateBlog from "../pages/admin/blog/CreateBlog";
 import ListingsPage from "../pages/public/common/Listing";
@@ -127,7 +131,9 @@ const AppRoutes = () => {
             <Route path="/admin/blog" element={<AdminBlogsPage />} />
             <Route path="/admin/blog/new" element={<AdminBlogEditorPage />} />
             <Route path="/admin/blog/:id" element={<AdminBlogEditorPage />} />
-            <Route path="/admin/blog/subscribers" element={<AdminNewsletterSubscribersPage />} />
+            <Route path="/admin/subscribers" element={<AdminNewsletterSubscribersPage />} />
+            <Route path="/admin/listings" element={<AdminAllListingsPage />} />
+            <Route path="/admin/subscriptions" element={<AdminSubscriptionsPage />} />
           </Route>
         </Route>
       </Route>

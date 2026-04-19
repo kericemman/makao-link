@@ -60,3 +60,18 @@ export const rejectServiceApplication = async (id) => {
   const response = await api.patch(`/admin/service-applications/${id}/reject`);
   return response.data;
 };
+
+export const getAllListings = async (params = {}) => {
+  const response = await api.get("/admin/listings", { params });
+  return response.data;
+};
+
+export const getAdminSubscriptions = async (params = {}) => {
+  const response = await api.get("/admin/subscriptions", { params });
+  return response.data;
+};
+
+export const getRecentActivity = async () => {
+  const response = await api.get("/admin/activity");
+  return response.data;
+};
