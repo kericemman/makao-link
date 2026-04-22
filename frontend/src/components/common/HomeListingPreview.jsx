@@ -1,50 +1,59 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getPublicListings } from "../../services/listings.service";
-import { 
-  FiHome, 
-  FiTrendingUp, 
+import {
+  FiHome,
+  FiTrendingUp,
   FiArrowRight,
-  FiEye,
   FiHeart,
   FiCamera,
   FiStar,
-  FiMapPin,
-  FiChevronRight
+  FiMapPin
 } from "react-icons/fi";
-import { FaBed, FaBath, FaBuilding } from "react-icons/fa";
+import { FaBed, FaBath, FaBuilding, FaRulerCombined } from "react-icons/fa";
 import toast from "react-hot-toast";
 
-// Helper function to get image URL
 const getImageUrl = (image) => {
   if (!image) return null;
-  if (typeof image === 'object' && image.url) return image.url;
-  if (typeof image === 'string') return image;
+  if (typeof image === "string") return image;
+  if (typeof image === "object" && image.url) return image.url;
   return null;
 };
 
-// Individual Listing Card Component - Airbnb style compact
+const prettifyLabel = (value) => {
+  if (!value) return "";
+  return value
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+};
+
 const ListingPreviewCard = ({ listing }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const firstImage = listing.images?.[0] ? getImageUrl(listing.images[0]) : null;
+  const isOffice = listing.type === "office";
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
+    return new Intl.NumberFormat("en-KE", {
+      style: "currency",
+      currency: "KES",
       minimumFractionDigits: 0
     }).format(price);
   };
 
+  const locationText = [listing.town, listing.area, listing.county]
+    .filter(Boolean)
+    .map((item) => prettifyLabel(item))
+    .join(", ");
+
   return (
     <Link
-      to={`/properties/${listing._id}`}
+      to={`/listings/${listing._id}`}
       className="group relative block rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Image Section - Compact height for mobile */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl">
         {firstImage ? (
           <img
@@ -54,8 +63,8 @@ const ListingPreviewCard = ({ listing }) => {
               isHovered ? "scale-110" : "scale-100"
             }`}
             onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.parentElement.classList.add('flex', 'items-center', 'justify-center');
+              e.target.style.display = "none";
+              e.target.parentElement.classList.add("flex", "items-center", "justify-center");
             }}
           />
         ) : (
@@ -63,8 +72,7 @@ const ListingPreviewCard = ({ listing }) => {
             <FiHome className="text-3xl text-white/50" />
           </div>
         )}
-        
-        {/* Featured Badge */}
+
         {listing.isFeatured && (
           <div className="absolute top-2 left-2">
             <span className="flex items-center gap-0.5 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-lg">
@@ -73,8 +81,8 @@ const ListingPreviewCard = ({ listing }) => {
             </span>
           </div>
         )}
+
         
-        {/* Favorite Button - Smaller for mobile */}
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -83,49 +91,70 @@ const ListingPreviewCard = ({ listing }) => {
           }}
           className="absolute top-2 right-2 rounded-full bg-white/90 p-1.5 shadow-lg backdrop-blur-sm transition-all hover:scale-110 z-10"
         >
-          <FiHeart 
+          <FiHeart
             className={`text-sm transition-colors ${
               isFavorite ? "fill-red-500 text-red-500" : "text-[#065A57]"
-            }`} 
+            }`}
           />
         </button>
-        
-        {/* Price Tag - Compact */}
+
         <div className="absolute bottom-2 left-2">
           <div className="rounded-lg bg-[#013E43]/90 px-2 py-0.5 backdrop-blur-sm">
             <p className="text-xs font-bold text-white">{formatPrice(listing.price)}</p>
           </div>
         </div>
+
+        {listing.images?.length > 0 && (
+          <div className="absolute bottom-2 right-2 flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] text-white backdrop-blur-sm">
+            <FiCamera className="text-[10px]" />
+            <span>{listing.images.length}</span>
+          </div>
+        )}
       </div>
 
-      {/* Content Section - Compact */}
       <div className="p-2">
-        {/* Location and Type */}
         <div className="flex items-start justify-between gap-1 mb-0.5">
           <p className="text-xs text-[#065A57] flex items-center truncate flex-1">
             <FiMapPin className="mr-0.5 flex-shrink-0 text-[#02BB31] text-[10px]" />
-            <span className="truncate">{listing.location}</span>
+            <span className="truncate">{locationText || "Location not specified"}</span>
           </p>
+
           <span className="flex items-center gap-0.5 rounded-full bg-[#F0F7F4] px-1.5 py-0.5 text-[10px] text-[#065A57] whitespace-nowrap">
             <FaBuilding className="text-[#02BB31] text-[8px]" />
-            {listing.type || "Apt"}
+            {listing.type === "office" ? "Office" : prettifyLabel(listing.type || "other")}
           </span>
         </div>
 
-        {/* Title - Compact */}
         <h3 className="text-xs font-semibold text-[#013E43] line-clamp-1 group-hover:text-[#02BB31] transition-colors mb-0.5">
           {listing.title}
         </h3>
 
-        {/* Property Features - Compact */}
-        <div className="flex items-center gap-2 text-[10px] text-[#065A57]">
-          <span className="flex items-center gap-0.5">
-            <FaBed className="text-[#02BB31] text-[8px]" />
-            {listing.bedrooms || 0}
+        <div className="flex items-center gap-2 text-[10px] text-[#065A57] flex-wrap">
+          {isOffice ? (
+            <span className="flex items-center gap-0.5">
+              <FaRulerCombined className="text-[#02BB31] text-[8px]" />
+              {listing.size ? `${listing.size} ${listing.sizeUnit || "sqft"}` : "Size N/A"}
+            </span>
+          ) : (
+            <>
+              <span className="flex items-center gap-0.5">
+                <FaBed className="text-[#02BB31] text-[8px]" />
+                {listing.bedrooms ?? 0}
+              </span>
+              <span className="flex items-center gap-0.5">
+                <FaBath className="text-[#02BB31] text-[8px]" />
+                {listing.bathrooms ?? 0}
+              </span>
+            </>
+          )}
+        </div>
+
+        <div className="mt-1">
+          <span className="text-[#02BB31] font-bold text-xs">
+            {formatPrice(listing.price)}
           </span>
-          <span className="flex items-center gap-0.5">
-            <FaBath className="text-[#02BB31] text-[8px]" />
-            {listing.bathrooms || 0}
+          <span className="ml-1 text-[#065A57] text-[10px]">
+            {listing.purpose === "sale" ? "/total" : "/month"}
           </span>
         </div>
       </div>
@@ -208,7 +237,6 @@ const HomeListingsPreview = () => {
   return (
     <section className="py-6 bg-gradient-to-b from-white to-[#F0F7F4]">
       <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header - Compact */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-5">
           <div>
             <div className="inline-flex items-center gap-1.5 bg-[#02BB31]/10 text-[#02BB31] px-2 py-0.5 rounded-full mb-2">
@@ -222,7 +250,7 @@ const HomeListingsPreview = () => {
           </div>
 
           <Link
-            to="/properties"
+            to="/listings"
             className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-medium hover:shadow-lg transition-all transform hover:scale-105 group w-fit"
           >
             <span>View All Properties</span>
@@ -230,7 +258,6 @@ const HomeListingsPreview = () => {
           </Link>
         </div>
 
-        {/* Listings Grid - Airbnb style compact */}
         {listings.length === 0 ? (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center border border-[#A8D8C1]">
             <div className="w-16 h-16 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-3">

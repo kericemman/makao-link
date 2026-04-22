@@ -17,8 +17,8 @@ module.exports = {
       propertyLimit: 20
     },
   
-    makaopro: {
-      name: "MakaoPro",
+    rendapro: {
+      name: "RendaPro",
       price: 2500,
       propertyLimit: 50
     }
