@@ -57,5 +57,10 @@ export const deleteListing = async (id) => {
 };
 
 
+export const getListingMeta = async () => {
+  const response = await api.get("/listings/meta");
+  return response.data;
+};
+
 
 

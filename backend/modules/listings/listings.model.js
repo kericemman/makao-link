@@ -1,4 +1,12 @@
 const mongoose = require("mongoose");
+const {
+  COUNTY_TOWNS,
+  COUNTIES,
+  RESIDENTIAL_TYPES,
+  LISTING_TYPES,
+  LISTING_PURPOSES,
+  OFFICE_SIZE_UNITS
+} = require("./listing.constants");
 
 function arrayLimit(val) {
   return val.length <= 5;
@@ -14,12 +22,13 @@ const listingSchema = new mongoose.Schema(
 
     description: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
 
     purpose: {
       type: String,
-      enum: ["rent", "sale"],
+      enum: LISTING_PURPOSES,
       required: true,
       default: "rent",
       index: true
@@ -31,24 +40,29 @@ const listingSchema = new mongoose.Schema(
       min: 0
     },
 
-    location: {
+    county: {
       type: String,
+      enum: COUNTIES,
       required: true,
       index: true
     },
 
+    town: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true
+    },
+
+    area: {
+      type: String,
+      default: "",
+      trim: true
+    },
+
     type: {
       type: String,
-      enum: [
-        "apartment",
-        "bedsitter",
-        "maisonette",
-        "studio",
-        "bungalow",
-        "townhouse",
-        "office",
-        "other"
-      ],
+      enum: LISTING_TYPES,
       required: true,
       index: true
     },
@@ -78,12 +92,13 @@ const listingSchema = new mongoose.Schema(
 
     sizeUnit: {
       type: String,
-      enum: ["sqft"],
+      enum: OFFICE_SIZE_UNITS,
       default: null
     },
 
     images: {
       type: [String],
+      default: [],
       validate: [arrayLimit, "Maximum 5 images allowed"]
     },
 
@@ -104,30 +119,35 @@ const listingSchema = new mongoose.Schema(
 
     contactPhone: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
 
     landlord: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
+      index: true
     },
 
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
-      default: "pending"
+      default: "pending",
+      index: true
     },
 
     availability: {
       type: String,
       enum: ["available", "taken"],
-      default: "available"
+      default: "available",
+      index: true
     },
 
     isActive: {
       type: Boolean,
-      default: true
+      default: true,
+      index: true
     },
 
     unlistReason: {
@@ -145,36 +165,35 @@ const listingSchema = new mongoose.Schema(
 );
 
 listingSchema.pre("validate", function () {
-  // Office listings should have size in square feet
+  if (this.county && this.town) {
+    const allowedTowns = COUNTY_TOWNS[this.county] || [];
+
+    if (!allowedTowns.includes(this.town)) {
+      throw new Error("Selected town does not belong to the selected county");
+    }
+  }
+
   if (this.type === "office") {
-    if (!this.size) {
-      throw new Error("Office listings must include size in square feet");
+    if (this.size === null || this.size === undefined || this.size === "") {
+      throw new Error("Office listings must include size");
     }
 
     if (!this.sizeUnit) {
       this.sizeUnit = "sqft";
     }
+
+    return;
   }
 
-  // Residential types should usually have bedrooms and bathrooms
-  const residentialTypes = [
-    "apartment",
-    "bedsitter",
-    "maisonette",
-    "studio",
-    "bungalow",
-    "townhouse"
-  ];
-
-  if (residentialTypes.includes(this.type)) {
-    if (this.bedrooms === null || this.bedrooms === undefined) {
+  if (RESIDENTIAL_TYPES.includes(this.type)) {
+    if (this.bedrooms === null || this.bedrooms === undefined || this.bedrooms === "") {
       throw new Error("Residential listings must include bedrooms");
     }
 
-    if (this.bathrooms === null || this.bathrooms === undefined) {
+    if (this.bathrooms === null || this.bathrooms === undefined || this.bathrooms === "") {
       throw new Error("Residential listings must include bathrooms");
     }
   }
 });
-module.exports = mongoose.model("Listing", listingSchema);
 
+module.exports = mongoose.model("Listing", listingSchema);

@@ -1,21 +1,29 @@
 const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../config/cloudinary");
 
-const storage = multer.memoryStorage();
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => ({
+    folder: "rendahomes/listings",
+    resource_type: "image",
+    allowed_formats: ["jpg", "jpeg", "png", "webp", "avif"]
+  })
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype && file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image files are allowed"), false);
+  }
+};
 
 const upload = multer({
   storage,
+  fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB max per file
-  },
-  fileFilter: (req, file, cb) => {
-    const isImage = file.mimetype.startsWith("image/");
-    const isVideo = file.mimetype.startsWith("video/");
-
-    if (isImage || isVideo) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image and video files are allowed"), false);
-    }
+    fileSize: 20 * 1024 * 1024 // 15MB
   }
 });
 

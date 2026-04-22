@@ -1,14 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createListing } from "../../services/listings.service";
+import { createListing, getListingMeta } from "../../services/listings.service";
 import { useAuth } from "../../context/AuthContext";
-import { 
-  FiHome, 
-  FiMapPin, 
-  FiDollarSign, 
+import imageCompression from "browser-image-compression";
+import {
+  FiMapPin,
+  FiDollarSign,
   FiFileText,
-  FiImage,
-  FiX,
   FiCheckCircle,
   FiGrid,
   FiCamera,
@@ -17,23 +15,48 @@ import {
   FiArrowLeft,
   FiInfo,
   FiVideo,
-  FiMaximize2,
-  FiTarget
+  FiTarget,
+  FiHome
 } from "react-icons/fi";
-import { FaBed, FaBath, FaBuilding, FaPhone, FaUtensils, FaRulerCombined } from "react-icons/fa";
+import {
+  FaBed,
+  FaBath,
+  FaBuilding,
+  FaPhone,
+  FaUtensils,
+  FaRulerCombined,
+  FaRuler
+} from "react-icons/fa";
 import toast from "react-hot-toast";
+
+const prettifyLabel = (value) =>
+  value
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 
 const CreateListingPage = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  
+
   const navigate = useNavigate();
   const { subscription, usage } = useAuth();
+
   const [loading, setLoading] = useState(false);
+  const [metaLoading, setMetaLoading] = useState(true);
   const [images, setImages] = useState([]);
   const [preview, setPreview] = useState([]);
   const [errors, setErrors] = useState({});
+
+  const [listingMeta, setListingMeta] = useState({
+    counties: [],
+    countyTowns: {},
+    residentialTypes: [],
+    listingTypes: [],
+    listingPurposes: [],
+    officeSizeUnits: []
+  });
 
   const blocked =
     !subscription ||
@@ -45,8 +68,10 @@ const CreateListingPage = () => {
     description: "",
     purpose: "rent",
     price: "",
-    location: "",
-    type: "apartment",
+    county: "",
+    town: "",
+    area: "",
+    type: "",
     bedrooms: "",
     bathrooms: "",
     kitchen: true,
@@ -65,22 +90,6 @@ const CreateListingPage = () => {
     }
   });
 
-  const propertyTypes = [
-    { value: "apartment", label: "Apartment" },
-    { value: "bedsitter", label: "Bedsitter" },
-    { value: "maisonette", label: "Maisonette" },
-    { value: "studio", label: "Studio" },
-    { value: "bungalow", label: "Bungalow" },
-    { value: "townhouse", label: "Townhouse" },
-    { value: "office", label: "Office" },
-    { value: "other", label: "Other" }
-  ];
-
-  const purposes = [
-    { value: "rent", label: "For Rent" },
-    { value: "sale", label: "For Sale" }
-  ];
-
   const amenitiesList = [
     { key: "garden", label: "Garden" },
     { key: "tarmacAccess", label: "Tarmac Access" },
@@ -91,19 +100,108 @@ const CreateListingPage = () => {
     { key: "electricityAvailable", label: "Electricity Available" }
   ];
 
+  useEffect(() => {
+    const fetchMeta = async () => {
+      try {
+        setMetaLoading(true);
+        const data = await getListingMeta();
+
+        const meta = data.meta || {
+          counties: [],
+          countyTowns: {},
+          residentialTypes: [],
+          listingTypes: [],
+          listingPurposes: [],
+          officeSizeUnits: []
+        };
+
+        setListingMeta(meta);
+
+        setFormData((prev) => ({
+          ...prev,
+          type: meta.listingTypes?.[0] || "apartment",
+          purpose: meta.listingPurposes?.[0] || "rent",
+          sizeUnit: meta.officeSizeUnits?.[0] || "sqft"
+        }));
+      } catch (error) {
+        toast.error("Failed to load listing options", {
+          style: { background: "#013E43", color: "#fff" }
+        });
+      } finally {
+        setMetaLoading(false);
+      }
+    };
+
+    fetchMeta();
+  }, []);
+
+  const countyOptions = useMemo(() => {
+    return (listingMeta.counties || []).map((county) => ({
+      value: county,
+      label: prettifyLabel(county)
+    }));
+  }, [listingMeta.counties]);
+
+  const townOptions = useMemo(() => {
+    const towns = listingMeta.countyTowns?.[formData.county] || [];
+    return towns.map((town) => ({
+      value: town,
+      label: prettifyLabel(town)
+    }));
+  }, [listingMeta.countyTowns, formData.county]);
+
+  const propertyTypes = useMemo(() => {
+    return (listingMeta.listingTypes || []).map((type) => ({
+      value: type,
+      label: type === "office" ? "Office Space" : prettifyLabel(type)
+    }));
+  }, [listingMeta.listingTypes]);
+
+  const purposes = useMemo(() => {
+    return (listingMeta.listingPurposes || []).map((purpose) => ({
+      value: purpose,
+      label: purpose === "rent" ? "For Rent" : "For Sale"
+    }));
+  }, [listingMeta.listingPurposes]);
+
+  const residentialTypes = listingMeta.residentialTypes || [];
+  const isResidential = residentialTypes.includes(formData.type);
+  const isOffice = formData.type === "office";
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value
-    }));
+
+    if (name === "county") {
+      setFormData((prev) => ({
+        ...prev,
+        county: value,
+        town: "",
+        area: ""
+      }));
+    } else if (name === "type") {
+      const nextType = value;
+      setFormData((prev) => ({
+        ...prev,
+        type: nextType,
+        bedrooms: residentialTypes.includes(nextType) ? prev.bedrooms : "",
+        bathrooms: residentialTypes.includes(nextType) ? prev.bathrooms : "",
+        size: nextType === "office" ? prev.size : "",
+        sizeUnit: nextType === "office" ? prev.sizeUnit || (listingMeta.officeSizeUnits?.[0] || "sqft") : prev.sizeUnit
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value
+      }));
+    }
+
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handleAmenityChange = (amenity) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       amenities: {
         ...prev.amenities,
@@ -112,35 +210,48 @@ const CreateListingPage = () => {
     }));
   };
 
-  const handleImages = (e) => {
-    const files = Array.from(e.target.files);
-    
-    const validFiles = files.filter(file => {
-      if (!file.type.startsWith("image/")) {
-        toast.error(`${file.name} is not an image file`);
-        return false;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`${file.name} exceeds 5MB limit`);
-        return false;
-      }
-      return true;
-    });
+ const handleImages = async (e) => {
+  const files = Array.from(e.target.files || []);
 
-    if (validFiles.length + images.length > 5) {
-      toast.error("Maximum 5 images allowed");
-      return;
+  const compressedFiles = [];
+
+  for (const file of files) {
+    if (!file.type.startsWith("image/")) {
+      toast.error(`${file.name} is not an image file`);
+      continue;
     }
 
-    setImages(prev => [...prev, ...validFiles]);
+    try {
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 1.5,
+        maxWidthOrHeight: 1600,
+        useWebWorker: true
+      });
 
-    const newPreviews = validFiles.map(file => URL.createObjectURL(file));
-    setPreview(prev => [...prev, ...newPreviews]);
-  };
+      compressedFiles.push(compressed);
+    } catch (error) {
+      toast.error(`Failed to process ${file.name}`);
+    }
+  }
+
+  if (compressedFiles.length + images.length > 5) {
+    toast.error("Maximum 5 images allowed");
+    return;
+  }
+
+  setImages((prev) => [...prev, ...compressedFiles]);
+
+  const newPreviews = compressedFiles.map((file) => URL.createObjectURL(file));
+  setPreview((prev) => [...prev, ...newPreviews]);
+
+  if (errors.images) {
+    setErrors((prev) => ({ ...prev, images: "" }));
+  }
+};
 
   const removeImage = (index) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
-    setPreview(prev => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setPreview((prev) => {
       URL.revokeObjectURL(prev[index]);
       return prev.filter((_, i) => i !== index);
     });
@@ -152,21 +263,28 @@ const CreateListingPage = () => {
     if (!formData.title.trim()) newErrors.title = "Title is required";
     if (!formData.description.trim()) newErrors.description = "Description is required";
     if (!formData.price) newErrors.price = "Price is required";
-    if (formData.price && formData.price < 0) newErrors.price = "Price must be positive";
-    if (!formData.location.trim()) newErrors.location = "Location is required";
+    if (formData.price && Number(formData.price) < 0) newErrors.price = "Price must be positive";
+
+    if (!formData.county) newErrors.county = "County is required";
+    if (!formData.town) newErrors.town = "Town/Location is required";
+    if (!formData.type) newErrors.type = "Property type is required";
+    if (!formData.purpose) newErrors.purpose = "Purpose is required";
     if (!formData.contactPhone.trim()) newErrors.contactPhone = "Contact phone is required";
     if (images.length === 0) newErrors.images = "At least one image is required";
 
-    // Residential type validations
-    const residentialTypes = ["apartment", "bedsitter", "maisonette", "studio", "bungalow", "townhouse"];
-    if (residentialTypes.includes(formData.type)) {
-      if (!formData.bedrooms && formData.bedrooms !== 0) newErrors.bedrooms = "Number of bedrooms is required";
-      if (!formData.bathrooms && formData.bathrooms !== 0) newErrors.bathrooms = "Number of bathrooms is required";
+    if (isResidential) {
+      if (formData.bedrooms === "" || formData.bedrooms === null) {
+        newErrors.bedrooms = "Number of bedrooms is required";
+      }
+      if (formData.bathrooms === "" || formData.bathrooms === null) {
+        newErrors.bathrooms = "Number of bathrooms is required";
+      }
     }
 
-    // Office type validation
-    if (formData.type === "office") {
-      if (!formData.size) newErrors.size = "Office listings must include size in square feet";
+    if (isOffice) {
+      if (!formData.size) {
+        newErrors.size = "Office size is required";
+      }
     }
 
     setErrors(newErrors);
@@ -179,13 +297,14 @@ const CreateListingPage = () => {
     if (blocked) {
       navigate("/landlord/subscription", {
         state: {
-          reason: usage.used >= usage.limit
-            ? "limit_reached"
-            : subscription?.status === "pending_payment"
-            ? "pending_payment"
-            : subscription?.status === "grace"
-            ? "grace_block"
-            : "expired"
+          reason:
+            usage.used >= usage.limit
+              ? "limit_reached"
+              : subscription?.status === "pending_payment"
+              ? "pending_payment"
+              : subscription?.status === "grace"
+              ? "grace_block"
+              : "expired"
         }
       });
       return;
@@ -203,16 +322,32 @@ const CreateListingPage = () => {
 
       const payload = new FormData();
 
-      // Add all form fields
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === "amenities") {
-          payload.append(key, JSON.stringify(value));
-        } else if (value !== undefined && value !== null && value !== "") {
-          payload.append(key, value);
-        }
-      });
+      payload.append("title", formData.title);
+      payload.append("description", formData.description);
+      payload.append("purpose", formData.purpose);
+      payload.append("price", formData.price);
+      payload.append("county", formData.county);
+      payload.append("town", formData.town);
+      if (formData.area) payload.append("area", formData.area);
+      payload.append("type", formData.type);
 
-      // Add images
+      if (isResidential) {
+        payload.append("bedrooms", formData.bedrooms);
+        payload.append("bathrooms", formData.bathrooms);
+      }
+
+      payload.append("kitchen", formData.kitchen);
+
+      if (isOffice && formData.size) {
+        payload.append("size", formData.size);
+        payload.append("sizeUnit", formData.sizeUnit);
+      }
+
+      if (formData.video) payload.append("video", formData.video);
+
+      payload.append("amenities", JSON.stringify(formData.amenities));
+      payload.append("contactPhone", formData.contactPhone);
+
       images.forEach((image) => {
         payload.append("images", image);
       });
@@ -222,17 +357,16 @@ const CreateListingPage = () => {
       toast.success("Property listed successfully! Pending approval.", {
         style: {
           background: "#02BB31",
-          color: "#fff",
+          color: "#fff"
         },
         duration: 3000
       });
 
-      preview.forEach(url => URL.revokeObjectURL(url));
+      preview.forEach((url) => URL.revokeObjectURL(url));
 
       setTimeout(() => {
         navigate("/landlord/listings");
       }, 2000);
-
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to create listing", {
         style: { background: "#013E43", color: "#fff" }
@@ -242,12 +376,8 @@ const CreateListingPage = () => {
     }
   };
 
-  const isResidential = ["apartment", "bedsitter", "maisonette", "studio", "bungalow", "townhouse"].includes(formData.type);
-  const isOffice = formData.type === "office";
-
   return (
     <div className="space-y-6">
-      {/* Header Section */}
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
         <div className="flex items-center space-x-4">
           <button
@@ -256,13 +386,19 @@ const CreateListingPage = () => {
           >
             <FiArrowLeft className="text-xl text-[#065A57]" />
           </button>
-          
+
           <div>
             <h1 className="text-xl font-bold text-[#013E43]">Add New Listing</h1>
             <p className="text-sm text-[#065A57]">List your property for tenants to find</p>
           </div>
         </div>
       </div>
+
+      {metaLoading ? (
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1] text-[#065A57]">
+          Loading listing options...
+        </div>
+      ) : null}
 
       {blocked ? (
         <div className="mb-6 rounded-xl bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200">
@@ -276,7 +412,6 @@ const CreateListingPage = () => {
       ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Information Card */}
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
           <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
             <FiFileText className="mr-2 text-[#02BB31]" />
@@ -298,16 +433,14 @@ const CreateListingPage = () => {
                   onChange={handleChange}
                   placeholder="e.g., 2 Bedroom Modern Apartment in Westlands"
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                    errors.title 
-                      ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                      : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                    errors.title
+                      ? "border-red-400 focus:border-red-500 bg-red-50"
+                      : "border-[#A8D8C1] focus:border-[#02BB31]"
                   }`}
-                  disabled={loading}
+                  disabled={loading || metaLoading}
                 />
               </div>
-              {errors.title && (
-                <p className="text-sm text-red-500 mt-1">{errors.title}</p>
-              )}
+              {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title}</p>}
             </div>
 
             <div>
@@ -321,11 +454,11 @@ const CreateListingPage = () => {
                 rows="5"
                 placeholder="Describe your property in detail..."
                 className={`w-full px-4 py-3 rounded-lg border-2 outline-none transition-all resize-none ${
-                  errors.description 
-                    ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                    : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                  errors.description
+                    ? "border-red-400 focus:border-red-500 bg-red-50"
+                    : "border-[#A8D8C1] focus:border-[#02BB31]"
                 }`}
-                disabled={loading}
+                disabled={loading || metaLoading}
               />
               {errors.description && (
                 <p className="text-sm text-red-500 mt-1">{errors.description}</p>
@@ -334,7 +467,6 @@ const CreateListingPage = () => {
           </div>
         </div>
 
-        {/* Location & Price Card */}
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
           <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
             <FiMapPin className="mr-2 text-[#02BB31]" />
@@ -355,14 +487,16 @@ const CreateListingPage = () => {
                   value={formData.purpose}
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none appearance-none bg-white"
+                  disabled={loading || metaLoading}
                 >
-                  {purposes.map(purpose => (
+                  {purposes.map((purpose) => (
                     <option key={purpose.value} value={purpose.value}>
                       {purpose.label}
                     </option>
                   ))}
                 </select>
               </div>
+              {errors.purpose && <p className="text-sm text-red-500 mt-1">{errors.purpose}</p>}
             </div>
 
             <div>
@@ -380,47 +514,98 @@ const CreateListingPage = () => {
                   onChange={handleChange}
                   placeholder="e.g., 25000"
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                    errors.price 
-                      ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                      : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                    errors.price
+                      ? "border-red-400 focus:border-red-500 bg-red-50"
+                      : "border-[#A8D8C1] focus:border-[#02BB31]"
                   }`}
-                  disabled={loading}
+                  disabled={loading || metaLoading}
                 />
               </div>
-              {errors.price && (
-                <p className="text-sm text-red-500 mt-1">{errors.price}</p>
-              )}
+              {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#013E43] mb-1">
+                County <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiMapPin className="h-5 w-5 text-[#0D915C]" />
+                </div>
+                <select
+                  name="county"
+                  value={formData.county}
+                  onChange={handleChange}
+                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
+                    errors.county
+                      ? "border-red-400 focus:border-red-500 bg-red-50"
+                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                  }`}
+                  disabled={loading || metaLoading}
+                >
+                  <option value="">Select County</option>
+                  {countyOptions.map((county) => (
+                    <option key={county.value} value={county.value}>
+                      {county.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {errors.county && <p className="text-sm text-red-500 mt-1">{errors.county}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#013E43] mb-1">
+                Town / Location <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiHome className="h-5 w-5 text-[#0D915C]" />
+                </div>
+                <select
+                  name="town"
+                  value={formData.town}
+                  onChange={handleChange}
+                  disabled={!formData.county || loading || metaLoading}
+                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
+                    errors.town
+                      ? "border-red-400 focus:border-red-500 bg-red-50"
+                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                  }`}
+                >
+                  <option value="">Select Town</option>
+                  {townOptions.map((town) => (
+                    <option key={town.value} value={town.value}>
+                      {town.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {errors.town && <p className="text-sm text-red-500 mt-1">{errors.town}</p>}
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-[#013E43] mb-1">
-                Location <span className="text-red-500">*</span>
+                Specific Area (Optional)
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiMapPin className="h-5 w-5 text-[#0D915C]" />
                 </div>
                 <input
-                  name="location"
-                  value={formData.location}
+                  name="area"
+                  value={formData.area}
                   onChange={handleChange}
-                  placeholder="e.g., Westlands, Nairobi"
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                    errors.location 
-                      ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                      : 'border-[#A8D8C1] focus:border-[#02BB31]'
-                  }`}
-                  disabled={loading}
+                  placeholder="e.g., Next to Garden City Mall"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none transition-colors"
+                  disabled={loading || metaLoading}
                 />
               </div>
-              {errors.location && (
-                <p className="text-sm text-red-500 mt-1">{errors.location}</p>
-              )}
+              <p className="text-xs text-[#065A57] mt-1">Optional: Add specific directions or landmark</p>
             </div>
           </div>
         </div>
 
-        {/* Property Details Card */}
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
           <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
             <FiGrid className="mr-2 text-[#02BB31]" />
@@ -440,19 +625,25 @@ const CreateListingPage = () => {
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none appearance-none bg-white"
-                  disabled={loading}
+                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
+                    errors.type
+                      ? "border-red-400 focus:border-red-500 bg-red-50"
+                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                  }`}
+                  disabled={loading || metaLoading}
                 >
-                  {propertyTypes.map(type => (
+                  <option value="">Select Type</option>
+                  {propertyTypes.map((type) => (
                     <option key={type.value} value={type.value}>
                       {type.label}
                     </option>
                   ))}
                 </select>
               </div>
+              {errors.type && <p className="text-sm text-red-500 mt-1">{errors.type}</p>}
             </div>
 
-            {isResidential && (
+            {isResidential ? (
               <>
                 <div>
                   <label className="block text-sm font-medium text-[#013E43] mb-1">
@@ -470,11 +661,11 @@ const CreateListingPage = () => {
                       placeholder="e.g., 2"
                       min="0"
                       className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                        errors.bedrooms 
-                          ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                          : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                        errors.bedrooms
+                          ? "border-red-400 focus:border-red-500 bg-red-50"
+                          : "border-[#A8D8C1] focus:border-[#02BB31]"
                       }`}
-                      disabled={loading}
+                      disabled={loading || metaLoading}
                     />
                   </div>
                   {errors.bedrooms && (
@@ -498,11 +689,11 @@ const CreateListingPage = () => {
                       placeholder="e.g., 2"
                       min="0"
                       className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                        errors.bathrooms 
-                          ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                          : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                        errors.bathrooms
+                          ? "border-red-400 focus:border-red-500 bg-red-50"
+                          : "border-[#A8D8C1] focus:border-[#02BB31]"
                       }`}
-                      disabled={loading}
+                      disabled={loading || metaLoading}
                     />
                   </div>
                   {errors.bathrooms && (
@@ -510,37 +701,61 @@ const CreateListingPage = () => {
                   )}
                 </div>
               </>
-            )}
+            ) : null}
 
-            {isOffice && (
-              <div>
-                <label className="block text-sm font-medium text-[#013E43] mb-1">
-                  Size (sq ft) <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaRulerCombined className="h-5 w-5 text-[#0D915C]" />
+            {isOffice ? (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-[#013E43] mb-1">
+                    Size <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaRuler className="h-5 w-5 text-[#0D915C]" />
+                    </div>
+                    <input
+                      name="size"
+                      type="number"
+                      value={formData.size}
+                      onChange={handleChange}
+                      placeholder="e.g., 1200"
+                      min="0"
+                      className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
+                        errors.size
+                          ? "border-red-400 focus:border-red-500 bg-red-50"
+                          : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      }`}
+                      disabled={loading || metaLoading}
+                    />
                   </div>
-                  <input
-                    name="size"
-                    type="number"
-                    value={formData.size}
-                    onChange={handleChange}
-                    placeholder="e.g., 1200"
-                    min="0"
-                    className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                      errors.size 
-                        ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                        : 'border-[#A8D8C1] focus:border-[#02BB31]'
-                    }`}
-                    disabled={loading}
-                  />
+                  {errors.size && <p className="text-sm text-red-500 mt-1">{errors.size}</p>}
                 </div>
-                {errors.size && (
-                  <p className="text-sm text-red-500 mt-1">{errors.size}</p>
-                )}
-              </div>
-            )}
+
+                <div>
+                  <label className="block text-sm font-medium text-[#013E43] mb-1">
+                    Size Unit
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaRulerCombined className="h-5 w-5 text-[#0D915C]" />
+                    </div>
+                    <select
+                      name="sizeUnit"
+                      value={formData.sizeUnit}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none appearance-none bg-white"
+                      disabled={loading || metaLoading}
+                    >
+                      {(listingMeta.officeSizeUnits || []).map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unit === "sqft" ? "Square Feet (sq ft)" : prettifyLabel(unit)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </>
+            ) : null}
 
             <div>
               <label className="block text-sm font-medium text-[#013E43] mb-1">
@@ -556,11 +771,11 @@ const CreateListingPage = () => {
                   onChange={handleChange}
                   placeholder="e.g., 0712345678"
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                    errors.contactPhone 
-                      ? 'border-red-400 focus:border-red-500 bg-red-50' 
-                      : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                    errors.contactPhone
+                      ? "border-red-400 focus:border-red-500 bg-red-50"
+                      : "border-[#A8D8C1] focus:border-[#02BB31]"
                   }`}
-                  disabled={loading}
+                  disabled={loading || metaLoading}
                 />
               </div>
               {errors.contactPhone && (
@@ -568,7 +783,6 @@ const CreateListingPage = () => {
               )}
             </div>
 
-            {/* Kitchen Checkbox */}
             <div className="md:col-span-2">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -587,13 +801,12 @@ const CreateListingPage = () => {
           </div>
         </div>
 
-        {/* Video URL Card */}
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
           <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
             <FiVideo className="mr-2 text-[#02BB31]" />
             Virtual Tour (Optional)
           </h2>
-          
+
           <div>
             <label className="block text-sm font-medium text-[#013E43] mb-1">
               Video URL
@@ -608,7 +821,7 @@ const CreateListingPage = () => {
                 onChange={handleChange}
                 placeholder="https://youtube.com/watch?v=..."
                 className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none transition-colors"
-                disabled={loading}
+                disabled={loading || metaLoading}
               />
             </div>
             <p className="text-xs text-[#065A57] mt-1">
@@ -617,7 +830,6 @@ const CreateListingPage = () => {
           </div>
         </div>
 
-        {/* Amenities Card */}
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
           <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
             <FiCheckCircle className="mr-2 text-[#02BB31]" />
@@ -639,7 +851,6 @@ const CreateListingPage = () => {
           </div>
         </div>
 
-        {/* Images Card */}
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
           <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
             <FiCamera className="mr-2 text-[#02BB31]" />
@@ -647,9 +858,11 @@ const CreateListingPage = () => {
           </h2>
 
           <div className="mb-4">
-            <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
-              errors.images ? 'border-red-300 bg-red-50' : 'border-[#A8D8C1] hover:border-[#02BB31]'
-            }`}>
+            <div
+              className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                errors.images ? "border-red-300 bg-red-50" : "border-[#A8D8C1] hover:border-[#02BB31]"
+              }`}
+            >
               <input
                 type="file"
                 multiple
@@ -657,27 +870,18 @@ const CreateListingPage = () => {
                 onChange={handleImages}
                 className="hidden"
                 id="image-upload"
-                disabled={loading}
+                disabled={loading || metaLoading}
               />
-              <label
-                htmlFor="image-upload"
-                className="cursor-pointer flex flex-col items-center"
-              >
+              <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center">
                 <FiUpload className="text-3xl text-[#065A57] mb-2" />
-                <span className="text-sm text-[#065A57]">
-                  Click to upload or drag and drop
-                </span>
+                <span className="text-sm text-[#065A57]">Click to upload or drag and drop</span>
                 <span className="text-xs text-[#065A57] mt-1">
-                  PNG, JPG, GIF up to 5MB (Max 5 images)
+                  PNG, JPG, GIF up to 5MB each (Max 5 images)
                 </span>
               </label>
             </div>
-            {errors.images && (
-              <p className="text-sm text-red-500 mt-1">{errors.images}</p>
-            )}
-            <p className="text-xs text-[#065A57] mt-2">
-              {images.length}/5 image(s) selected
-            </p>
+            {errors.images && <p className="text-sm text-red-500 mt-1">{errors.images}</p>}
+            <p className="text-xs text-[#065A57] mt-2">{images.length}/5 image(s) selected</p>
           </div>
 
           {preview.length > 0 && (
@@ -702,24 +906,23 @@ const CreateListingPage = () => {
           )}
         </div>
 
-        {/* Form Actions */}
         <div className="flex justify-end space-x-3">
           <button
             type="button"
             onClick={() => navigate("/landlord/listings")}
             className="px-6 py-3 text-[#065A57] border border-[#A8D8C1] rounded-lg hover:bg-[#F0F7F4] transition-colors"
-            disabled={loading}
+            disabled={loading || metaLoading}
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={loading || blocked}
+            disabled={loading || blocked || metaLoading}
             className="px-6 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {loading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                 Submitting...
               </>
             ) : (

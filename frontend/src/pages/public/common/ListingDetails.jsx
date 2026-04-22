@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getSingleListing } from "../../../services/listings.service";
 import { sendInquiry } from "../../../services/inquiry.service";
@@ -14,7 +14,9 @@ import {
   FiArrowLeft,
   FiHeart,
   FiXCircle,
-  FiPhoneCall
+  FiPhoneCall,
+  FiMaximize2,
+  FiTag
 } from "react-icons/fi";
 import {
   FaBed,
@@ -22,7 +24,8 @@ import {
   FaBuilding,
   FaWhatsapp,
   FaHome as FaHomeIcon,
-  FaPhoneAlt
+  FaPhoneAlt,
+  FaRulerCombined
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 
@@ -34,6 +37,23 @@ const amenityLabels = {
   nearHospital: "Near Hospital",
   waterAvailable: "Water Available",
   electricityAvailable: "Electricity Available"
+};
+
+const residentialTypes = [
+  "apartment",
+  "bedsitter",
+  "maisonette",
+  "studio",
+  "bungalow",
+  "townhouse"
+];
+
+const prettify = (value) => {
+  if (!value) return "";
+  return String(value)
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 };
 
 const ListingDetailsPage = () => {
@@ -105,17 +125,14 @@ const ListingDetailsPage = () => {
 
     const cleaned = String(phone).replace(/\D/g, "");
 
-    // 07XXXXXXXX or 01XXXXXXXX (10 digits)
     if (cleaned.startsWith("0") && cleaned.length === 10) {
       return `254${cleaned.slice(1)}`;
     }
 
-    // 2547XXXXXXXX or 2541XXXXXXXX (12 digits)
     if (cleaned.startsWith("254") && cleaned.length === 12) {
       return cleaned;
     }
 
-    // 7XXXXXXXX or 1XXXXXXXX (9 digits)
     if ((cleaned.startsWith("7") || cleaned.startsWith("1")) && cleaned.length === 9) {
       return `254${cleaned}`;
     }
@@ -133,70 +150,103 @@ const ListingDetailsPage = () => {
     return true;
   };
 
-  const generateWhatsAppMessage = (name, email, phone, message) => {
-    const msg = `*RendaHomes Property Inquiry*
+  const locationText = useMemo(() => {
+    if (!listing) return "";
+    const parts = [
+      listing.area,
+      listing.town ? prettify(listing.town) : "",
+      listing.county ? prettify(listing.county) : ""
+    ].filter(Boolean);
+    return parts.join(", ");
+  }, [listing]);
 
-🏠 *Property:* ${listing.title}
-📍 *Location:* ${listing.location}
-💰 *Price:* ${formatPrice(listing.price)}/month
-🛏️ *Bedrooms:* ${listing.bedrooms}
-🛁 *Bathrooms:* ${listing.bathrooms}
-🏷️ *Type:* ${listing.type}
+  const isResidential = useMemo(() => {
+    return residentialTypes.includes(listing?.type);
+  }, [listing]);
 
-👤 *Inquiry from:* ${name || "Potential Tenant"}
-📧 *Email:* ${email || "Not provided"}
-📱 *Phone:* ${phone || "Not provided"}
+  const purposeLabel = useMemo(() => {
+    return listing?.purpose === "sale" ? "For Sale" : "For Rent";
+  }, [listing]);
 
-📝 *Message:* 
-${message || "I'm interested in this property. Please get in touch."}
+  const typeLabel = useMemo(() => {
+    if (!listing?.type) return "";
+    return listing.type === "office" ? "Office Space" : prettify(listing.type);
+  }, [listing]);
 
---
-Sent via RendaHomes Property Platform
-View listing: ${window.location.href}`;
+  const priceSuffix = useMemo(() => {
+    return listing?.purpose === "sale" ? "" : "/month";
+  }, [listing]);
 
-    return encodeURIComponent(msg);
+  const generateWhatsAppMessage = ({ name, email, phone, message }) => {
+    const lines = [
+      "*RendaHomes Property Inquiry*",
+      "",
+      `🏠 *Property:* ${listing.title}`,
+      `🎯 *Purpose:* ${purposeLabel}`,
+      `🏷️ *Type:* ${typeLabel}`,
+      `📍 *Location:* ${locationText || "Not specified"}`,
+      `💰 *Price:* ${formatPrice(listing.price)}${priceSuffix}`
+    ];
+
+    if (isResidential) {
+      lines.push(`🛏️ *Bedrooms:* ${listing.bedrooms ?? "N/A"}`);
+      lines.push(`🛁 *Bathrooms:* ${listing.bathrooms ?? "N/A"}`);
+    }
+
+    if (listing.type === "office" && listing.size) {
+      lines.push(`📐 *Size:* ${listing.size} ${listing.sizeUnit || "sqft"}`);
+    }
+
+    lines.push("");
+    lines.push(`👤 *Inquiry from:* ${name || "Potential Client"}`);
+    lines.push("");
+    lines.push("*Message:*");
+    lines.push(message || "I'm interested in this property. Please get in touch.");
+    lines.push("");
+    lines.push("--");
+    lines.push("Sent via RendaHomes Property Platform");
+    lines.push(`View listing: ${window.location.href}`);
+
+    return encodeURIComponent(lines.join("\n"));
   };
 
   const handleWhatsAppClick = () => {
-    // Get current form values directly
-    const currentName = formData.name.trim();
-    const currentEmail = formData.email.trim();
-    const currentPhone = formData.phone.trim();
-    const currentMessage = formData.message.trim();
+  const currentName = formData.name.trim();
+  const currentEmail = formData.email.trim();
+  const currentPhone = formData.phone.trim();
+  const currentMessage = formData.message.trim();
 
-    // Validate required fields
-    if (!currentName || !currentEmail || !currentMessage) {
-      toast.error("Please fill in your name, email, and message before contacting via WhatsApp", {
-        style: { background: "#013E43", color: "#fff" },
-        duration: 4000
-      });
-      return;
-    }
+  if (!currentName || !currentEmail || !currentMessage) {
+    toast.error("Please fill in your name, email, and message before contacting via WhatsApp", {
+      style: { background: "#013E43", color: "#fff" },
+      duration: 4000
+    });
+    return;
+  }
 
-    // Get landlord's phone number
-    const rawPhone = listing?.contactPhone || listing?.landlord?.phone;
-    const landlordPhone = normalizeKenyanPhone(rawPhone);
+  const rawPhone = listing?.contactPhone || listing?.landlord?.phone;
+  const landlordPhone = normalizeKenyanPhone(rawPhone);
 
-    if (!landlordPhone) {
-      toast.error("This listing does not have a valid WhatsApp/contact number.", {
-        style: { background: "#013E43", color: "#fff" }
-      });
-      return;
-    }
+  if (!landlordPhone) {
+    toast.error("This listing does not have a valid WhatsApp/contact number.", {
+      style: { background: "#013E43", color: "#fff" }
+    });
+    return;
+  }
 
-    // Generate message with current form data
-    const encodedMessage = generateWhatsAppMessage(
-      currentName,
-      currentEmail,
-      currentPhone,
-      currentMessage
-    );
+  const encodedMessage = generateWhatsAppMessage({
+    name: currentName,
+    email: currentEmail,
+    phone: currentPhone,
+    message: currentMessage
+  });
 
-    const whatsappUrl = `https://wa.me/${landlordPhone}?text=${encodedMessage}`;
-    
-    // Open WhatsApp
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-  };
+  const whatsappUrl = `https://wa.me/${landlordPhone}?text=${encodedMessage}`;
+
+  // More reliable than window.open in some setups
+  window.location.href = whatsappUrl;
+};
+
 
   const handleInquiry = async (e) => {
     e.preventDefault();
@@ -296,9 +346,7 @@ View listing: ${window.location.href}`;
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-          {/* Left Column - Images & Details */}
           <div>
-            {/* Main Image */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#013E43] to-[#005C57]">
               <div className="aspect-video">
                 {mainImage ? (
@@ -337,7 +385,6 @@ View listing: ${window.location.href}`;
               </button>
             </div>
 
-            {/* Thumbnail Gallery */}
             {images.length > 1 && images.some(Boolean) && (
               <div className="mt-4 grid grid-cols-4 gap-3">
                 {images.map(
@@ -362,73 +409,71 @@ View listing: ${window.location.href}`;
               </div>
             )}
 
-            {/* Property Title & Info */}
             <div className="mt-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-[#02BB31]/10 px-3 py-1 text-xs font-medium text-[#02BB31]">
+                      <FiTag />
+                      {purposeLabel}
+                    </span>
+
+                    {listing.availability === "taken" ? (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-600">
+                        Taken
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+                        Available
+                      </span>
+                    )}
+                  </div>
+
                   <h1 className="text-xl font-bold text-[#013E43]">{listing.title}</h1>
                   <p className="mt-2 flex items-center text-[#065A57]">
                     <FiMapPin className="mr-2 text-[#02BB31]" />
-                    {listing.location}
+                    {locationText}
                   </p>
                 </div>
                 <p className="text-xl font-bold text-[#02BB31]">
                   {formatPrice(listing.price)}
-                  <span className="ml-1 text-sm font-normal text-[#065A57]">/month</span>
+                  <span className="ml-1 text-sm font-normal text-[#065A57]">{priceSuffix}</span>
                 </p>
               </div>
             </div>
 
-            {/* Property Features */}
             <div className="mt-6 flex flex-wrap gap-3">
               <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
                 <FaBuilding className="text-[#02BB31]" />
-                {listing.type}
+                {typeLabel}
               </span>
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
-                <FaBed className="text-[#02BB31]" />
-                {listing.bedrooms} {listing.bedrooms === 1 ? "Bedroom" : "Bedrooms"}
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
-                <FaBath className="text-[#02BB31]" />
-                {listing.bathrooms} {listing.bathrooms === 1 ? "Bathroom" : "Bathrooms"}
-              </span>
+
+              {isResidential ? (
+                <>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
+                    <FaBed className="text-[#02BB31]" />
+                    {listing.bedrooms} {Number(listing.bedrooms) === 1 ? "Bedroom" : "Bedrooms"}
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
+                    <FaBath className="text-[#02BB31]" />
+                    {listing.bathrooms} {Number(listing.bathrooms) === 1 ? "Bathroom" : "Bathrooms"}
+                  </span>
+                </>
+              ) : null}
+
+              {listing.type === "office" && listing.size ? (
+                <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
+                  <FaRulerCombined className="text-[#02BB31]" />
+                  {listing.size} {listing.sizeUnit || "sqft"}
+                </span>
+              ) : null}
+
               <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
                 <FaHomeIcon className="text-[#02BB31]" />
                 {listing.kitchen ? "Kitchen Available" : "No Kitchen"}
               </span>
             </div>
-
-            {/* Description */}
-            <div className="mt-8 rounded-2xl border border-[#A8D8C1] bg-white p-6">
-              <h2 className="text-xl font-bold text-[#013E43]">About this property</h2>
-              <p className="mt-4 leading-relaxed text-[#065A57]">{listing.description}</p>
-            </div>
-
-            {/* Amenities */}
-            <div className="mt-6 rounded-2xl border border-[#A8D8C1] bg-white p-6">
-              <h2 className="text-xl font-bold text-[#013E43]">Amenities</h2>
-              {activeAmenities.length === 0 ? (
-                <p className="mt-4 text-sm text-[#065A57]">No amenities listed.</p>
-              ) : (
-                <div className="mt-4 flex flex-wrap gap-3">
-                  {activeAmenities.map(([key]) => (
-                    <span
-                      key={key}
-                      className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]"
-                    >
-                      <FiCheckCircle className="text-[#02BB31]" />
-                      {amenityLabels[key] || key}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column - Contact Form & Details */}
-          <div>
-            {/* Landlord Info Card */}
+            <div>
             <div className="mb-6 rounded-2xl border border-[#A8D8C1] bg-white p-6 shadow-lg">
               <h3 className="mb-4 flex items-center text-lg font-bold text-[#013E43]">
                 <FiUser className="mr-2 text-[#02BB31]" />
@@ -438,7 +483,7 @@ View listing: ${window.location.href}`;
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-base font-semibold text-[#013E43]">
-                    {listing.landlord?.name || "Property Owner"}
+                    {listing.landlord?.businessName || listing.landlord?.name || "Property Owner"}
                   </p>
                   <p className="text-sm text-[#065A57]">Verified Landlord</p>
                 </div>
@@ -467,7 +512,33 @@ View listing: ${window.location.href}`;
               )}
             </div>
 
-            {/* Contact Form */}
+
+            <div className="mt-8 rounded-2xl border border-[#A8D8C1] bg-white p-6">
+              <h2 className="text-xl font-bold text-[#013E43]">About this property</h2>
+              <p className="mt-4 leading-relaxed text-[#065A57]">{listing.description}</p>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-[#A8D8C1] bg-white p-6">
+              <h2 className="text-xl font-bold text-[#013E43]">Amenities</h2>
+              {activeAmenities.length === 0 ? (
+                <p className="mt-4 text-sm text-[#065A57]">No amenities listed.</p>
+              ) : (
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {activeAmenities.map(([key]) => (
+                    <span
+                      key={key}
+                      className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]"
+                    >
+                      <FiCheckCircle className="text-[#02BB31]" />
+                      {amenityLabels[key] || key}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          
             <div className="sticky top-24 rounded-2xl border border-[#A8D8C1] bg-white p-6 shadow-lg">
               <h2 className="text-xl font-bold text-[#013E43]">Contact Landlord</h2>
               <p className="mt-2 text-sm text-[#065A57]">
@@ -553,7 +624,7 @@ View listing: ${window.location.href}`;
                   </div>
                 )}
 
-                {error && (
+                {error && listing && (
                   <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
                     <FiAlertCircle />
                     {error}
@@ -569,55 +640,79 @@ View listing: ${window.location.href}`;
                 </button>
               </form>
 
-              {/* WhatsApp Section */}
               <div className="mt-4 border-t border-[#A8D8C1] pt-4">
                 <p className="mb-3 text-center text-xs text-[#065A57]">
                   Or contact via WhatsApp
                 </p>
-                <button
-                  type="button"
-                  onClick={handleWhatsAppClick}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#128C7E]"
-                >
-                  <FaWhatsapp className="text-lg" />
-                  <span>Send WhatsApp Message</span>
-                </button>
+                <a
+                    href={`https://wa.me/${normalizeKenyanPhone(listing?.contactPhone || listing?.landlord?.phone)}?text=${generateWhatsAppMessage({
+                      name: formData.name.trim() || "Interested Client",
+                      email: formData.email.trim() || "Not provided",
+                      phone: formData.phone.trim() || "Not provided",
+                      message: formData.message.trim() || "I am interested in this property."
+                    })}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#128C7E]"
+                  >
+                    <FaWhatsapp className="text-lg" />
+                    <span>Send WhatsApp Message</span>
+                  </a>
                 <p className="mt-2 text-center text-xs text-[#065A57]">
                   Your name, email, and message will be included in the WhatsApp message
                 </p>
               </div>
             </div>
 
-            {/* Quick Details */}
             <div className="mt-6 rounded-2xl border border-[#A8D8C1] bg-white p-6">
               <h3 className="text-lg font-bold text-[#013E43]">Quick Details</h3>
               <div className="mt-4 space-y-3 text-sm">
                 <div className="flex justify-between">
+                  <span className="text-[#065A57]">Purpose</span>
+                  <span className="font-medium text-[#013E43]">{purposeLabel}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-[#065A57]">Location</span>
-                  <span className="font-medium text-[#013E43]">{listing.location}</span>
+                  <span className="font-medium text-[#013E43]">{locationText}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#065A57]">Property Type</span>
-                  <span className="font-medium text-[#013E43]">{listing.type}</span>
+                  <span className="font-medium text-[#013E43]">{typeLabel}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-[#065A57]">Bedrooms</span>
-                  <span className="font-medium text-[#013E43]">{listing.bedrooms}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#065A57]">Bathrooms</span>
-                  <span className="font-medium text-[#013E43]">{listing.bathrooms}</span>
-                </div>
+
+                {isResidential ? (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-[#065A57]">Bedrooms</span>
+                      <span className="font-medium text-[#013E43]">{listing.bedrooms}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#065A57]">Bathrooms</span>
+                      <span className="font-medium text-[#013E43]">{listing.bathrooms}</span>
+                    </div>
+                  </>
+                ) : null}
+
+                {listing.type === "office" && listing.size ? (
+                  <div className="flex justify-between">
+                    <span className="text-[#065A57]">Size</span>
+                    <span className="font-medium text-[#013E43]">
+                      {listing.size} {listing.sizeUnit || "sqft"}
+                    </span>
+                  </div>
+                ) : null}
+
                 <div className="flex justify-between">
                   <span className="text-[#065A57]">Kitchen</span>
                   <span className="font-medium text-[#013E43]">
                     {listing.kitchen ? "Yes" : "No"}
                   </span>
                 </div>
+
                 <div className="flex justify-between border-t border-[#A8D8C1] pt-2">
                   <span className="text-[#065A57]">Price</span>
                   <span className="font-bold text-[#02BB31]">
-                    {formatPrice(listing.price)}/month
+                    {formatPrice(listing.price)}{priceSuffix}
                   </span>
                 </div>
               </div>
@@ -626,7 +721,6 @@ View listing: ${window.location.href}`;
         </div>
       </div>
 
-      {/* Full Image Modal */}
       {showFullImage && mainImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4">
           <div className="relative w-full max-w-5xl">
