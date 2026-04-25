@@ -58,7 +58,7 @@ const ListingCard = ({ listing }) => {
 
   return (
     <Link
-      to={`/listings/${listing._id}`}
+      to={`/properties/${listing._id}`}
       className="group relative block overflow-hidden rounded-xl sm:rounded-2xl bg-white shadow-lg border border-[#A8D8C1] transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

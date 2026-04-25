@@ -49,7 +49,7 @@ const ListingPreviewCard = ({ listing }) => {
 
   return (
     <Link
-      to={`/listings/${listing._id}`}
+      to={`/properties/${listing._id}`}
       className="group relative block rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

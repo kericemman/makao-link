@@ -16,6 +16,7 @@ const {
 const { canCreateListing } = require("../subscriptions/subscription.service");
 const uploadToCloudinary = require("../../utils/uploadToCloudinary");
 
+const Subscription = require("../subscriptions/subscription.model");
 // public - metadata for frontend filters/forms
 exports.getListingMeta = async (req, res, next) => {
   try {
@@ -432,3 +433,41 @@ exports.markListingAvailable = async (req, res, next) => {
     next(error);
   }
 };
+
+
+
+exports.getFeaturedListings = async (req, res) => {
+  try {
+    const planWeight = {
+      pro: 2,
+      premium: 1
+    };
+    const activeSubscriptions = await Subscription.find({
+      status: "active",
+      plan: { $in: ["premium", "pro"] }
+    }).select("landlord");
+
+    const landlordIds = activeSubscriptions.map((sub) => sub.landlord);
+
+    const listings = await Listing.find({
+      landlord: { $in: activeSubscriptions.map((sub) => sub.landlord) },
+      status: "approved",
+      availability: "available",
+      isActive: true
+    }).lean();
+
+    const sortedListings = listings.sort((a, b) => {
+      const aPlan = landlordPlanMap.get(String(a.landlord)) || "premium";
+      const bPlan = landlordPlanMap.get(String(b.landlord)) || "premium";
+
+      return planWeight[bPlan] - planWeight[aPlan];
+    });
+
+    return res.status(200).json({ listings });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch featured listings"
+    });
+  }
+};
+

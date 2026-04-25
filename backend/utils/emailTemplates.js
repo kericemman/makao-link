@@ -6,7 +6,7 @@ const clientUrl = process.env.CLIENT_URL || "https://rendahomes.com";
 exports.welcomeEmail = ({ name, planName, isFreePlan }) => {
   return buildEmailLayout({
     title: "Welcome to RendaHomes",
-    greeting: `Hello ${name},`,
+    greeting: `Hello ${name}`,
     intro: `
       Finding the right tenants shouldn't feel like a gamble.
 
@@ -32,7 +32,7 @@ exports.welcomeEmail = ({ name, planName, isFreePlan }) => {
 exports.passwordResetEmail = ({ name, resetUrl }) => {
   return buildEmailLayout({
     title: "Reset Your Password",
-    greeting: `Hello ${name},`,
+    greeting: `Hello ${name}`,
     intro: "We received a request to reset your password.",
     body: `
       <p>Use the button below to choose a new password.</p>
@@ -47,7 +47,7 @@ exports.passwordResetEmail = ({ name, resetUrl }) => {
 exports.subscriptionActivatedEmail = ({ name, plan, billingEndDate }) => {
   return buildEmailLayout({
     title: "Subscription Activated",
-    greeting: `Hello ${name},`,
+    greeting: `Hello ${name}`,
     intro: `Your ${plan.toUpperCase()} plan is now active.`,
     body: `
       <p><strong>Billing period ends:</strong> ${billingEndDate}</p>
@@ -61,7 +61,7 @@ exports.subscriptionActivatedEmail = ({ name, plan, billingEndDate }) => {
 exports.gracePeriodEmail = ({ name, graceEndDate }) => {
   return buildEmailLayout({
     title: "Payment Failed — Grace Period Started",
-    greeting: `Hello ${name},`,
+    greeting: `Hello ${name}`,
     intro: "We could not process your subscription payment.",
     body: `
       <p><strong>Grace period ends:</strong> ${graceEndDate}</p>
@@ -75,7 +75,7 @@ exports.gracePeriodEmail = ({ name, graceEndDate }) => {
 exports.subscriptionExpiredEmail = ({ name }) => {
   return buildEmailLayout({
     title: "Subscription Expired",
-    greeting: `Hello ${name},`,
+    greeting: `Hello ${name}`,
     intro: "Your subscription grace period has ended.",
     body: `
       <p>Your public listings have been temporarily removed until you renew your plan.</p>
@@ -88,7 +88,7 @@ exports.subscriptionExpiredEmail = ({ name }) => {
 exports.listingSubmittedEmail = ({ name, listingTitle }) => {
   return buildEmailLayout({
     title: "Listing Submitted for Review",
-    greeting: `Hello ${name},`,
+    greeting: `Hello ${name}`,
     intro: `Your property <strong>${listingTitle}</strong> has been submitted successfully.`,
     body: `
       <p>Our team will review it and notify you once it has been approved.</p>
@@ -101,7 +101,7 @@ exports.listingSubmittedEmail = ({ name, listingTitle }) => {
 exports.listingApprovedEmail = ({ name, listingTitle }) => {
   return buildEmailLayout({
     title: "Listing Approved",
-    greeting: `Hello ${name},`,
+    greeting: `Hi there ${name}`,
     intro: `Your property <strong>${listingTitle}</strong> has been approved.`,
     body: `
       <p>Your listing is now live and visible to users on the platform.</p>
@@ -114,7 +114,7 @@ exports.listingApprovedEmail = ({ name, listingTitle }) => {
 exports.listingRejectedEmail = ({ name, listingTitle }) => {
   return buildEmailLayout({
     title: "Listing Rejected",
-    greeting: `Hello ${name},`,
+    greeting: `Hello ${name}`,
     intro: `Your property <strong>${listingTitle}</strong> was not approved.`,
     body: `
       <p>Please review your submission and make any needed corrections before trying again.</p>
@@ -127,7 +127,7 @@ exports.listingRejectedEmail = ({ name, listingTitle }) => {
 exports.inquiryReceivedEmail = ({ landlordName, listingTitle, senderName, senderEmail, senderPhone, message }) => {
   return buildEmailLayout({
     title: "New Property Inquiry",
-    greeting: `Hello ${landlordName},`,
+    greeting: `Hello ${landlordName}`,
     intro: `You received a new inquiry for <strong>${listingTitle}</strong>.`,
     body: `
       <p><strong>Name:</strong> ${senderName}</p>
@@ -144,7 +144,7 @@ exports.inquiryReceivedEmail = ({ landlordName, listingTitle, senderName, sender
 exports.inquiryConfirmationEmail = ({ name, listingTitle }) => {
   return buildEmailLayout({
     title: "Inquiry Sent Successfully",
-    greeting: `Hello ${name},`,
+    greeting: `Hello ${name}`,
     intro: `Your inquiry for <strong>${listingTitle}</strong> has been sent to the landlord.`,
     body: `
       <p>They should contact you using the details you provided if the property is still available.</p>
@@ -157,7 +157,7 @@ exports.inquiryConfirmationEmail = ({ name, listingTitle }) => {
 exports.contactReceivedEmail = ({ name, subject }) => {
   return buildEmailLayout({
     title: "We Received Your Message",
-    greeting: `Hello ${name},`,
+    greeting: `Hello ${name}`,
     intro: "Thanks for contacting us.",
     body: `
       <p><strong>Subject:</strong> ${subject}</p>
@@ -171,7 +171,7 @@ exports.contactReceivedEmail = ({ name, subject }) => {
 exports.adminContactNotificationEmail = ({ name, email, phone, subject, message }) => {
   return buildEmailLayout({
     title: "New Contact Message",
-    greeting: "Hello Admin,",
+    greeting: "Hello Admin",
     intro: "A new contact message has been submitted.",
     body: `
       <p><strong>Name:</strong> ${name}</p>
@@ -189,7 +189,7 @@ exports.adminContactNotificationEmail = ({ name, email, phone, subject, message 
 exports.supportReplyEmail = ({ name, subject, reply }) => {
   return buildEmailLayout({
     title: "Support Ticket Update",
-    greeting: `Hello ${name},`,
+    greeting: `Hello ${name}`,
     intro: `Our team has replied to your support ticket: <strong>${subject}</strong>.`,
     body: `
       <p><strong>Reply:</strong></p>
@@ -204,7 +204,7 @@ exports.supportReplyEmail = ({ name, subject, reply }) => {
 exports.partnerPaymentConfirmedEmail = ({ contactPerson, companyName, category }) => {
   return buildEmailLayout({
     title: "Partner Application Payment Confirmed",
-    greeting: `Hello ${contactPerson},`,
+    greeting: `Hello ${contactPerson}`,
     intro: "Your payment for joining Makao as a service partner has been confirmed successfully.",
     body: `
       <p><strong>Company:</strong> ${companyName}</p>
@@ -219,12 +219,12 @@ exports.partnerPaymentConfirmedEmail = ({ contactPerson, companyName, category }
 exports.partnerApprovedEmail = ({ contactPerson, companyName, category }) => {
   return buildEmailLayout({
     title: "Partner Application Approved",
-    greeting: `Hello ${contactPerson},`,
+    greeting: `Hello ${contactPerson}`,
     intro: `Your company <strong>${companyName}</strong> has been approved as a Makao service partner.`,
     body: `
       <p>Your details can now be displayed under the <strong>${category}</strong> category on our platform.</p>
     `,
-    ctaText: "View Services",
+    ctaText: "View Our Services",
     ctaUrl: `${clientUrl}/services/${category}`
   });
 };
@@ -232,7 +232,7 @@ exports.partnerApprovedEmail = ({ contactPerson, companyName, category }) => {
 exports.partnerRejectedEmail = ({ contactPerson, companyName }) => {
   return buildEmailLayout({
     title: "Partner Application Update",
-    greeting: `Hello ${contactPerson},`,
+    greeting: `Hello ${contactPerson}`,
     intro: `Your partner application for <strong>${companyName}</strong> was not approved at this time.`,
     body: `
       <p>If needed, our team may contact you with more details.</p>
@@ -245,13 +245,13 @@ exports.partnerRejectedEmail = ({ contactPerson, companyName }) => {
 exports.blogPublishedEmail = ({ title, excerpt, slug }) => {
   return buildEmailLayout({
     title: "New Blog Post on RendaHomes",
-    greeting: "Hi there,",
+    greeting: "Hi there",
     intro: `We just published a new article: <strong>${title}</strong>.`,
     body: `
       <p>${excerpt}</p>
       <
     `,
-    ctaText: "Read Article",
+    ctaText: "Read Full Article",
     ctaUrl: `${clientUrl}/blog/${slug}`
   });
 };
@@ -259,7 +259,7 @@ exports.blogPublishedEmail = ({ title, excerpt, slug }) => {
 exports.newsletterWelcomeEmail = () => {
   return buildEmailLayout({
     title: "Subscription Confirmed",
-    greeting: "Hello,",
+    greeting: "Hello",
     intro: "Thanks for subscribing to Renda blog updates.",
     body: `
       <p>You’ll receive an email every time we publish a new article.</p>

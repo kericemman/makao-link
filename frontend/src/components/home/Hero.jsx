@@ -96,7 +96,7 @@ const Hero = () => {
 
     return (
       <Link
-        to={`/listings/${listing._id}`}
+        to={`/properties/${listing._id}`}
         className="group block bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-xl overflow-hidden transition-all border border-white/10 hover:border-white/20 hover:shadow-xl"
         onMouseEnter={() => handleHover(listing._id, true)}
         onMouseLeave={() => handleHover(listing._id, false)}
@@ -293,7 +293,7 @@ const Hero = () => {
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Link
-                to="/listings"
+                to="/properties"
                 className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105 text-sm sm:text-base"
               >
                 <FiSearch className="text-sm sm:text-base" />
@@ -301,7 +301,7 @@ const Hero = () => {
               </Link>
 
               <Link
-                to="/plans"
+                to="/pricing"
                 className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 bg-white/10 backdrop-blur-sm text-white rounded-xl font-semibold hover:bg-white/20 transition-all border border-white/20 text-sm sm:text-base"
               >
                 <FaKey className="text-sm sm:text-base" />

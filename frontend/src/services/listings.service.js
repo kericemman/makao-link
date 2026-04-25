@@ -63,4 +63,9 @@ export const getListingMeta = async () => {
 };
 
 
+export const getFeaturedListings = async () => {
+  const response = await api.get("/listings/featured");
+  return response.data;
+};
+
 

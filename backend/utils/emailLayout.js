@@ -123,7 +123,7 @@ const buildEmailLayout = ({
                       © ${year} ${brandName}. All rights reserved.
                     </p>
                     <p style="margin:0 0 16px; font-size:12px; color:#6b7280;">
-                      FIND. LIVE. RENT
+                      FIND | RENT | LIVE
                     </p>
                     ${unsubscribeUrl ? `
                       <div style="margin-top:12px;">

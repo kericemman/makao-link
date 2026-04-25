@@ -14,7 +14,8 @@ const {
   deleteListing,
   updateListingAvailability,
   markListingTaken,
-  markListingAvailable
+  markListingAvailable,
+  getFeaturedListings
   
 } = require("./listings.controller");
 
@@ -75,5 +76,7 @@ router.delete(
 
 router.patch("/:id/mark-taken", protect, requireRole("landlord"), markListingTaken);
 router.patch("/:id/mark-available", protect, requireRole("landlord"), markListingAvailable);
+
+router.get("/featured", getFeaturedListings);
 
 module.exports = router;

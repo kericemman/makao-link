@@ -274,6 +274,10 @@ exports.getAdminPayments = async (req, res, next) => {
           availability: "available"
         });
 
+        const totalListings = await Listing.countDocuments({
+          landlord: landlord._id
+        });
+
         const subscription = landlord.subscription;
         const planConfig = subscription ? plans[subscription.plan] : null;
 
@@ -295,6 +299,7 @@ exports.getAdminPayments = async (req, res, next) => {
               }
             : null,
           activeListings,
+          totalListings,
           latestPayment: latestPayment
             ? {
                 reference: latestPayment.reference,
@@ -683,6 +688,76 @@ exports.getPlatformHealth = async (req, res, next) => {
       responseTime,
       storageUsed: 45, // replace with actual storage logic later
       uptime: 99.9
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+exports.getAdminPayments = async (req, res, next) => {
+  try {
+    const landlords = await User.find({ role: "landlord" })
+      .populate("subscription")
+      .sort({ createdAt: -1 });
+
+    const records = await Promise.all(
+      landlords.map(async (landlord) => {
+        const latestPayment = await Payment.findOne({
+          user: landlord._id,
+          paymentType: "subscription"
+        }).sort({ createdAt: -1 });
+
+        const activeListings = await Listing.countDocuments({
+          landlord: landlord._id,
+          isActive: true,
+          availability: "available"
+        });
+
+        const totalListings = await Listing.countDocuments({
+          landlord: landlord._id
+        });
+
+        const subscription = landlord.subscription;
+        const planConfig = subscription ? plans[subscription.plan] : null;
+
+        return {
+          _id: landlord._id,
+          landlord: {
+            name: landlord.name,
+            email: landlord.email,
+            phone: landlord.phone
+          },
+          subscription: subscription
+            ? {
+                plan: subscription.plan,
+                status: subscription.status,
+                currentPeriodStart: subscription.currentPeriodStart,
+                currentPeriodEnd: subscription.currentPeriodEnd,
+                gracePeriodEnd: subscription.gracePeriodEnd,
+                listingLimit: planConfig?.listingLimit || 0
+              }
+            : null,
+          activeListings,
+          totalListings,
+          latestPayment: latestPayment
+            ? {
+                reference: latestPayment.reference,
+                amount: latestPayment.amount,
+                currency: latestPayment.currency,
+                plan: latestPayment.plan,
+                status: latestPayment.status,
+                paidAt: latestPayment.paidAt,
+                createdAt: latestPayment.createdAt
+              }
+            : null
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      records
     });
   } catch (error) {
     next(error);
