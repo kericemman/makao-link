@@ -12,8 +12,13 @@ import ListingsGrid from "../../../components/listings/ListingGrid";
 const categoryTitles = {
   student: "Student Friendly Homes",
   office: "Office Spaces",
-  family: "Family Homes for Sale",
-  luxury: "Luxury Apartments"
+  family: "Family Homes",
+  luxury: "Luxury Apartments",
+  bungalow: "Bungalow",
+  villa: "Villa",
+  studio: "Studio",
+  maisonette: "Maisonette",
+  townhouse: "Townhouse"
 };
 
 const ListingsPage = () => {
@@ -167,8 +172,9 @@ const ListingsPage = () => {
   return (
     <div className="min-h-screen bg-[#F0F7F4]">
       <div className="mx-auto max-w-9xl px-4 py-6 sm:px-6 lg:px-8">
+        {/* Header Section */}
         <div className="mb-5">
-          <h1 className="text-2xl font-bold text-[#013E43] md:text-3xl">
+          <h1 className="text-xl md:text-xl font-medium text-[#013E43] md:text-3xl">
             {pageTitle}
           </h1>
           <p className="mt-1 text-sm text-[#065A57]">
@@ -176,14 +182,18 @@ const ListingsPage = () => {
           </p>
         </div>
 
-        <ListingCategoryTabs
-          activeCategory={filters.category}
-          onChange={updateCategory}
-        />
+        {/* Sticky Category Tabs - Fixed at top on scroll */}
+        <div className="sticky top-0 z-50 -mx-4 bg-[#F0F7F4] px-4 py-2 shadow-sm">
+          <ListingCategoryTabs
+            activeCategory={filters.category}
+            onChange={updateCategory}
+          />
+        </div>
 
+        {/* Sticky Filter Button - Mobile only, below category tabs */}
         <button
           onClick={() => setShowMobileFilters(true)}
-          className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#A8D8C1] bg-white py-3 font-medium text-[#013E43] shadow-sm lg:hidden"
+          className="sticky top-[90px] z-10 mb-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#A8D8C1] bg-white py-3 font-medium text-[#013E43] shadow-sm lg:hidden"
         >
           <FiFilter />
           Filters

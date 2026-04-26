@@ -5,10 +5,10 @@ const HomeListingSection = ({ title, subtitle, listings = [], viewAllLink }) => 
   if (!listings.length) return null;
 
   return (
-    <section className="py-8">
+    <section className="py-2">
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-[#013E43]">
+          <h2 className="text-lg md:text-2xl font-medium text-[#013E43]">
             {title}
           </h2>
           <p className="mt-1 text-sm text-[#065A57]">{subtitle}</p>
@@ -16,7 +16,7 @@ const HomeListingSection = ({ title, subtitle, listings = [], viewAllLink }) => 
 
         <Link
           to={viewAllLink}
-          className="shrink-0 text-sm font-semibold text-[#02BB31] hover:text-[#0D915C]"
+          className="shrink-0 text-sm font-light text-[#02BB31] hover:text-[#0D915C]"
         >
           View All
         </Link>

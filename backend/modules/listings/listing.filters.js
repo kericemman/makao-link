@@ -8,7 +8,9 @@ const buildListingFilter = (query = {}) => {
     minPrice,
     maxPrice,
     bedrooms,
-    bathrooms
+    bathrooms,
+    minSize,
+    maxSize
   } = query;
 
   const filter = {
@@ -18,16 +20,16 @@ const buildListingFilter = (query = {}) => {
   };
 
   if (purpose) filter.purpose = purpose;
-  if (type) filter.type = type;
+  if (type) filter.type = type === "office-space" ? "office" : type;
   if (county) filter.county = county;
   if (town) filter.town = town;
 
   if (bedrooms !== undefined && bedrooms !== "") {
-    filter.bedrooms = Number(bedrooms);
+    filter.bedrooms = { $gte: Number(bedrooms) };
   }
 
   if (bathrooms !== undefined && bathrooms !== "") {
-    filter.bathrooms = Number(bathrooms);
+    filter.bathrooms = { $gte: Number(bathrooms) };
   }
 
   if (minPrice || maxPrice) {
@@ -36,7 +38,13 @@ const buildListingFilter = (query = {}) => {
     if (maxPrice) filter.price.$lte = Number(maxPrice);
   }
 
-  // Curated homepage categories
+  if (minSize || maxSize) {
+    filter.size = {};
+    if (minSize) filter.size.$gte = Number(minSize);
+    if (maxSize) filter.size.$lte = Number(maxSize);
+  }
+
+  // Curated categories
   if (category === "student") {
     filter.purpose = "rent";
     filter.price = { $lte: 20000 };
@@ -44,7 +52,7 @@ const buildListingFilter = (query = {}) => {
     filter.bedrooms = { $lte: 1 };
   }
 
-  if (category === "office") {
+  if (category === "office" || category === "office-space") {
     filter.type = "office";
   }
 
@@ -56,7 +64,28 @@ const buildListingFilter = (query = {}) => {
   if (category === "luxury") {
     filter.purpose = "rent";
     filter.town = { $in: ["kilimani", "karen", "lavington"] };
-    filter.type = { $in: ["apartment", "maisonette", "townhouse"] };
+    filter.type = { $in: ["apartment", "maisonette", "townhouse", "villa"] };
+  }
+
+  // Direct property category filters
+  if (category === "maisonette") {
+    filter.type = "maisonette";
+  }
+
+  if (category === "bungalow") {
+    filter.type = "bungalow";
+  }
+
+  if (category === "villa") {
+    filter.type = "villa";
+  }
+
+  if (category === "studio") {
+    filter.type = "studio";
+  }
+
+  if (category === "townhouse") {
+    filter.type = "townhouse";
   }
 
   return filter;

@@ -12,6 +12,7 @@ function Home() {
         <HomeCategories/>
         <HomeLisingsPreview/>
         <HomePage/>
+        
 
   
       </div>

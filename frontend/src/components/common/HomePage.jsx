@@ -83,7 +83,7 @@ const HomePage = () => {
         />
 
         <HomeListingSection
-          title="Student Rentals"
+          title="Student Friendly"
           listings={studentListings}
           viewAllLink="/properties?category=student"
         />
@@ -96,7 +96,7 @@ const HomePage = () => {
         />
 
         <HomeListingSection
-          title="Family Houses for Sale"
+          title="Family Houses"
           
           listings={familyListings}
           viewAllLink="/properties?category=family"

@@ -171,7 +171,7 @@ const HomeListingsPreview = () => {
     try {
       setLoading(true);
       setError("");
-      const data = await getPublicListings({ limit: 8, page: 1 });
+      const data = await getPublicListings({ limit: 4, page: 1 });
       setListings(data.listings || []);
     } catch (err) {
       setError("Failed to load listings");
@@ -243,15 +243,15 @@ const HomeListingsPreview = () => {
               <FiTrendingUp className="text-xs" />
               <span className="text-[10px] font-medium">Recently Added</span>
             </div>
-            <h2 className="text-xl font-bold text-[#013E43]">Latest Listings</h2>
+            {/* <h2 className="text-xl font-bold text-[#013E43]">Latest Listings</h2>
             <p className="mt-1 text-xs text-[#065A57] max-w-2xl hidden sm:block">
               Explore newest verified properties on RendaHomes
-            </p>
+            </p> */}
           </div>
 
           <Link
-            to="/listings"
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-medium hover:shadow-lg transition-all transform hover:scale-105 group w-fit"
+            to="/properties"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-white text-[#02BB31 rounded-lg font-medium hover:shadow-lg transition-all transform hover:scale-105 group w-fit"
           >
             <span>View All Properties</span>
             <FiArrowRight className="text-xs group-hover:translate-x-0.5 transition-transform" />
