@@ -249,7 +249,7 @@ exports.blogPublishedEmail = ({ title, excerpt, slug }) => {
     intro: `We just published a new article: <strong>${title}</strong>.`,
     body: `
       <p>${excerpt}</p>
-      <
+      
     `,
     ctaText: "Read Full Article",
     ctaUrl: `${clientUrl}/blog/${slug}`

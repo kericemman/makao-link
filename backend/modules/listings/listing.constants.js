@@ -57,6 +57,8 @@ const RESIDENTIAL_TYPES = [
   "studio",
   "bungalow",
   "townhouse",
+  "villa",
+  
 ];
 
 const LISTING_TYPES = [

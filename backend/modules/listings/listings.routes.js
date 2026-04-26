@@ -15,7 +15,8 @@ const {
   updateListingAvailability,
   markListingTaken,
   markListingAvailable,
-  getFeaturedListings
+  getFeaturedListings,
+  getRecentListings
   
 } = require("./listings.controller");
 
@@ -27,6 +28,7 @@ const upload = require("../../middleware/upload.middleware");
 router.get("/meta", getListingMeta);
 router.get("/", getPublicListings);
 router.get("/:id", getListingById);
+router.get("/recent", getRecentListings);
 
 // landlord
 router.get("/landlord/my/all", protect, requireRole("landlord"), getMyListings);
@@ -51,6 +53,8 @@ router.get(
   requireRole("landlord"),
   getMyListingById
 );
+
+
 
 router.put(
   "/:id",

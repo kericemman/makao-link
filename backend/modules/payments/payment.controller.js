@@ -188,6 +188,7 @@ exports.verifyPaymentByReference = async (req, res, next) => {
     console.error("VERIFY ERROR:", error.response?.data || error.message);
     next(error);
   }
+  console.log("VERIFY HIT");
 };
 
 exports.getMySubscription = async (req, res, next) => {

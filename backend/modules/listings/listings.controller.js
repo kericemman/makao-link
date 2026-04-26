@@ -13,6 +13,7 @@ const sendEmail = require("../../utils/sendEmail");
 const {
   listingSubmittedEmail
 } = require("../../utils/emailTemplates");
+const buildListingFilter = require("./listing.filters");
 const { canCreateListing } = require("../subscriptions/subscription.service");
 const uploadToCloudinary = require("../../utils/uploadToCloudinary");
 
@@ -40,33 +41,25 @@ exports.getListingMeta = async (req, res, next) => {
 exports.getPublicListings = async (req, res, next) => {
   try {
     const {
-      county,
-      town,
-      type,
-      purpose,
-      minPrice,
-      maxPrice,
-      bedrooms,
       page = 1,
-      limit = 12
+      limit = 12,
+      sort = "latest"
     } = req.query;
 
-    const filter = {
-      status: "approved",
-      isActive: true,
-      availability: "available"
-    };
+    const filter = buildListingFilter(req.query);
 
-    if (county) filter.county = county;
-    if (town) filter.town = town;
-    if (type) filter.type = type;
-    if (purpose) filter.purpose = purpose;
-    if (bedrooms !== undefined && bedrooms !== "") filter.bedrooms = Number(bedrooms);
+    let sortOption = { createdAt: -1 };
 
-    if (minPrice || maxPrice) {
-      filter.price = {};
-      if (minPrice) filter.price.$gte = Number(minPrice);
-      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    if (sort === "price-low") {
+      sortOption = { price: 1 };
+    }
+
+    if (sort === "price-high") {
+      sortOption = { price: -1 };
+    }
+
+    if (sort === "popular") {
+      sortOption = { views: -1 };
     }
 
     const currentPage = Math.max(Number(page) || 1, 1);
@@ -75,10 +68,10 @@ exports.getPublicListings = async (req, res, next) => {
 
     const [listings, total] = await Promise.all([
       Listing.find(filter)
-        .sort({ createdAt: -1 })
+        .populate("landlord", "name businessName")
+        .sort(sortOption)
         .skip(skip)
-        .limit(perPage)
-        .populate("landlord", "name businessName"),
+        .limit(perPage),
       Listing.countDocuments(filter)
     ]);
 
@@ -90,7 +83,41 @@ exports.getPublicListings = async (req, res, next) => {
         page: currentPage,
         limit: perPage,
         pages: Math.ceil(total / perPage)
-      }
+      },
+      appliedFilters: req.query
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//Recent listings
+
+exports.getRecentListings = async (req, res, next) => {
+  try {
+    const ids = req.query.ids ? req.query.ids.split(",") : [];
+
+    if (!ids.length) {
+      return res.json({
+        success: true,
+        listings: []
+      });
+    }
+
+    const listings = await Listing.find({
+      _id: { $in: ids },
+      status: "approved",
+      isActive: true,
+      availability: "available"
+    });
+
+    const orderedListings = ids
+      .map((id) => listings.find((listing) => String(listing._id) === id))
+      .filter(Boolean);
+
+    res.json({
+      success: true,
+      listings: orderedListings
     });
   } catch (error) {
     next(error);
