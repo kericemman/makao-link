@@ -68,4 +68,14 @@ export const getFeaturedListings = async () => {
   return response.data;
 };
 
+export const getRecentListings = async (ids = []) => {
+  const response = await api.get("/listings/recent", {
+    params: {
+      ids: ids.join(",")
+    }
+  });
+
+  return response.data;
+};
+
 

@@ -30,14 +30,15 @@ const Footer = () => {
     { name: "List Property", path: "/pricing" },
     { name: "Landlord Login", path: "/login" },
     { name: "Pricing", path: "/pricing" },
-    { name: "Resources", path: "/blog" },
-    { name: "Support", path: "/support" },
+    { name: "Resources", path: "/blog" }
+   
   ];
 
   const tenantLinks = [
     { name: "Find Homes", path: "/properties" },
     { name: "FAQs", path: "/faqs" },
-    { name: "Articles", path: "/blog"}
+    { name: "Articles", path: "/blog"},
+     { name: "Support", path: "/support" },
   ];
 
   const legalLinks = [
