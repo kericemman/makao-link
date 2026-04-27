@@ -40,6 +40,7 @@ const ListingsPage = () => {
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const filters = useMemo(() => {
     return {
@@ -161,6 +162,28 @@ const ListingsPage = () => {
     }
   };
 
+  // Listen for mobile menu toggle events
+  useEffect(() => {
+    const handleMenuToggle = (event) => {
+      setIsMobileMenuOpen(event.detail?.isOpen || false);
+      
+      // Optional: Prevent body scrolling when menu is open
+      if (event.detail?.isOpen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    };
+
+    window.addEventListener("mobileMenuToggle", handleMenuToggle);
+    
+    // Cleanup function to reset body overflow when component unmounts
+    return () => {
+      window.removeEventListener("mobileMenuToggle", handleMenuToggle);
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   useEffect(() => {
     fetchMeta();
   }, []);
@@ -171,92 +194,103 @@ const ListingsPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F0F7F4]">
-      <div className="mx-auto max-w-9xl px-4 py-6 sm:px-6 lg:px-8">
-        {/* Header Section */}
-        <div className="mb-5">
-          <h1 className="text-xl md:text-xl font-medium text-[#013E43] md:text-3xl">
-            {pageTitle}
-          </h1>
-          <p className="mt-1 text-sm text-[#065A57]">
-            Find rentals, sale properties, office spaces, student homes, and family homes.
-          </p>
-        </div>
+      <div className={`transition-all duration-300 ${isMobileMenuOpen ? 'pointer-events-none' : ''}`}>
+        <div className="mx-auto max-w-9xl px-4 py-6 sm:px-6 lg:px-8">
+          {/* Header Section */}
+          <div className="mb-5">
+            <h1 className="text-xl md:text-xl font-medium text-[#013E43] md:text-3xl">
+              {pageTitle}
+            </h1>
+            <p className="mt-1 text-sm text-[#065A57]">
+              Find rentals, sale properties, office spaces, student homes, and family homes.
+            </p>
+          </div>
 
-        {/* Sticky Category Tabs - Fixed at top on scroll */}
-        <div className="sticky top-0 z-50 -mx-4 bg-[#F0F7F4] px-4 py-2 shadow-sm">
-          <ListingCategoryTabs
-            activeCategory={filters.category}
-            onChange={updateCategory}
-          />
-        </div>
+          {/* Sticky Category Tabs - Hidden on mobile when menu is open */}
+          <div className={`
+            sticky top-0 z-50 -mx-4 bg-[#F0F7F4] px-4 py-2 shadow-sm
+            transition-all duration-300
+            ${isMobileMenuOpen ? 'hidden lg:block' : 'block'}
+          `}>
+            <ListingCategoryTabs
+              activeCategory={filters.category}
+              onChange={updateCategory}
+            />
+          </div>
 
-        {/* Sticky Filter Button - Mobile only, below category tabs */}
-        <button
-          onClick={() => setShowMobileFilters(true)}
-          className="sticky top-[90px] z-10 mb-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#A8D8C1] bg-white py-3 font-medium text-[#013E43] shadow-sm lg:hidden"
-        >
-          <FiFilter />
-          Filters
-          {activeFilterCount > 0 && (
-            <span className="rounded-full bg-[#02BB31] px-2 py-0.5 text-xs text-white">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
+          {/* Sticky Filter Button - Mobile only */}
+          <div className={`
+            transition-all duration-300
+            ${isMobileMenuOpen ? 'hidden' : 'block'}
+          `}>
+            <button
+              onClick={() => setShowMobileFilters(true)}
+              className="sticky top-[90px] z-10 mb-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#A8D8C1] bg-white py-3 font-medium text-[#013E43] shadow-sm lg:hidden"
+            >
+              <FiFilter />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="rounded-full bg-[#02BB31] px-2 py-0.5 text-xs text-white">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
 
-        <div className="grid gap-6 lg:grid-cols-[30%_70%]">
-          <aside className="hidden lg:block">
-            <div className="sticky top-24">
-              <ListingsFilterPanel
-                meta={meta}
-                filters={filters}
-                updateFilter={updateFilter}
+          <div className="grid gap-6 lg:grid-cols-[30%_70%]">
+            <aside className="hidden lg:block">
+              <div className="sticky top-24">
+                <ListingsFilterPanel
+                  meta={meta}
+                  filters={filters}
+                  updateFilter={updateFilter}
+                  clearFilters={clearFilters}
+                  hasActiveFilters={hasActiveFilters}
+                />
+              </div>
+            </aside>
+
+            <main>
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-sm text-[#065A57]">
+                  <span className="font-semibold text-[#013E43]">
+                    {pagination?.total ?? listings.length}
+                  </span>{" "}
+                  listings found
+                </p>
+              </div>
+
+              <ListingsGrid
+                loading={loading}
+                listings={listings}
                 clearFilters={clearFilters}
                 hasActiveFilters={hasActiveFilters}
               />
-            </div>
-          </aside>
 
-          <main>
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm text-[#065A57]">
-                <span className="font-semibold text-[#013E43]">
-                  {pagination?.total ?? listings.length}
-                </span>{" "}
-                listings found
-              </p>
-            </div>
+              {pagination?.pages > 1 && (
+                <div className="mt-8 flex justify-center gap-2">
+                  {Array.from({ length: pagination.pages }).map((_, index) => {
+                    const page = index + 1;
+                    const active = Number(filters.page) === page;
 
-            <ListingsGrid
-              loading={loading}
-              listings={listings}
-              clearFilters={clearFilters}
-              hasActiveFilters={hasActiveFilters}
-            />
-
-            {pagination?.pages > 1 && (
-              <div className="mt-8 flex justify-center gap-2">
-                {Array.from({ length: pagination.pages }).map((_, index) => {
-                  const page = index + 1;
-                  const active = Number(filters.page) === page;
-
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => updateFilter("page", String(page))}
-                      className={`h-10 w-10 rounded-lg font-medium ${
-                        active
-                          ? "bg-[#013E43] text-white"
-                          : "border border-[#A8D8C1] text-[#065A57] bg-white"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </main>
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => updateFilter("page", String(page))}
+                        className={`h-10 w-10 rounded-lg font-medium ${
+                          active
+                            ? "bg-[#013E43] text-white"
+                            : "border border-[#A8D8C1] text-[#065A57] bg-white"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </main>
+          </div>
         </div>
       </div>
 

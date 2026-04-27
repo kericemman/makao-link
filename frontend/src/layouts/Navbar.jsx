@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { 
   FiHome, 
   FiGrid, 
@@ -32,13 +32,40 @@ function Navbar() {
     navigate("/")
   }
 
+  // Dispatch custom event when mobile menu opens/closes
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('mobileMenuToggle', { 
+      detail: { isOpen: isOpen } 
+    }))
+
+    // Prevent body scrolling when mobile menu is open
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+
+    // Cleanup function
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
+
+  const toggleMobileMenu = () => {
+    setIsOpen(!isOpen)
+  }
+
+  const closeMobileMenu = () => {
+    setIsOpen(false)
+  }
+
   return (
     <header className="bg-white shadow-lg sticky top-0 z-50 border-b border-[#A8D8C1]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
           
           {/* Logo - Left on all screens */}
-          <Link to="/" className="flex items-center space-x-2 group flex-shrink-0">
+          <Link to="/" className="flex items-center space-x-2 group flex-shrink-0" onClick={closeMobileMenu}>
             <img src="/assets/rend.jpeg" alt="RendaHomes Logo" className="h-10 w-auto" />
           </Link>
 
@@ -140,7 +167,10 @@ function Navbar() {
                           <Link
                             to={user.role === "admin" || user.role === "landlord" ? "/landlord/dashboard" : "/admin/dashboard"}
                             className="flex items-center space-x-3 px-4 py-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                            onClick={() => setShowUserMenu(false)}
+                            onClick={() => {
+                              setShowUserMenu(false)
+                              closeMobileMenu()
+                            }}
                           >
                             <FiUser />
                             <span>Dashboard</span>
@@ -149,14 +179,20 @@ function Navbar() {
                           <Link
                             to="/support"
                             className="flex items-center space-x-3 px-4 py-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                            onClick={() => setShowUserMenu(false)}
+                            onClick={() => {
+                              setShowUserMenu(false)
+                              closeMobileMenu()
+                            }}
                           >
                             <FiHelpCircle />
                             <span>Help & Support</span>
                           </Link>
                           <hr className="my-2 border-[#A8D8C1]" />
                           <button
-                            onClick={handleLogout}
+                            onClick={() => {
+                              handleLogout()
+                              setShowUserMenu(false)
+                            }}
                             className="w-full flex items-center space-x-3 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           >
                             <FiLogOut />
@@ -178,9 +214,10 @@ function Navbar() {
               <Link
                 to="/pricing"
                 className="flex mr-2 px-3 py-1.5 bg-white text-[#02BB31] border border-[#02BB31] rounded-lg text-sm font-light hover:shadow-lg transition-all transform hover:scale-105 whitespace-nowrap"
+                onClick={closeMobileMenu}
               >
                 <FiUserPlus className="text-lg mr-1" />
-                  <span>List Property</span>
+                <span>List Property</span>
               </Link>
             )}
 
@@ -192,8 +229,9 @@ function Navbar() {
 
             {/* Mobile Menu Button */}
             <button
-              onClick={() => setIsOpen(!isOpen)}
+              onClick={toggleMobileMenu}
               className="p-2 rounded-lg hover:bg-[#F0F7F4] transition-colors"
+              aria-label={isOpen ? "Close menu" : "Open menu"}
             >
               {isOpen ? (
                 <FiX className="text-2xl text-[#02BB31]" />
@@ -215,7 +253,7 @@ function Navbar() {
             <Link
               to="/"
               className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-              onClick={() => setIsOpen(false)}
+              onClick={closeMobileMenu}
             >
               <FiHome className="text-xl" />
               <span>Home</span>
@@ -224,7 +262,7 @@ function Navbar() {
             <Link
               to="/properties"
               className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-              onClick={() => setIsOpen(false)}
+              onClick={closeMobileMenu}
             >
               <FiGrid className="text-xl" />
               <span>Properties</span>
@@ -233,7 +271,7 @@ function Navbar() {
             <Link
               to="/services"
               className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-              onClick={() => setIsOpen(false)}
+              onClick={closeMobileMenu}
             >
               <FaBuilding className="text-xl" />
               <span>Services</span>
@@ -242,7 +280,7 @@ function Navbar() {
             <Link
               to="/pricing"
               className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-              onClick={() => setIsOpen(false)}
+              onClick={closeMobileMenu}
             >
               <FaDollarSign className="text-xl" />
               <span>Pricing</span>
@@ -253,10 +291,19 @@ function Navbar() {
                 <Link
                   to="/login"
                   className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                  onClick={() => setIsOpen(false)}
+                  onClick={closeMobileMenu}
                 >
                   <FiLogIn className="text-xl" />
                   <span>Login</span>
+                </Link>
+
+                <Link
+                  to="/pricing"
+                  className="flex items-center space-x-3 px-4 py-3 text-[#02BB31] border border-[#02BB31] rounded-lg transition-colors"
+                  onClick={closeMobileMenu}
+                >
+                  <FiUserPlus className="text-xl" />
+                  <span>List Property</span>
                 </Link>
               </>
             )}
@@ -271,7 +318,7 @@ function Navbar() {
                 <Link
                   to={user.role === "admin" || user.role === "landlord" ? "/landlord/dashboard" : "/admin/dashboard"}
                   className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                  onClick={() => setIsOpen(false)}
+                  onClick={closeMobileMenu}
                 >
                   <FiUser />
                   <span>Dashboard</span>
@@ -280,7 +327,7 @@ function Navbar() {
                 <Link
                   to="/support"
                   className="flex items-center space-x-3 px-4 py-3 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-                  onClick={() => setIsOpen(false)}
+                  onClick={closeMobileMenu}
                 >
                   <FiHelpCircle />
                   <span>Help & Support</span>
@@ -290,7 +337,7 @@ function Navbar() {
                 <button
                   onClick={() => {
                     handleLogout()
-                    setIsOpen(false)
+                    closeMobileMenu()
                   }}
                   className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 >
