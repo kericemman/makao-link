@@ -151,10 +151,16 @@ const userSchema = new mongoose.Schema(
       trim: true
     },
 
+    // role: {
+    //   type: String,
+    //   enum: ["landlord", "admin"],
+    //   default: "landlord"
+    // },
+
     role: {
       type: String,
-      enum: ["landlord", "admin"],
-      default: "landlord"
+      enum: ["user", "landlord", "admin"],
+      default: "user"
     },
 
     subscription: {
