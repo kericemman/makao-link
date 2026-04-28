@@ -1,6 +1,7 @@
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+
 import { 
   FiHome, 
   FiGrid, 
@@ -12,6 +13,8 @@ import {
   FiLogOut,
   FiMenu,
   FiX,
+  FiClock,
+  FiCheckCircle,
   FiBell,
   FiSettings,
   FiChevronDown,
@@ -22,71 +25,16 @@ import {
   FiDollarSign,
   FiUserCheck,
   FiActivity,
-  FiPhoneCall
+  FiPhoneCall,
+  FiPaperclip,
+  FiSmartphone,
+  FiServer,
+  FiMail,
+  FiFeather,
+  FiBookOpen
 } from "react-icons/fi";
-import { FaBuilding, FaKey, FaHandshake, FaBlog } from "react-icons/fa";
+import { FaBuilding, FaKey, FaHandshake, FaBlog, FaMobileAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
-
-const navItems = [
-  { 
-    label: "Dashboard", 
-    path: "/admin/dashboard", 
-    icon: FiHome,
-    description: "Platform overview"
-  },
-  { 
-    label: "Pending Listings", 
-    path: "/admin/listings/pending", 
-    icon: FiEye,
-    description: "Review submissions",
-    badge: null
-  },
- 
-  { 
-    label: "Landlords", 
-    path: "/admin/landlords", 
-    icon: FiUsers,
-    description: "Manage landlords"
-  },
-  { 
-    label: "Payments", 
-    path: "/admin/payments", 
-    icon: FiCreditCard,
-    description: "Payment transactions"
-  },
-  { 
-    label: "Inquiries", 
-    path: "/admin/inquiries", 
-    icon: FiMessageSquare,
-    description: "Tenant inquiries"
-  },
-
-  {
-    label: "Contact Inquiries",
-    path: "/admin/contact",
-    icon: FiPhoneCall,
-    description: "User queries"
-  },
-  { 
-    label: "Support Tickets", 
-    path: "/admin/support", 
-    icon: FiHelpCircle,
-    description: "Support requests"
-  },
-  {
-    label: "Service Applications",
-    path: "/admin/services/applications",
-    icon: FiFileText,
-    description: "Review service applications"
-  },
-  { 
-    label: "Blogs", 
-    path: "/admin/blogs", 
-    icon: FaBlog,
-    description: "Manage articles"
-  },
-  
-];
 
 const AdminLayout = () => {
   const { user, logout } = useAuth();
@@ -97,6 +45,7 @@ const AdminLayout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState({});
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -111,11 +60,22 @@ const AdminLayout = () => {
     navigate("/login");
   };
 
+  const toggleDropdown = (dropdownName) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [dropdownName]: !prev[dropdownName]
+    }));
+  };
+
   const isActivePath = (path) => {
     if (path === "/admin/dashboard") {
       return location.pathname === "/admin/dashboard";
     }
     return location.pathname.startsWith(path);
+  };
+
+  const isChildActive = (paths) => {
+    return paths.some(path => location.pathname.startsWith(path));
   };
 
   // Mock notifications - replace with real data
@@ -126,6 +86,247 @@ const AdminLayout = () => {
   ];
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Navigation items with dropdown structure
+  const navigationGroups = [
+    {
+      type: "link",
+      label: "Dashboard",
+      path: "/admin/dashboard",
+      icon: FiHome,
+      description: "Platform overview"
+    },
+    {
+      type: "link",
+      label: "Pending Listings",
+      path: "/admin/listings/pending",
+      icon: FiEye,
+      description: "Review submissions"
+    },
+    {
+      type: "link",
+      label: "Landlords",
+      path: "/admin/landlords",
+      icon: FiUsers,
+      description: "Manage landlords"
+    },
+    {
+      type: "link",
+      label: "Payments",
+      path: "/admin/payments",
+      icon: FiCreditCard,
+      description: "Payment transactions"
+    },
+    {
+      type: "link",
+      label: "Inquiries",
+      path: "/admin/inquiries",
+      icon: FiMessageSquare,
+      description: "Tenant inquiries"
+    },
+    {
+      type: "link",
+      label: "Contact Inquiries",
+      path: "/admin/contact",
+      icon: FiPhoneCall,
+      description: "User queries"
+    },
+    {
+      type: "link",
+      label: "Support Tickets",
+      path: "/admin/support",
+      icon: FiHelpCircle,
+      description: "Support requests"
+    },
+    {
+      type: "dropdown",
+      label: "App Management",
+      icon: FiSmartphone,
+      description: "Mobile app & content",
+      isOpen: openDropdowns.appManagement,
+      toggle: () => toggleDropdown("appManagement"),
+      isActive: isChildActive(["/admin/app"]),
+      children: [
+        { 
+          label: "Support Categories", 
+          path: "/admin/app/categories", 
+          icon: FiHelpCircle,
+          description: "Manage support categories"
+        },
+       
+        { 
+          label: "Contact Info", 
+          path: "/admin/contact-info", 
+          icon: FiPhoneCall,
+          description: "Manage contact details"
+        },
+        { 
+          label: "Updates", 
+          path: "/admin/app/updates", 
+          icon: FiFeather,
+          description: "App updates & changelog"
+        },
+        { 
+          label: "Subscribers", 
+          path: "/admin/app/subscribers", 
+          icon: FiMail,
+          description: "Newsletter subscribers"
+        },
+        { 
+          label: "Policies", 
+          path: "/admin/app/policies", 
+          icon: FiShield,
+          description: "Privacy & terms"
+        }
+      ]
+    },
+    {
+      type: "dropdown",
+      label: "Service Applications",
+      icon: FiFileText,
+      description: "Review service applications",
+      isOpen: openDropdowns.serviceApps,
+      toggle: () => toggleDropdown("serviceApps"),
+      isActive: isChildActive(["/admin/services"]),
+      children: [
+        { 
+          label: "Pending Applications", 
+          path: "/admin/services/applications", 
+          icon: FiClock,
+          description: "Applications pending review"
+        },
+        { 
+          label: "Approved Partners", 
+          path: "/admin/services/partners", 
+          icon: FiCheckCircle,
+          description: "Approved service partners"
+        }
+      ]
+    },
+    {
+      type: "dropdown",
+      label: "Blog Management",
+      icon: FaBlog,
+      description: "Manage blog content",
+      isOpen: openDropdowns.blogManagement,
+      toggle: () => toggleDropdown("blogManagement"),
+      isActive: isChildActive(["/admin/blogs"]),
+      children: [
+        { 
+          label: "All Posts", 
+          path: "/admin/blogs", 
+          icon: FiBookOpen,
+          description: "View all blog posts"
+        },
+        { 
+          label: "Create Post", 
+          path: "/admin/blog/new", 
+          icon: FiFeather,
+          description: "Write new article"
+        }
+      ]
+    }
+  ];
+
+  // Flatten nav items for rendering
+  const renderNavItem = (item) => {
+    const Icon = item.icon;
+    const isActive = item.type === "link" ? isActivePath(item.path) : item.isActive;
+
+    if (item.type === "link") {
+      return (
+        <Link
+          key={item.path}
+          to={item.path}
+          onClick={() => setIsMobileMenuOpen(false)}
+          className={`flex items-center ${!isSidebarOpen && 'justify-center'} p-3 rounded-xl transition-all group relative
+            ${isActive 
+              ? 'bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white shadow-lg shadow-[#02BB31]/20' 
+              : 'text-[#A8D8C1] hover:bg-white/10 hover:text-white'
+            }`}
+        >
+          <Icon className={`text-xl ${!isSidebarOpen ? 'mr-0' : 'mr-3'} flex-shrink-0`} />
+          {isSidebarOpen && (
+            <>
+              <div className="flex-1 min-w-0">
+                <span className="font-medium block truncate">{item.label}</span>
+                <p className="text-xs opacity-75 truncate">{item.description}</p>
+              </div>
+            </>
+          )}
+          
+          {/* Tooltip for collapsed sidebar */}
+          {!isSidebarOpen && (
+            <div className="absolute left-full ml-2 px-2 py-1 bg-[#013E43] text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-xl">
+              {item.label}
+            </div>
+          )}
+        </Link>
+      );
+    }
+
+    if (item.type === "dropdown") {
+      return (
+        <div key={item.label} className="space-y-1">
+          <button
+            onClick={item.toggle}
+            className={`w-full flex items-center ${!isSidebarOpen && 'justify-center'} p-3 rounded-xl transition-all group relative
+              ${item.isActive 
+                ? 'bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white shadow-lg shadow-[#02BB31]/20' 
+                : 'text-[#A8D8C1] hover:bg-white/10 hover:text-white'
+              }`}
+          >
+            <Icon className={`text-xl ${!isSidebarOpen ? 'mr-0' : 'mr-3'} flex-shrink-0`} />
+            {isSidebarOpen && (
+              <>
+                <div className="flex-1 text-left">
+                  <span className="font-medium block truncate">{item.label}</span>
+                  <p className="text-xs opacity-75 truncate">{item.description}</p>
+                </div>
+                <FiChevronDown className={`ml-2 transition-transform ${item.isOpen ? 'rotate-180' : ''}`} />
+              </>
+            )}
+            
+            {/* Tooltip for collapsed sidebar */}
+            {!isSidebarOpen && (
+              <div className="absolute left-full ml-2 px-2 py-1 bg-[#013E43] text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-xl">
+                {item.label}
+              </div>
+            )}
+          </button>
+          
+          {isSidebarOpen && item.isOpen && (
+            <div className="ml-6 pl-4 space-y-1 border-l border-[#065A57]">
+              {item.children.map((child) => {
+                const ChildIcon = child.icon;
+                const isChildActive = location.pathname === child.path;
+                return (
+                  <Link
+                    key={child.path}
+                    to={child.path}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center p-2 rounded-lg transition-all group ${
+                      isChildActive
+                        ? 'bg-[#02BB31] text-white'
+                        : 'text-[#A8D8C1] hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <ChildIcon className="text-base mr-2 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium block truncate">{child.label}</span>
+                      <p className="text-xs opacity-75 truncate">{child.description}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="min-h-screen bg-[#F0F7F4]">
@@ -140,7 +341,7 @@ const AdminLayout = () => {
       {/* Sidebar */}
       <aside 
         className={`fixed top-0 left-0 z-30 h-full bg-gradient-to-b from-[#013E43] to-[#001A1C] text-white transition-all duration-300 ease-in-out
-          ${isSidebarOpen ? 'w-72' : 'w-20'} 
+          ${isSidebarOpen ? 'w-80' : 'w-20'} 
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           border-r border-[#065A57] shadow-2xl overflow-hidden`}
       >
@@ -149,7 +350,14 @@ const AdminLayout = () => {
           {/* Sidebar Header */}
           <div className={`sticky top-0 z-10 p-4 border-b border-[#065A57] bg-gradient-to-r from-[#02BB31]/10 to-transparent backdrop-blur-sm ${!isSidebarOpen && 'lg:p-3'}`}>
             <div className="flex items-center justify-between">
-              
+              {isSidebarOpen && (
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-gradient-to-r from-[#02BB31] to-[#0D915C] rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold">M</span>
+                  </div>
+                  <span className="text-lg font-bold text-white">Admin Panel</span>
+                </div>
+              )}
               
               {/* Mobile Close Button */}
               <button
@@ -163,7 +371,7 @@ const AdminLayout = () => {
               {/* Toggle Button - Desktop */}
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="hidden lg:block p-2 hover:bg-white/10 rounded-lg transition-colors text-white flex-shrink-0"
+                className="hidden lg:block p-2 hover:bg-white/10 rounded-lg transition-colors text-white flex-shrink-0 ml-auto"
                 aria-label="Toggle sidebar"
               >
                 {isSidebarOpen ? <FiX size={20} /> : <FiMenu size={20} />}
@@ -193,45 +401,7 @@ const AdminLayout = () => {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = isActivePath(item.path);
-              
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center ${!isSidebarOpen && 'justify-center'} p-3 rounded-xl transition-all group relative
-                    ${isActive 
-                      ? 'bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white shadow-lg shadow-[#02BB31]/20' 
-                      : 'text-[#A8D8C1] hover:bg-white/10 hover:text-white'
-                    }`}
-                >
-                  <Icon className={`text-xl ${!isSidebarOpen ? 'mr-0' : 'mr-3'} flex-shrink-0`} />
-                  {isSidebarOpen && (
-                    <>
-                      <div className="flex-1 min-w-0">
-                        <span className="font-medium block truncate">{item.label}</span>
-                        <p className="text-xs opacity-75 truncate">{item.description}</p>
-                      </div>
-                      {item.badge && (
-                        <span className="px-2 py-1 text-xs bg-red-500 text-white rounded-full">
-                          {item.badge}
-                        </span>
-                      )}
-                    </>
-                  )}
-                  
-                  {/* Tooltip for collapsed sidebar */}
-                  {!isSidebarOpen && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-[#013E43] text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-xl">
-                      {item.label}
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
+            {navigationGroups.map((item) => renderNavItem(item))}
           </nav>
 
           {/* Bottom Section */}
@@ -268,7 +438,7 @@ const AdminLayout = () => {
       </aside>
 
       {/* Main Content */}
-      <main className={`transition-all duration-300 ${isSidebarOpen ? 'lg:ml-72' : 'lg:ml-20'} ml-0 min-h-screen`}>
+      <main className={`transition-all duration-300 ${isSidebarOpen ? 'lg:ml-80' : 'lg:ml-20'} ml-0 min-h-screen`}>
         {/* Top Navigation Bar */}
         <header className="sticky top-0 z-20 bg-white shadow-sm border-b border-[#A8D8C1]">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
@@ -285,10 +455,10 @@ const AdminLayout = () => {
               {/* Page Title */}
               <div className="flex-1 ml-4 lg:ml-0">
                 <h1 className="text-xl font-bold text-[#013E43]">
-                  {navItems.find(item => isActivePath(item.path))?.label || 'Dashboard'}
+                  Admin Dashboard
                 </h1>
                 <p className="text-sm text-[#065A57]">
-                  {navItems.find(item => isActivePath(item.path))?.description}
+                  Manage your platform
                 </p>
               </div>
 

@@ -75,3 +75,28 @@ export const getRecentActivity = async () => {
   const response = await api.get("/admin/activity");
   return response.data;
 };
+
+
+// App routes
+
+
+export const getSupportCategories = () => api.get("/admin/support-categories");
+export const createSupportCategory = (payload) => api.post("/admin/support-categories", payload);
+export const updateSupportCategory = (id, payload) => api.patch(`/admin/support-categories/${id}`, payload);
+export const deleteSupportCategory = (id) => api.delete(`/admin/support-categories/${id}`);
+
+export const getSupportTickets = () => api.get("/admin/support-tickets");
+export const updateSupportTicket = (id, payload) => api.patch(`/admin/support-tickets/${id}`, payload);
+
+export const getContactInfo = () => api.get("/admin/contact-info");
+export const updateContactInfo = (payload) => api.patch("/admin/contact-info", payload);
+
+export const getUpdates = () => api.get("/admin/updates");
+export const createUpdate = (payload) => api.post("/admin/updates", payload);
+export const updateUpdate = (id, payload) => api.patch(`/admin/updates/${id}`, payload);
+export const deleteUpdate = (id) => api.delete(`/admin/updates/${id}`);
+
+export const getSubscribers = () => api.get("/admin/subscribers");
+
+export const getPolicies = () => api.get("/admin/policies");
+export const upsertPolicy = (payload) => api.post("/admin/policies", payload);

@@ -17,6 +17,9 @@ const contactRoutes = require("./modules/contact/contact.route");
 const userRoutes = require("./modules/users/user.routes");
 const seoRoutes = require("./modules/seo/seo.routes");
 const blogRoutes = require("./modules/blog/blog.route");
+const publicContentRoutes = require("./modules/app/routes/publicContent.routes");
+const adminContentRoutes =  require("./modules/app/routes/adminContent.routes")
+
 
 const app = express();
 
@@ -62,6 +65,8 @@ app.use("/api/services", serviceRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/blog", blogRoutes);
+app.use("/api/public", publicContentRoutes);
+app.use("/api/admin/content", adminContentRoutes);
 app.use("/", seoRoutes);
 
 

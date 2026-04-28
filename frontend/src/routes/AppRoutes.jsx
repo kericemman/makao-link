@@ -60,6 +60,12 @@ import AdminBlogsPage from "../pages/admin/blog/AdminBlog";
 import AdminBlogEditorPage from "../pages/admin/blog/CreateBlog";
 import AdminNewsletterSubscribersPage from "../pages/admin/AdminSubscribersPage";
 import EditListingPage from "../pages/landlord/EditProperty";
+import SupportCategoriesPage from "../pages/admin/app/SupportCategoriesPage";
+import ContactInfoPage from "../pages/admin/app/ContactInfoPage";
+import PolicyPagesPage from "../pages/admin/app/PolicyPage";
+import SubscribersPage from "../pages/admin/app/SubscriberPage";
+import AppUpdatesPage from "../pages/admin/app/AppPage";
+
 
 
 
@@ -134,7 +140,13 @@ const AppRoutes = () => {
             <Route path="/admin/subscribers" element={<AdminNewsletterSubscribersPage />} />
             <Route path="/admin/listings" element={<AdminAllListingsPage />} />
             <Route path="/admin/subscriptions" element={<AdminSubscriptionsPage />} />
-          </Route>
+            <Route path="/admin/app/categories" element={<SupportCategoriesPage/> } /> 
+            <Route path="/admin/contact-info" element={<ContactInfoPage />} />   
+            <Route path="/admin/app/policies" element={<PolicyPagesPage />} />
+            <Route path="/admin/app/updates" element={<AppUpdatesPage />} />
+            <Route path="/admin/app/subscribers" element={<SubscribersPage />} />
+           </Route>
+            
         </Route>
       </Route>
     </Routes>

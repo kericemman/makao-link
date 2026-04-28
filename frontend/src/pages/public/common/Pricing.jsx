@@ -145,7 +145,7 @@ const PlanCard = ({ plan, onSelect, isPopular }) => {
         {/* Properties Limit */}
         <div className="mb-4">
           <span className="inline-flex items-center px-3 py-1 bg-[#F0F7F4] text-[#013E43] text-sm font-medium rounded-full">
-            {plan.limit === 1 ? "1 property" : `Up to ${plan.limit} properties`}
+            {plan.limit === 1 ? "2 property" : `Up to ${plan.limit} properties`}
           </span>
         </div>
 
