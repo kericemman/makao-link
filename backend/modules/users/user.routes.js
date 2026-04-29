@@ -24,7 +24,7 @@ const { protect } = require("../../middleware/auth.middleware");
 const requireRole = require("../../middleware/role.middleware");
 const upload = require("../../middleware/upload.middleware");
 
-router.get("/profile", protect, requireRole("landlord", "admin"), getProfile);
+router.get("/profile", protect, requireRole("landlord", "admin", "user"), getProfile);
 router.patch(
   "/profile",
   protect,
