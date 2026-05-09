@@ -139,13 +139,17 @@ exports.initializePartnerApplicationPayment = async (req, res, next) => {
     }
 
     if (application.paymentStatus === "success") {
-      return res.status(400).json({ message: "Payment already confirmed for this application" });
+      return res.status(400).json({
+        message: "Payment already confirmed for this application"
+      });
     }
+
+    const callbackUrl = `${process.env.CLIENT_URL}/services/apply/callback?applicationId=${application._id}`;
 
     const response = await paystack.post("/transaction/initialize", {
       email: application.email,
       amount: application.amountPaid * 100,
-      callback_url: `${process.env.CLIENT_URL}/services/apply/callback`,
+      callback_url: callbackUrl,
       metadata: {
         applicationId: application._id.toString(),
         paymentType: "partner_application",
@@ -155,7 +159,65 @@ exports.initializePartnerApplicationPayment = async (req, res, next) => {
 
     res.json({
       success: true,
-      authorization_url: response.data.data.authorization_url
+      authorization_url: response.data.data.authorization_url,
+      reference: response.data.data.reference
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+exports.verifyPartnerApplicationPayment = async (req, res, next) => {
+  try {
+    const { reference } = req.params;
+    const { applicationId } = req.query;
+
+    if (!reference) {
+      return res.status(400).json({ message: "Payment reference is required" });
+    }
+
+    const response = await paystack.get(`/transaction/verify/${reference}`);
+    const data = response.data?.data;
+
+    if (!data || data.status !== "success") {
+      return res.status(400).json({
+        message: "Payment has not been confirmed"
+      });
+    }
+
+    const metadataApplicationId = data.metadata?.applicationId;
+    const targetApplicationId = applicationId || metadataApplicationId;
+
+    if (!targetApplicationId) {
+      return res.status(400).json({
+        message: "Application ID missing from payment metadata"
+      });
+    }
+
+    if (
+      metadataApplicationId &&
+      String(metadataApplicationId) !== String(targetApplicationId)
+    ) {
+      return res.status(400).json({
+        message: "Payment metadata does not match this application"
+      });
+    }
+
+    const application = await PartnerApplication.findById(targetApplicationId);
+
+    if (!application) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    application.paymentStatus = "success";
+    application.paymentReference = reference;
+    await application.save();
+
+    res.json({
+      success: true,
+      message: "Partner application payment verified",
+      application
     });
   } catch (error) {
     next(error);

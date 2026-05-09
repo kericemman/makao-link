@@ -194,7 +194,7 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
+    <section className="relative min-h-[70vh] p-15 flex items-center overflow-hidden">
       <div className="absolute inset-0">
         {backgroundImages.map((image, index) => (
           <div
@@ -309,7 +309,7 @@ const Hero = () => {
               </Link>
             </div>
 
-            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+            {/* <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
               <p className="text-xs text-[#A8D8C1] mb-2 sm:mb-3 flex items-center">
                 <FiShield className="mr-1 text-[#02BB31] text-xs" />
                 Why choose RendaHomes?
@@ -332,7 +332,7 @@ const Hero = () => {
                   <span className="text-[10px] sm:text-xs text-white">No hidden fees</span>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

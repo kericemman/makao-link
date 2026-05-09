@@ -7,6 +7,7 @@ const {
   login,
   me,
   getMe,
+  socialLogin,
   forgotPassword,
   resetPassword
 } = require("./auth.controller");
@@ -20,6 +21,8 @@ router.get("/me", protect, getMe);
 router.post("/register", register);
 router.post("/login", login);
 router.get("/me", protect, me);
+
+router.post("/social-login", socialLogin);
 
 
 

@@ -15,7 +15,6 @@ import {
   FiHeart,
   FiXCircle,
   FiPhoneCall,
-  FiMaximize2,
   FiTag
 } from "react-icons/fi";
 import {
@@ -24,8 +23,7 @@ import {
   FaBuilding,
   FaWhatsapp,
   FaHome as FaHomeIcon,
-  FaPhoneAlt,
-  FaRulerCombined
+  FaPhoneAlt
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 
@@ -122,21 +120,10 @@ const ListingDetailsPage = () => {
 
   const normalizeKenyanPhone = (phone) => {
     if (!phone) return null;
-
     const cleaned = String(phone).replace(/\D/g, "");
-
-    if (cleaned.startsWith("0") && cleaned.length === 10) {
-      return `254${cleaned.slice(1)}`;
-    }
-
-    if (cleaned.startsWith("254") && cleaned.length === 12) {
-      return cleaned;
-    }
-
-    if ((cleaned.startsWith("7") || cleaned.startsWith("1")) && cleaned.length === 9) {
-      return `254${cleaned}`;
-    }
-
+    if (cleaned.startsWith("0") && cleaned.length === 10) return `254${cleaned.slice(1)}`;
+    if (cleaned.startsWith("254") && cleaned.length === 12) return cleaned;
+    if ((cleaned.startsWith("7") || cleaned.startsWith("1")) && cleaned.length === 9) return `254${cleaned}`;
     return null;
   };
 
@@ -160,22 +147,10 @@ const ListingDetailsPage = () => {
     return parts.join(", ");
   }, [listing]);
 
-  const isResidential = useMemo(() => {
-    return residentialTypes.includes(listing?.type);
-  }, [listing]);
-
-  const purposeLabel = useMemo(() => {
-    return listing?.purpose === "sale" ? "For Sale" : "For Rent";
-  }, [listing]);
-
-  const typeLabel = useMemo(() => {
-    if (!listing?.type) return "";
-    return listing.type === "office" ? "Office Space" : prettify(listing.type);
-  }, [listing]);
-
-  const priceSuffix = useMemo(() => {
-    return listing?.purpose === "sale" ? "" : "/month";
-  }, [listing]);
+  const isResidential = useMemo(() => residentialTypes.includes(listing?.type), [listing]);
+  const purposeLabel = useMemo(() => listing?.purpose === "sale" ? "For Sale" : "For Rent", [listing]);
+  const typeLabel = useMemo(() => listing?.type === "office" ? "Office Space" : prettify(listing?.type), [listing]);
+  const priceSuffix = useMemo(() => listing?.purpose === "sale" ? "" : "/month", [listing]);
 
   const generateWhatsAppMessage = ({ name, email, phone, message }) => {
     const lines = [
@@ -193,64 +168,56 @@ const ListingDetailsPage = () => {
       lines.push(`🛁 *Bathrooms:* ${listing.bathrooms ?? "N/A"}`);
     }
 
-    if (listing.type === "office" && listing.size) {
-      lines.push(`📐 *Size:* ${listing.size} ${listing.sizeUnit || "sqft"}`);
-    }
-
-    lines.push("");
-    lines.push(`👤 *Inquiry from:* ${name || "Potential Client"}`);
-    lines.push("");
-    lines.push("*Message:*");
-    lines.push(message || "I'm interested in this property. Please get in touch.");
-    lines.push("");
-    lines.push("--");
-    lines.push("Sent via RendaHomes Property Platform");
-    lines.push(`View listing: ${window.location.href}`);
+    lines.push(
+      "",
+      `👤 *Inquiry from:* ${name || "Potential Client"}`,
+      "",
+      "*Message:*",
+      message || "I'm interested in this property. Please get in touch.",
+      "",
+      "--",
+      "Sent via RendaHomes Property Platform",
+      `View listing: ${window.location.href}`
+    );
 
     return encodeURIComponent(lines.join("\n"));
   };
 
   const handleWhatsAppClick = () => {
-  const currentName = formData.name.trim();
-  const currentEmail = formData.email.trim();
-  const currentPhone = formData.phone.trim();
-  const currentMessage = formData.message.trim();
+    const currentName = formData.name.trim();
+    const currentEmail = formData.email.trim();
+    const currentMessage = formData.message.trim();
 
-  if (!currentName || !currentEmail || !currentMessage) {
-    toast.error("Please fill in your name, email, and message before contacting via WhatsApp", {
-      style: { background: "#013E43", color: "#fff" },
-      duration: 4000
+    if (!currentName || !currentEmail || !currentMessage) {
+      toast.error("Please fill in your name, email, and message before contacting via WhatsApp", {
+        style: { background: "#013E43", color: "#fff" },
+        duration: 4000
+      });
+      return;
+    }
+
+    const rawPhone = listing?.contactPhone || listing?.landlord?.phone;
+    const landlordPhone = normalizeKenyanPhone(rawPhone);
+
+    if (!landlordPhone) {
+      toast.error("This listing does not have a valid WhatsApp/contact number.", {
+        style: { background: "#013E43", color: "#fff" }
+      });
+      return;
+    }
+
+    const encodedMessage = generateWhatsAppMessage({
+      name: currentName,
+      email: currentEmail,
+      phone: formData.phone.trim(),
+      message: currentMessage
     });
-    return;
-  }
 
-  const rawPhone = listing?.contactPhone || listing?.landlord?.phone;
-  const landlordPhone = normalizeKenyanPhone(rawPhone);
-
-  if (!landlordPhone) {
-    toast.error("This listing does not have a valid WhatsApp/contact number.", {
-      style: { background: "#013E43", color: "#fff" }
-    });
-    return;
-  }
-
-  const encodedMessage = generateWhatsAppMessage({
-    name: currentName,
-    email: currentEmail,
-    phone: currentPhone,
-    message: currentMessage
-  });
-
-  const whatsappUrl = `https://wa.me/${landlordPhone}?text=${encodedMessage}`;
-
-  // More reliable than window.open in some setups
-  window.location.href = whatsappUrl;
-};
-
+    window.location.href = `https://wa.me/${landlordPhone}?text=${encodedMessage}`;
+  };
 
   const handleInquiry = async (e) => {
     e.preventDefault();
-
     if (!validateInquiryFields()) return;
 
     try {
@@ -258,28 +225,18 @@ const ListingDetailsPage = () => {
       setSuccess("");
       setError("");
 
-      await sendInquiry({
-        listingId: id,
-        ...formData
-      });
+      await sendInquiry({ listingId: id, ...formData });
 
       setSuccess("Inquiry sent successfully!");
       toast.success("Inquiry sent successfully!", {
         style: { background: "#02BB31", color: "#fff" }
       });
 
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        message: ""
-      });
+      setFormData({ name: "", email: "", phone: "", message: "" });
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to send inquiry";
       setError(msg);
-      toast.error(msg, {
-        style: { background: "#013E43", color: "#fff" }
-      });
+      toast.error(msg, { style: { background: "#013E43", color: "#fff" } });
     } finally {
       setSubmittingInquiry(false);
     }
@@ -316,10 +273,7 @@ const ListingDetailsPage = () => {
           </div>
           <h2 className="mb-2 text-2xl font-bold text-[#013E43]">Property Not Found</h2>
           <p className="mb-6 text-[#065A57]">{error}</p>
-          <Link
-            to="/properties"
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#02BB31] to-[#0D915C] px-6 py-3 font-semibold text-white transition-all hover:shadow-lg"
-          >
+          <Link to="/properties" className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#02BB31] to-[#0D915C] px-6 py-3 font-semibold text-white transition-all hover:shadow-lg">
             <FiArrowLeft />
             Browse Other Properties
           </Link>
@@ -332,21 +286,21 @@ const ListingDetailsPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F0F7F4]">
+      {/* Back Navigation */}
       <div className="sticky top-0 z-10 border-b border-[#A8D8C1] bg-white">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <Link
-            to="/properties"
-            className="inline-flex items-center text-[#065A57] transition-colors hover:text-[#013E43]"
-          >
+          <Link to="/properties" className="inline-flex items-center text-[#065A57] transition-colors hover:text-[#013E43]">
             <FiArrowLeft className="mr-2" />
             Back to Properties
           </Link>
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-          <div>
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 sm:py-8">
+        <div className="flex flex-col lg:flex-row lg:gap-8">
+          {/* Left Column - Images & Details */}
+          <div className="w-full lg:w-2/3">
+            {/* Main Image */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#013E43] to-[#005C57]">
               <div className="aspect-video">
                 {mainImage ? (
@@ -357,11 +311,7 @@ const ListingDetailsPage = () => {
                     onClick={() => setShowFullImage(true)}
                     onError={(e) => {
                       e.currentTarget.style.display = "none";
-                      e.currentTarget.parentElement.classList.add(
-                        "flex",
-                        "items-center",
-                        "justify-center"
-                      );
+                      e.currentTarget.parentElement.classList.add("flex", "items-center", "justify-center");
                     }}
                   />
                 ) : (
@@ -377,160 +327,88 @@ const ListingDetailsPage = () => {
                 onClick={() => setIsFavorite(!isFavorite)}
                 className="absolute right-4 top-4 rounded-full bg-white/90 p-3 shadow-lg backdrop-blur-sm transition-all hover:scale-110"
               >
-                <FiHeart
-                  className={`text-xl transition-colors ${
-                    isFavorite ? "fill-red-500 text-red-500" : "text-[#065A57]"
-                  }`}
-                />
+                <FiHeart className={`text-xl transition-colors ${isFavorite ? "fill-red-500 text-red-500" : "text-[#065A57]"}`} />
               </button>
             </div>
 
+            {/* Thumbnail Gallery */}
             {images.length > 1 && images.some(Boolean) && (
               <div className="mt-4 grid grid-cols-4 gap-3">
-                {images.map(
-                  (img, index) =>
-                    img && (
-                      <button
-                        type="button"
-                        key={index}
-                        onClick={() => setSelectedImage(index)}
-                        className={`relative aspect-square overflow-hidden rounded-lg ${
-                          selectedImage === index ? "ring-2 ring-[#02BB31]" : ""
-                        }`}
-                      >
-                        <img
-                          src={img}
-                          alt={`Thumbnail ${index + 1}`}
-                          className="h-full w-full object-cover transition-transform duration-300 hover:scale-110"
-                        />
-                      </button>
-                    )
-                )}
+                {images.map((img, index) => img && (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => setSelectedImage(index)}
+                    className={`relative aspect-square overflow-hidden rounded-lg ${selectedImage === index ? "ring-2 ring-[#02BB31]" : ""}`}
+                  >
+                    <img src={img} alt={`Thumbnail ${index + 1}`} className="h-full w-full object-cover transition-transform duration-300 hover:scale-110" />
+                  </button>
+                ))}
               </div>
             )}
 
+            {/* Title & Price */}
             <div className="mt-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <div className="mb-3 flex flex-wrap gap-2">
                     <span className="inline-flex items-center gap-2 rounded-full bg-[#02BB31]/10 px-3 py-1 text-xs font-medium text-[#02BB31]">
-                      <FiTag />
-                      {purposeLabel}
+                      <FiTag /> {purposeLabel}
                     </span>
-
                     {listing.availability === "taken" ? (
-                      <span className="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-600">
-                        Taken
-                      </span>
+                      <span className="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-600">Taken</span>
                     ) : (
-                      <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
-                        Available
-                      </span>
+                      <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">Available</span>
                     )}
                   </div>
-
-                  <h1 className="text-xl font-bold text-[#013E43]">{listing.title}</h1>
-                  <p className="mt-2 flex items-center text-[#065A57]">
-                    <FiMapPin className="mr-2 text-[#02BB31]" />
-                    {locationText}
+                  <h1 className="text-xl font-bold text-[#013E43] sm:text-2xl">{listing.title}</h1>
+                  <p className="mt-2 flex items-center text-sm text-[#065A57] sm:text-base">
+                    <FiMapPin className="mr-2 text-[#02BB31]" /> {locationText}
                   </p>
                 </div>
-                <p className="text-xl font-bold text-[#02BB31]">
+                <p className="text-xl font-bold text-[#02BB31] sm:text-2xl">
                   {formatPrice(listing.price)}
                   <span className="ml-1 text-sm font-normal text-[#065A57]">{priceSuffix}</span>
                 </p>
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
-                <FaBuilding className="text-[#02BB31]" />
-                {typeLabel}
+            {/* Property Features */}
+            <div className="mt-6 flex flex-wrap gap-2 sm:gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-3 py-1.5 text-xs text-[#013E43] sm:px-4 sm:py-2 sm:text-sm">
+                <FaBuilding className="text-[#02BB31]" /> {typeLabel}
               </span>
-
-              {isResidential ? (
+              {isResidential && (
                 <>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
-                    <FaBed className="text-[#02BB31]" />
-                    {listing.bedrooms} {Number(listing.bedrooms) === 1 ? "Bedroom" : "Bedrooms"}
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-3 py-1.5 text-xs text-[#013E43] sm:px-4 sm:py-2 sm:text-sm">
+                    <FaBed className="text-[#02BB31]" /> {listing.bedrooms} {Number(listing.bedrooms) === 1 ? "Bedroom" : "Bedrooms"}
                   </span>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
-                    <FaBath className="text-[#02BB31]" />
-                    {listing.bathrooms} {Number(listing.bathrooms) === 1 ? "Bathroom" : "Bathrooms"}
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-3 py-1.5 text-xs text-[#013E43] sm:px-4 sm:py-2 sm:text-sm">
+                    <FaBath className="text-[#02BB31]" /> {listing.bathrooms} {Number(listing.bathrooms) === 1 ? "Bathroom" : "Bathrooms"}
                   </span>
                 </>
-              ) : null}
-
-              {listing.type === "office" && listing.size ? (
-                <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
-                  <FaRulerCombined className="text-[#02BB31]" />
-                  {listing.size} {listing.sizeUnit || "sqft"}
-                </span>
-              ) : null}
-
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]">
-                <FaHomeIcon className="text-[#02BB31]" />
-                {listing.kitchen ? "Kitchen Available" : "No Kitchen"}
+              )}
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-3 py-1.5 text-xs text-[#013E43] sm:px-4 sm:py-2 sm:text-sm">
+                <FaHomeIcon className="text-[#02BB31]" /> {listing.kitchen ? "Kitchen Available" : "No Kitchen"}
               </span>
             </div>
-            <div>
-            <div className="mb-6 rounded-2xl border border-[#A8D8C1] bg-white p-6 shadow-lg">
-              <h3 className="mb-4 flex items-center text-lg font-bold text-[#013E43]">
-                <FiUser className="mr-2 text-[#02BB31]" />
-                Landlord Information
-              </h3>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-base font-semibold text-[#013E43]">
-                    {listing.landlord?.businessName || listing.landlord?.name || "Property Owner"}
-                  </p>
-                  <p className="text-sm text-[#065A57]">Verified Landlord</p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowPhone(!showPhone)}
-                  className="flex items-center gap-2 rounded-lg bg-[#013E43] px-4 py-2 text-white transition-colors hover:bg-[#005C57]"
-                >
-                  <FiPhoneCall />
-                  <span>{showPhone ? "Hide Phone" : "Call Landlord"}</span>
-                </button>
-              </div>
-
-              {showPhone && (
-                <div className="mt-4 rounded-lg border border-[#A8D8C1] bg-[#F0F7F4] p-3">
-                  <p className="mb-2 text-sm text-[#065A57]">Contact Number:</p>
-                  <a
-                    href={`tel:${listing.contactPhone || listing.landlord?.phone || ""}`}
-                    className="flex items-center gap-2 text-lg font-semibold text-[#02BB31] hover:underline"
-                  >
-                    <FaPhoneAlt />
-                    {listing.contactPhone || listing.landlord?.phone || "Not provided"}
-                  </a>
-                </div>
-              )}
+            {/* Description */}
+            <div className="mt-6 rounded-2xl border border-[#A8D8C1] bg-white p-4 sm:p-6">
+              <h2 className="text-lg font-bold text-[#013E43] sm:text-xl">About this property</h2>
+              <p className="mt-3 leading-relaxed text-[#065A57] sm:mt-4">{listing.description}</p>
             </div>
 
-
-            <div className="mt-8 rounded-2xl border border-[#A8D8C1] bg-white p-6">
-              <h2 className="text-xl font-bold text-[#013E43]">About this property</h2>
-              <p className="mt-4 leading-relaxed text-[#065A57]">{listing.description}</p>
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-[#A8D8C1] bg-white p-6">
-              <h2 className="text-xl font-bold text-[#013E43]">Amenities</h2>
+            {/* Amenities */}
+            <div className="mt-6 rounded-2xl border border-[#A8D8C1] bg-white p-4 sm:p-6">
+              <h2 className="text-lg font-bold text-[#013E43] sm:text-xl">Amenities</h2>
               {activeAmenities.length === 0 ? (
-                <p className="mt-4 text-sm text-[#065A57]">No amenities listed.</p>
+                <p className="mt-3 text-sm text-[#065A57] sm:mt-4">No amenities listed.</p>
               ) : (
-                <div className="mt-4 flex flex-wrap gap-3">
+                <div className="mt-3 flex flex-wrap gap-2 sm:mt-4 sm:gap-3">
                   {activeAmenities.map(([key]) => (
-                    <span
-                      key={key}
-                      className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-4 py-2 text-sm text-[#013E43]"
-                    >
-                      <FiCheckCircle className="text-[#02BB31]" />
-                      {amenityLabels[key] || key}
+                    <span key={key} className="inline-flex items-center gap-2 rounded-full bg-[#F0F7F4] px-3 py-1.5 text-xs text-[#013E43] sm:px-4 sm:py-2 sm:text-sm">
+                      <FiCheckCircle className="text-[#02BB31]" /> {amenityLabels[key] || key}
                     </span>
                   ))}
                 </div>
@@ -538,135 +416,113 @@ const ListingDetailsPage = () => {
             </div>
           </div>
 
-          
-            <div className="sticky top-24 rounded-2xl border border-[#A8D8C1] bg-white p-6 shadow-lg">
-              <h2 className="text-xl font-bold text-[#013E43]">Contact Landlord</h2>
-              <p className="mt-2 text-sm text-[#065A57]">
-                Send an inquiry and the landlord will receive your message directly.
-              </p>
-
-              <form onSubmit={handleInquiry} className="mt-5 space-y-4">
+          {/* Right Column - Contact Form & Details */}
+          <div className="mt-6 w-full lg:mt-0 lg:w-1/3">
+            {/* Landlord Info */}
+            <div className="rounded-2xl border border-[#A8D8C1] bg-white p-4 shadow-lg sm:p-6">
+              <h3 className="mb-4 flex items-center text-base font-bold text-[#013E43] sm:text-lg">
+                <FiUser className="mr-2 text-[#02BB31]" /> Landlord Information
+              </h3>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#013E43]">
-                    Your Name <span className="text-red-500">*</span>
-                  </label>
+                  <p className="font-semibold text-[#013E43]">{listing.landlord?.businessName || listing.landlord?.name || "Property Owner"}</p>
+                  <p className="text-xs text-[#065A57] sm:text-sm">Verified Landlord</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPhone(!showPhone)}
+                  className="flex items-center justify-center gap-2 rounded-lg bg-[#013E43] px-3 py-2 text-sm text-white transition-colors hover:bg-[#005C57] sm:px-4"
+                >
+                  <FiPhoneCall /> {showPhone ? "Hide Phone" : "Call Landlord"}
+                </button>
+              </div>
+              {showPhone && (
+                <div className="mt-4 rounded-lg border border-[#A8D8C1] bg-[#F0F7F4] p-3">
+                  <p className="mb-1 text-xs text-[#065A57]">Contact Number:</p>
+                  <a href={`tel:${listing.contactPhone || listing.landlord?.phone || ""}`} className="flex items-center gap-2 text-sm font-semibold text-[#02BB31] hover:underline sm:text-base">
+                    <FaPhoneAlt /> {listing.contactPhone || listing.landlord?.phone || "Not provided"}
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Contact Form */}
+            <div className="mt-6 rounded-2xl border border-[#A8D8C1] bg-white p-4 shadow-lg sm:p-6">
+              <h2 className="text-lg font-bold text-[#013E43] sm:text-xl">Contact Landlord</h2>
+              <p className="mt-1 text-xs text-[#065A57] sm:mt-2 sm:text-sm">Send an inquiry and the landlord will receive your message directly.</p>
+
+              <form onSubmit={handleInquiry} className="mt-4 space-y-3 sm:mt-5 sm:space-y-4">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[#013E43] sm:text-sm">Your Name <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 transform text-[#0D915C]" />
-                    <input
-                      type="text"
-                      name="name"
-                      placeholder="Enter your full name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border-2 border-[#A8D8C1] py-3 pl-10 pr-4 outline-none transition-colors focus:border-[#02BB31]"
-                      required
-                    />
+                    <input type="text" name="name" placeholder="Enter your full name" value={formData.name} onChange={handleChange} className="w-full rounded-lg border-2 border-[#A8D8C1] py-2 pl-10 pr-3 text-sm outline-none transition-colors focus:border-[#02BB31] sm:py-3" required />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#013E43]">
-                    Email <span className="text-red-500">*</span>
-                  </label>
+                  <label className="mb-1 block text-xs font-medium text-[#013E43] sm:text-sm">Email <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 transform text-[#0D915C]" />
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="your@email.com"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border-2 border-[#A8D8C1] py-3 pl-10 pr-4 outline-none transition-colors focus:border-[#02BB31]"
-                      required
-                    />
+                    <input type="email" name="email" placeholder="your@email.com" value={formData.email} onChange={handleChange} className="w-full rounded-lg border-2 border-[#A8D8C1] py-2 pl-10 pr-3 text-sm outline-none transition-colors focus:border-[#02BB31] sm:py-3" required />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#013E43]">
-                    Phone Number
-                  </label>
+                  <label className="mb-1 block text-xs font-medium text-[#013E43] sm:text-sm">Phone Number</label>
                   <div className="relative">
                     <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 transform text-[#0D915C]" />
-                    <input
-                      type="tel"
-                      name="phone"
-                      placeholder="e.g., 0712345678"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border-2 border-[#A8D8C1] py-3 pl-10 pr-4 outline-none transition-colors focus:border-[#02BB31]"
-                    />
+                    <input type="tel" name="phone" placeholder="e.g., 0712345678" value={formData.phone} onChange={handleChange} className="w-full rounded-lg border-2 border-[#A8D8C1] py-2 pl-10 pr-3 text-sm outline-none transition-colors focus:border-[#02BB31] sm:py-3" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#013E43]">
-                    Message <span className="text-red-500">*</span>
-                  </label>
+                  <label className="mb-1 block text-xs font-medium text-[#013E43] sm:text-sm">Message <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <FiMessageSquare className="absolute left-3 top-3 text-[#0D915C]" />
-                    <textarea
-                      name="message"
-                      rows="4"
-                      placeholder="I am interested in this property..."
-                      value={formData.message}
-                      onChange={handleChange}
-                      className="w-full resize-none rounded-lg border-2 border-[#A8D8C1] py-3 pl-10 pr-4 outline-none transition-colors focus:border-[#02BB31]"
-                      required
-                    />
+                    <textarea name="message" rows="4" placeholder="I am interested in this property..." value={formData.message} onChange={handleChange} className="w-full resize-none rounded-lg border-2 border-[#A8D8C1] py-2 pl-10 pr-3 text-sm outline-none transition-colors focus:border-[#02BB31] sm:py-3" required />
                   </div>
                 </div>
 
                 {success && (
-                  <div className="flex items-center gap-2 rounded-lg bg-[#02BB31]/10 p-3 text-sm text-[#02BB31]">
-                    <FiCheckCircle />
-                    {success}
+                  <div className="flex items-center gap-2 rounded-lg bg-[#02BB31]/10 p-2 text-xs text-[#02BB31] sm:p-3 sm:text-sm">
+                    <FiCheckCircle /> {success}
                   </div>
                 )}
-
                 {error && listing && (
-                  <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                    <FiAlertCircle />
-                    {error}
+                  <div className="flex items-center gap-2 rounded-lg bg-red-50 p-2 text-xs text-red-600 sm:p-3 sm:text-sm">
+                    <FiAlertCircle /> {error}
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={submittingInquiry}
-                  className="w-full transform rounded-lg bg-gradient-to-r from-[#02BB31] to-[#0D915C] py-3 font-semibold text-white transition-all hover:scale-[1.02] hover:shadow-lg disabled:opacity-60"
-                >
+                <button type="submit" disabled={submittingInquiry} className="w-full transform rounded-lg bg-gradient-to-r from-[#02BB31] to-[#0D915C] py-2 text-sm font-semibold text-white transition-all hover:scale-[1.02] hover:shadow-lg disabled:opacity-60 sm:py-3 sm:text-base">
                   {submittingInquiry ? "Sending..." : "Send Inquiry"}
                 </button>
               </form>
 
               <div className="mt-4 border-t border-[#A8D8C1] pt-4">
-                <p className="mb-3 text-center text-xs text-[#065A57]">
-                  Or contact via WhatsApp
-                </p>
+                <p className="mb-2 text-center text-xs text-[#065A57] sm:mb-3">Or contact via WhatsApp</p>
                 <a
-                    href={`https://wa.me/${normalizeKenyanPhone(listing?.contactPhone || listing?.landlord?.phone)}?text=${generateWhatsAppMessage({
-                      name: formData.name.trim() || "Interested Client",
-                      email: formData.email.trim() || "Not provided",
-                      phone: formData.phone.trim() || "Not provided",
-                      message: formData.message.trim() || "I am interested in this property."
-                    })}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#128C7E]"
-                  >
-                    <FaWhatsapp className="text-lg" />
-                    <span>Send WhatsApp Message</span>
-                  </a>
-                <p className="mt-2 text-center text-xs text-[#065A57]">
-                  Your name, email, and message will be included in the WhatsApp message
-                </p>
+                  href={`https://wa.me/${normalizeKenyanPhone(listing?.contactPhone || listing?.landlord?.phone)}?text=${generateWhatsAppMessage({
+                    name: formData.name.trim() || "Interested Client",
+                    email: formData.email.trim() || "Not provided",
+                    phone: formData.phone.trim() || "Not provided",
+                    message: formData.message.trim() || "I am interested in this property."
+                  })}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#128C7E] sm:py-3"
+                >
+                  <FaWhatsapp className="text-base sm:text-lg" /> Send WhatsApp Message
+                </a>
+                <p className="mt-2 text-center text-xs text-[#065A57]">Your name, email, and message will be included in the WhatsApp message</p>
               </div>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-[#A8D8C1] bg-white p-6">
-              <h3 className="text-lg font-bold text-[#013E43]">Quick Details</h3>
-              <div className="mt-4 space-y-3 text-sm">
+            {/* Quick Details */}
+            <div className="mt-6 rounded-2xl border border-[#A8D8C1] bg-white p-4 shadow-lg sm:p-6">
+              <h3 className="text-base font-bold text-[#013E43] sm:text-lg">Quick Details</h3>
+              <div className="mt-3 space-y-2 text-xs sm:mt-4 sm:space-y-3 sm:text-sm">
                 <div className="flex justify-between">
                   <span className="text-[#065A57]">Purpose</span>
                   <span className="font-medium text-[#013E43]">{purposeLabel}</span>
@@ -679,8 +535,7 @@ const ListingDetailsPage = () => {
                   <span className="text-[#065A57]">Property Type</span>
                   <span className="font-medium text-[#013E43]">{typeLabel}</span>
                 </div>
-
-                {isResidential ? (
+                {isResidential && (
                   <>
                     <div className="flex justify-between">
                       <span className="text-[#065A57]">Bedrooms</span>
@@ -691,29 +546,14 @@ const ListingDetailsPage = () => {
                       <span className="font-medium text-[#013E43]">{listing.bathrooms}</span>
                     </div>
                   </>
-                ) : null}
-
-                {listing.type === "office" && listing.size ? (
-                  <div className="flex justify-between">
-                    <span className="text-[#065A57]">Size</span>
-                    <span className="font-medium text-[#013E43]">
-                      {listing.size} {listing.sizeUnit || "sqft"}
-                    </span>
-                  </div>
-                ) : null}
-
+                )}
                 <div className="flex justify-between">
                   <span className="text-[#065A57]">Kitchen</span>
-                  <span className="font-medium text-[#013E43]">
-                    {listing.kitchen ? "Yes" : "No"}
-                  </span>
+                  <span className="font-medium text-[#013E43]">{listing.kitchen ? "Yes" : "No"}</span>
                 </div>
-
                 <div className="flex justify-between border-t border-[#A8D8C1] pt-2">
                   <span className="text-[#065A57]">Price</span>
-                  <span className="font-bold text-[#02BB31]">
-                    {formatPrice(listing.price)}{priceSuffix}
-                  </span>
+                  <span className="font-bold text-[#02BB31]">{formatPrice(listing.price)}{priceSuffix}</span>
                 </div>
               </div>
             </div>
@@ -721,31 +561,21 @@ const ListingDetailsPage = () => {
         </div>
       </div>
 
+      {/* Full Image Modal */}
       {showFullImage && mainImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4">
           <div className="relative w-full max-w-5xl">
-            <button
-              type="button"
-              onClick={() => setShowFullImage(false)}
-              className="absolute -top-10 right-0 text-white transition-colors hover:text-[#02BB31]"
-            >
+            <button type="button" onClick={() => setShowFullImage(false)} className="absolute -top-10 right-0 text-white transition-colors hover:text-[#02BB31]">
               <FiXCircle className="text-3xl" />
             </button>
-
-            <img
-              src={mainImage}
-              alt={listing.title}
-              className="w-full rounded-lg shadow-2xl"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-                const parent = e.currentTarget.parentElement;
-                const errorDiv = document.createElement("div");
-                errorDiv.className = "flex h-full items-center justify-center text-white";
-                errorDiv.innerHTML = "<p>Failed to load image</p>";
-                parent?.appendChild(errorDiv);
-              }}
-            />
-
+            <img src={mainImage} alt={listing.title} className="w-full rounded-lg shadow-2xl" onError={(e) => {
+              e.currentTarget.style.display = "none";
+              const parent = e.currentTarget.parentElement;
+              const errorDiv = document.createElement("div");
+              errorDiv.className = "flex h-full items-center justify-center text-white";
+              errorDiv.innerHTML = "<p>Failed to load image</p>";
+              parent?.appendChild(errorDiv);
+            }} />
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 transform rounded-full bg-black/50 px-4 py-2 text-sm text-white">
               {selectedImage + 1} / {images.filter(Boolean).length}
             </div>

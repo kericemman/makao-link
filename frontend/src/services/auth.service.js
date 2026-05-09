@@ -24,3 +24,24 @@ export const resetPassword = async (token, payload) => {
   const response = await api.post(`/auth/reset-password/${token}`, payload);
   return response.data;
 };
+
+
+export const loginUser = async (payload) => {
+  const response = await api.post("/auth/login", payload);
+  return response.data;
+};
+
+export const signupUser = async (payload) => {
+  const response = await api.post("/auth/register", payload);
+  return response.data;
+};
+
+export const socialLoginUser = async (payload) => {
+  const response = await api.post("/auth/social-login", payload);
+  return response.data;
+};
+
+export const getCurrentUser = async () => {
+  const response = await api.get("/auth/me");
+  return response.data;
+};

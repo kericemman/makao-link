@@ -133,7 +133,7 @@ const LoginPage = () => {
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
           {/* Logo */}
-          <div className="mb-8">
+          {/* <div className="mb-8">
             <div className="flex items-center space-x-3">
               <div className="w-16 h-16 bg-white rounded-2xl shadow-2xl flex items-center justify-center">
                 <img src="/assets/logo.png" alt="Renda Homes Logo" className="w-10 h-10 object-contain" />
@@ -143,7 +143,7 @@ const LoginPage = () => {
                 <p className="text-[#A8D8C1] text-lg">Connecting You to Your Perfect Home</p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Tagline */}
           <h2 className="text-3xl font-bold text-center mb-6">

@@ -65,6 +65,7 @@ import ContactInfoPage from "../pages/admin/app/ContactInfoPage";
 import PolicyPagesPage from "../pages/admin/app/PolicyPage";
 import SubscribersPage from "../pages/admin/app/SubscriberPage";
 import AppUpdatesPage from "../pages/admin/app/AppPage";
+import PartnerPaymentCallback from "../pages/public/partners/PartnerPaymentCallback";
 
 
 
@@ -79,6 +80,10 @@ const AppRoutes = () => {
         <Route path="/landlord/register" element={<RegisterLandlordPage />} />
         <Route path="/pricing" element={<PlansPage />} />
         <Route path="/payment/callback" element={<PaymentCallbackPage />} />
+        <Route
+          path="/services/apply/callback"
+          element={<PartnerPaymentCallback />}
+        />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       

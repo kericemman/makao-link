@@ -355,3 +355,49 @@ exports.resetPassword = async (req, res, next) => {
     next(error);
   }
 };
+
+// Social logins
+
+exports.socialLogin = async (req, res) => {
+  try {
+    const { provider, providerId, name, email, avatar } = req.body;
+
+    if (!provider || !providerId || !email) {
+      return res.status(400).json({
+        message: "Provider, providerId and email are required"
+      });
+    }
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      user = await User.create({
+        name: name || "RendaHomes User",
+        email: email.toLowerCase(),
+        phone: "N/A",
+        password: `${provider}-${providerId}-${Date.now()}`,
+        role: "user",
+        avatar: avatar || ""
+      });
+    }
+
+    const token = generateToken(user._id);
+
+    return res.status(200).json({
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        businessName: user.businessName,
+        avatar: user.avatar
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Social login failed"
+    });
+  }
+};

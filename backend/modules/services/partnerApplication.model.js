@@ -69,7 +69,7 @@ const partnerApplicationSchema = new mongoose.Schema(
 
     amountPaid: {
       type: Number,
-      default: 100
+      default: 10
     },
 
     status: {
