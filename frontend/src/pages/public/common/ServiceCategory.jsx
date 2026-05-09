@@ -246,7 +246,7 @@ const ServiceCategoryPage = () => {
                 key={partner._id}
                 className="group bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1"
               >
-                <div className={`h-1.5 bg-gradient-to-r ${colorClass}`}></div>
+                {/* <div className={`h-1.5 bg-gradient-to-r ${colorClass}`}></div> */}
                 
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-4 mb-4">

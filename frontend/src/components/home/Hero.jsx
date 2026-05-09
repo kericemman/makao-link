@@ -194,7 +194,7 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative min-h-[70vh] p-15 flex items-center overflow-hidden">
+    <section className="relative min-h-[70vh] flex items-center overflow-hidden">
       <div className="absolute inset-0">
         {backgroundImages.map((image, index) => (
           <div

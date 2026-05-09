@@ -214,7 +214,7 @@ const ServicesPage = () => {
                         Explore
                         <FiArrowRight className="text-sm" />
                       </span>
-                      <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${colorClass}`}></div>
+                      {/* <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${colorClass}`}></div> */}
                     </div>
                   </div>
                 </Link>
