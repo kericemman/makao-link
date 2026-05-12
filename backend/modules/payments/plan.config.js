@@ -8,7 +8,7 @@ const plans = {
 
   basic: {
     name: "Basic",
-    price: 500,
+    price: 10,
     listingLimit: 5,
     planCode: process.env.PAYSTACK_BASIC_PLAN
   },
