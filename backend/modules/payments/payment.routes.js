@@ -26,6 +26,8 @@
 //   changeSubscriptionPlan
 // );
 
+
+
 // router.post(
 //   "/paystack-webhook",
 //   paymentController.paystackWebhook
@@ -42,6 +44,7 @@
 
 const express = require("express");
 const router = express.Router();
+
 const {
   initializeSubscriptionPayment,
   getMySubscription,
@@ -50,17 +53,40 @@ const {
   changeSubscriptionPlan,
   verifyPaymentByReference
 } = require("./payment.controller");
+
 const { protect } = require("../../middleware/auth.middleware");
 const requireRole = require("../../middleware/role.middleware");
 
-router.post("/initialize-subscription", protect, requireRole("landlord"), initializeSubscriptionPayment);
-router.get("/subscription", protect, requireRole("landlord"), getMySubscription);
-router.patch("/change-plan", protect, requireRole("landlord"), changeSubscriptionPlan);
-router.post("/paystack-webhook", paystackWebhook);
-router.post("/run-expiry-check", runExpiryCheck);
+router.post(
+  "/initialize-subscription",
+  protect,
+  requireRole("landlord"),
+  initializeSubscriptionPayment
+);
+
+router.get(
+  "/subscription",
+  protect,
+  requireRole("landlord"),
+  getMySubscription
+);
+
+router.patch(
+  "/change-plan",
+  protect,
+  requireRole("landlord"),
+  changeSubscriptionPlan
+);
+
 router.get(
   "/verify/:reference",
-  protect, requireRole("admin"), verifyPaymentByReference
+  protect,
+  requireRole("landlord"),
+  verifyPaymentByReference
 );
+
+router.post("/paystack-webhook", paystackWebhook);
+
+router.post("/run-expiry-check", runExpiryCheck);
 
 module.exports = router;

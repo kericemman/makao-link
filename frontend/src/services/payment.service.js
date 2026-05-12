@@ -10,10 +10,12 @@ export const getMySubscription = async () => {
   return response.data;
 };
 
-
-export const changeSubscriptionPlan = async (plan) => {
-  const response = await api.patch("/payments/change-plan", { plan });
+export const changeSubscriptionPlan = async (payload) => {
+  const response = await api.patch("/payments/change-plan", payload);
   return response.data;
 };
 
-
+export const verifyPayment = async (reference) => {
+  const response = await api.get(`/payments/verify/${reference}`);
+  return response.data;
+};

@@ -1,25 +1,25 @@
 module.exports = {
-    normal: {
-      name: "Normal",
-      price: 0,
-      propertyLimit: 2
-    },
-  
-    basic: {
-      name: "Basic",
-      price: 5,
-      propertyLimit: 6
-    },
-  
-    premium: {
-      name: "Premium",
-      price: 1500,
-      propertyLimit: 20
-    },
-  
-    rendapro: {
-      name: "RendaPro",
-      price: 2500,
-      propertyLimit: 50
-    }
-  };
+  normal: {
+    name: "Normal",
+    price: 0,
+    listingLimit: 2
+  },
+
+  basic: {
+    name: "Basic",
+    price: 500,
+    listingLimit: 5
+  },
+
+  premium: {
+    name: "Premium",
+    price: 1500,
+    listingLimit: 15
+  },
+
+  pro: {
+    name: "Pro",
+    price: 2500,
+    listingLimit: 50
+  }
+};

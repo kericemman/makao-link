@@ -18,19 +18,16 @@ const userRoutes = require("./modules/users/user.routes");
 const seoRoutes = require("./modules/seo/seo.routes");
 const blogRoutes = require("./modules/blog/blog.route");
 const publicContentRoutes = require("./modules/app/routes/publicContent.routes");
-const adminContentRoutes =  require("./modules/app/routes/adminContent.routes")
-
+const adminContentRoutes = require("./modules/app/routes/adminContent.routes");
 
 const app = express();
-
 
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
       "https://rendahomes.com",
-      "https://www.rendahomes.com",
-      "www.rendahomes.com"
+      "https://www.rendahomes.com"
     ],
     credentials: true
   })
@@ -39,12 +36,14 @@ app.use(
 app.use(helmet());
 app.use(morgan("dev"));
 
+/**
+ * IMPORTANT:
+ * Paystack webhook must receive raw body BEFORE express.json()
+ */
 app.use(
   "/api/payments/paystack-webhook",
   express.raw({ type: "application/json" })
 );
-
-app.use(express.json());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -52,6 +51,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.json({ message: "Makao API running" });
 });
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/auth", authRoutes);
@@ -68,7 +68,6 @@ app.use("/api/blog", blogRoutes);
 app.use("/api/public", publicContentRoutes);
 app.use("/api/admin/content", adminContentRoutes);
 app.use("/", seoRoutes);
-
 
 app.use(errorHandler);
 

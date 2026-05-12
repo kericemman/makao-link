@@ -114,7 +114,7 @@ const LandlordSubscription = () => {
     try {
       setUpgradeLoadingPlan(plan);
       setError("");
-      await changeSubscriptionPlan(plan);
+      await changeSubscriptionPlan({ plan });
       const data = await initializeSubscriptionPayment();
       window.location.href = data.authorization_url;
     } catch (err) {
