@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { verifyPayment } from "../../services/payment.service";
-import { useAuth } from "../../context/AuthContext";
+import toast from "react-hot-toast";
 
 const PaymentCallbackPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { refreshAuth } = useAuth();
 
-  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("Verifying your payment...");
 
   useEffect(() => {
@@ -16,39 +14,38 @@ const PaymentCallbackPage = () => {
       const reference = searchParams.get("reference");
 
       if (!reference) {
-        setMessage("Payment reference not found.");
-        setLoading(false);
+        setMessage("Payment reference was not found.");
+        toast.error("Payment reference missing");
         return;
       }
 
       try {
         await verifyPayment(reference);
-        await refreshAuth();
 
         setMessage("Payment verified successfully. Redirecting...");
+        toast.success("Payment verified successfully");
 
         setTimeout(() => {
-          navigate("/landlord/subscription");
-        }, 1500);
+          navigate("/landlord/subscription", { replace: true });
+        }, 1200);
       } catch (error) {
-        setMessage(
+        const errorMessage =
           error.response?.data?.message ||
-            "We could not verify your payment automatically yet. Please contact support if this continues."
-        );
-      } finally {
-        setLoading(false);
+          "Payment verification failed. Please contact support.";
+
+        setMessage(errorMessage);
+        toast.error(errorMessage);
       }
     };
 
     runVerification();
-  }, [searchParams, navigate, refreshAuth]);
+  }, [searchParams, navigate]);
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-2xl items-center justify-center px-4">
-      <div className="w-full rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        <h1 className="text-3xl font-bold text-slate-900">Payment Status</h1>
-        <p className="mt-4 text-slate-600">{message}</p>
-        {loading ? <div className="mt-6">Please wait...</div> : null}
+    <div className="min-h-[70vh] flex items-center justify-center bg-[#F0F7F4] px-4">
+      <div className="w-full max-w-md rounded-2xl bg-white border border-[#A8D8C1] shadow-lg p-8 text-center">
+        <h1 className="text-2xl font-bold text-[#013E43]">Payment Status</h1>
+        <p className="mt-4 text-sm text-[#065A57]">{message}</p>
       </div>
     </div>
   );

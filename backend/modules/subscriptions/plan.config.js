@@ -7,7 +7,7 @@ module.exports = {
 
   basic: {
     name: "Basic",
-    price: 10,
+    price: 500,
     listingLimit: 5
   },
 

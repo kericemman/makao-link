@@ -102,27 +102,29 @@ exports.getAdminSummary = async (req, res, next) => {
       rejectedListings,
       totalListings,
       landlords,
-      tenants,
       totalInquiries,
       activeSubscriptions,
       pendingPayments,
       totalSupportTickets,
       openSupportTickets,
-      successfulPayments
+      revenueAgg
     ] = await Promise.all([
       Listing.countDocuments({ status: "pending" }),
       Listing.countDocuments({ status: "approved" }),
       Listing.countDocuments({ status: "rejected" }),
       Listing.countDocuments(),
       User.countDocuments({ role: "landlord" }),
-      User.countDocuments({ role: "tenant" }), // if you actually have tenants
       Inquiry.countDocuments(),
       Subscription.countDocuments({ status: "active" }),
       Subscription.countDocuments({ status: "pending_payment" }),
       SupportTicket.countDocuments(),
       SupportTicket.countDocuments({ status: { $in: ["open", "in_progress"] } }),
       Payment.aggregate([
-        { $match: { status: "success", paymentType: "subscription" } },
+        {
+          $match: {
+            status: "success"
+          }
+        },
         {
           $group: {
             _id: null,
@@ -132,7 +134,7 @@ exports.getAdminSummary = async (req, res, next) => {
       ])
     ]);
 
-    const totalRevenue = successfulPayments?.[0]?.total || 0;
+    const totalRevenue = revenueAgg[0]?.total || 0;
 
     res.json({
       success: true,
@@ -140,9 +142,8 @@ exports.getAdminSummary = async (req, res, next) => {
         pendingListings,
         approvedListings,
         rejectedListings,
-        landlords,
-        tenants,
         totalListings,
+        landlords,
         totalInquiries,
         totalRevenue,
         activeSubscriptions,
@@ -155,7 +156,6 @@ exports.getAdminSummary = async (req, res, next) => {
     next(error);
   }
 };
-
 
 exports.getRecentActivity = async (req, res, next) => {
   try {
@@ -265,8 +265,26 @@ exports.getAdminPayments = async (req, res, next) => {
 
     const records = await Promise.all(
       landlords.map(async (landlord) => {
-        const latestPayment = await Payment.findOne({ user: landlord._id })
-          .sort({ createdAt: -1 });
+        const latestPayment = await Payment.findOne({
+          user: landlord._id
+        }).sort({ createdAt: -1 });
+
+        const totalPaidAgg = await Payment.aggregate([
+          {
+            $match: {
+              user: landlord._id,
+              status: "success"
+            }
+          },
+          {
+            $group: {
+              _id: "$user",
+              total: { $sum: "$amount" }
+            }
+          }
+        ]);
+
+        const totalPaid = totalPaidAgg[0]?.total || 0;
 
         const activeListings = await Listing.countDocuments({
           landlord: landlord._id,
@@ -284,6 +302,7 @@ exports.getAdminPayments = async (req, res, next) => {
         return {
           _id: landlord._id,
           landlord: {
+            _id: landlord._id,
             name: landlord.name,
             email: landlord.email,
             phone: landlord.phone
@@ -300,6 +319,7 @@ exports.getAdminPayments = async (req, res, next) => {
             : null,
           activeListings,
           totalListings,
+          totalPaid,
           latestPayment: latestPayment
             ? {
                 reference: latestPayment.reference,
@@ -315,15 +335,31 @@ exports.getAdminPayments = async (req, res, next) => {
       })
     );
 
+    const totalRevenueAgg = await Payment.aggregate([
+      {
+        $match: {
+          status: "success"
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    const totalRevenue = totalRevenueAgg[0]?.total || 0;
+
     res.json({
       success: true,
+      totalRevenue,
       records
     });
   } catch (error) {
     next(error);
   }
 };
-
 
 exports.getListingHistory = async (req, res, next) => {
   try {

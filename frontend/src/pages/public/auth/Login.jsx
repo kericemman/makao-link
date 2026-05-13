@@ -321,11 +321,11 @@ const LoginPage = () => {
             </Link>
           </p>
 
-          {/* Security Badge */}
+          {/* Security Badge
           <div className="flex items-center justify-center space-x-2 text-xs text-[#065A57] mt-4 p-2 bg-[#F0F7F4] rounded-lg">
             <FiShield className="h-3 w-3 text-[#02BB31]" />
             <span>256-bit SSL Encrypted</span>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

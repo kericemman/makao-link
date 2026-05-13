@@ -12,30 +12,15 @@ const subscriptionSchema = new mongoose.Schema(
     plan: {
       type: String,
       enum: ["normal", "basic", "premium", "pro"],
-      required: true,
-      default: "normal"
+      default: "normal",
+      required: true
     },
 
     status: {
       type: String,
       enum: ["free", "pending_payment", "active", "grace", "expired", "cancelled"],
-      required: true,
-      default: "free"
-    },
-
-    paystackCustomerCode: {
-      type: String,
-      default: null
-    },
-
-    paystackSubscriptionCode: {
-      type: String,
-      default: null
-    },
-
-    paystackEmailToken: {
-      type: String,
-      default: null
+      default: "free",
+      required: true
     },
 
     currentPeriodStart: {
@@ -55,6 +40,16 @@ const subscriptionSchema = new mongoose.Schema(
 
     lastPaymentDate: {
       type: Date,
+      default: null
+    },
+
+    paystackCustomerCode: {
+      type: String,
+      default: null
+    },
+
+    paystackSubscriptionCode: {
+      type: String,
       default: null
     }
   },

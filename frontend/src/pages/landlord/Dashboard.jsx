@@ -229,7 +229,7 @@ function DashboardHome() {
             <h3 className="font-semibold">Recent Properties</h3>
 
             <Link
-              to="/dashboard/properties"
+              to="/landlord/listings"
               className="text-green-600 text-sm"
             >
               View All
@@ -241,7 +241,7 @@ function DashboardHome() {
 
               <Link
                 key={p._id}
-                to={`/dashboard/properties/${p._id}`}
+                to={`/landlord/listings/${p._id}`}
                 className="block p-3 border rounded mb-2 hover:bg-gray-50"
               >
                 <h4 className="font-medium">{p.title}</h4>
@@ -265,7 +265,7 @@ function DashboardHome() {
             <h3 className="font-semibold">Recent Inquiries</h3>
 
             <Link
-              to="/dashboard/inquiries"
+              to="/landlord/inquiries"
               className="text-green-600 text-sm"
             >
               View All
@@ -278,7 +278,7 @@ function DashboardHome() {
 
               <div
                 key={inq._id}
-                onClick={() => navigate(`/dashboard/inquiries/${inq._id}`)}
+                onClick={() => navigate(`/landlord/inquiries/${inq._id}`)}
                 className="p-3 border rounded mb-2 hover:bg-gray-50 cursor-pointer"
               >
                 <p className="font-medium">{inq.tenantName}</p>
@@ -318,7 +318,7 @@ function DashboardHome() {
           </Link>
 
           <Link
-            to="/dashboard/inquiries"
+            to="/landlord/inquiries"
             className="p-4 bg-gray-50 rounded hover:bg-green-500 hover:text-white text-center transition"
           >
             <FiMessageSquare className="mx-auto text-xl mb-1" />
@@ -334,11 +334,11 @@ function DashboardHome() {
           </Link>
 
           <Link
-            to="/dashboard/settings"
+            to="/landlord/support"
             className="p-4 bg-gray-50 rounded hover:bg-green-500 hover:text-white text-center transition"
           >
             <FiDollarSign className="mx-auto text-xl mb-1" />
-            Billing
+            Support
           </Link>
 
         </div>
