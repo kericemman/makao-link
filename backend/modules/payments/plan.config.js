@@ -8,7 +8,7 @@ module.exports = {
 
   basic: {
     name: "Basic",
-    price: 50,
+    price: 500,
     listingLimit: 7,
     paystackPlanCode: process.env.PAYSTACK_BASIC_PLAN
   },
