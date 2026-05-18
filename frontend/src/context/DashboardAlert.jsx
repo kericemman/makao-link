@@ -1,14 +1,31 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
+const defaultUsage = { used: 0, limit: 0, remaining: 0 };
+
 const DashboardAlert = () => {
   const navigate = useNavigate();
-  const { subscription, usage } = useAuth();
+  const { subscription, usage = defaultUsage, loading } = useAuth();
 
+  if (loading) return null;
   if (!subscription) return null;
 
-  const isFree = subscription.status === "free" && subscription.plan === "normal";
-  const atLimit = usage.used >= usage.limit;
+  const used = Number(usage?.used || 0);
+  const limit = Number(usage?.limit || 0);
+
+  const hasValidLimit = limit > 0;
+  const atLimit = hasValidLimit && used >= limit;
+
+  const isFree =
+    subscription.status === "free" && subscription.plan === "normal";
+
+  if (subscription.status === "active" && !atLimit) {
+    return null;
+  }
+
+  if (subscription.status === "free" && !atLimit) {
+    return null;
+  }
 
   if (subscription.status === "pending_payment") {
     return (
@@ -79,7 +96,7 @@ const DashboardAlert = () => {
       <AlertCard
         tone="amber"
         title="You’ve reached your current plan limit"
-        description={`You are using ${usage.used} of ${usage.limit} listing slots. Upgrade to publish more properties.`}
+        description={`You are using ${used} of ${limit} listing slots. Upgrade to publish more properties.`}
         actionText="Upgrade Plan"
         onAction={() => navigate("/landlord/subscription")}
       />

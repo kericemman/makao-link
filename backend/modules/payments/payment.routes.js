@@ -41,14 +41,8 @@ router.get(
   getMySubscription
 );
 
-router.post(
-  "/paystack-webhook",
-  paystackWebhook
-);
+router.post("/paystack-webhook", paystackWebhook);
 
-router.post(
-  "/run-expiry-check",
-  runExpiryCheck
-);
+router.post("/run-expiry-check", runExpiryCheck);
 
 module.exports = router;

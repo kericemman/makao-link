@@ -1,6 +1,5 @@
-
-
 const Listing = require("./listings.model");
+
 const {
   COUNTY_TOWNS,
   COUNTIES,
@@ -9,16 +8,20 @@ const {
   LISTING_PURPOSES,
   OFFICE_SIZE_UNITS
 } = require("./listing.constants");
+
 const sendEmail = require("../../utils/sendEmail");
+
 const {
   listingSubmittedEmail
 } = require("../../utils/emailTemplates");
+
 const buildListingFilter = require("./listing.filters");
+
 const { canCreateListing } = require("../subscriptions/subscription.service");
-const uploadToCloudinary = require("../../utils/uploadToCloudinary");
 
 const Subscription = require("../subscriptions/subscription.model");
-// public - metadata for frontend filters/forms
+
+// Public - metadata for frontend filters/forms
 exports.getListingMeta = async (req, res, next) => {
   try {
     res.json({
@@ -37,30 +40,18 @@ exports.getListingMeta = async (req, res, next) => {
   }
 };
 
-// public - get approved/active listings
+// Public - get approved/active listings
 exports.getPublicListings = async (req, res, next) => {
   try {
-    const {
-      page = 1,
-      limit = 12,
-      sort = "latest"
-    } = req.query;
+    const { page = 1, limit = 12, sort = "latest" } = req.query;
 
     const filter = buildListingFilter(req.query);
 
     let sortOption = { createdAt: -1 };
 
-    if (sort === "price-low") {
-      sortOption = { price: 1 };
-    }
-
-    if (sort === "price-high") {
-      sortOption = { price: -1 };
-    }
-
-    if (sort === "popular") {
-      sortOption = { views: -1 };
-    }
+    if (sort === "price-low") sortOption = { price: 1 };
+    if (sort === "price-high") sortOption = { price: -1 };
+    if (sort === "popular") sortOption = { views: -1 };
 
     const currentPage = Math.max(Number(page) || 1, 1);
     const perPage = Math.max(Number(limit) || 12, 1);
@@ -91,8 +82,7 @@ exports.getPublicListings = async (req, res, next) => {
   }
 };
 
-//Recent listings
-
+// Public - recently viewed listings
 exports.getRecentListings = async (req, res, next) => {
   try {
     const ids = req.query.ids ? req.query.ids.split(",") : [];
@@ -124,13 +114,14 @@ exports.getRecentListings = async (req, res, next) => {
   }
 };
 
-// public - get single approved listing
+// Public - get single approved listing
 exports.getListingById = async (req, res, next) => {
   try {
     const listing = await Listing.findOne({
       _id: req.params.id,
       status: "approved",
-      isActive: true
+      isActive: true,
+      availability: "available"
     }).populate("landlord", "name email phone businessName");
 
     if (!listing) {
@@ -152,7 +143,7 @@ exports.getListingById = async (req, res, next) => {
   }
 };
 
-// landlord - get one own listing
+// Landlord - get one own listing
 exports.getMyListingById = async (req, res, next) => {
   try {
     const listing = await Listing.findOne({
@@ -176,19 +167,34 @@ exports.getMyListingById = async (req, res, next) => {
   }
 };
 
-// landlord - create listing
+// Landlord - create listing
 exports.createListing = async (req, res, next) => {
   try {
+    const permission = await canCreateListing(req.user);
+
+    if (!permission.allowed) {
+      return res.status(403).json({
+        success: false,
+        code: permission.code || "LISTING_NOT_ALLOWED",
+        message: permission.message
+      });
+    }
+
     let parsedAmenities = {};
+
     if (req.body.amenities) {
       try {
         parsedAmenities = JSON.parse(req.body.amenities);
       } catch (error) {
-        return res.status(400).json({ message: "Invalid amenities format" });
+        return res.status(400).json({
+          success: false,
+          message: "Invalid amenities format"
+        });
       }
     }
 
-    const imageUrls = req.files?.map((file) => file.path).filter(Boolean) || [];
+    const imageUrls =
+      req.files?.map((file) => file.path).filter(Boolean) || [];
 
     const listing = await Listing.create({
       title: req.body.title,
@@ -199,20 +205,27 @@ exports.createListing = async (req, res, next) => {
       town: req.body.town,
       area: req.body.area || "",
       type: req.body.type,
+
       bedrooms:
         req.body.bedrooms !== undefined && req.body.bedrooms !== ""
           ? Number(req.body.bedrooms)
           : null,
+
       bathrooms:
         req.body.bathrooms !== undefined && req.body.bathrooms !== ""
           ? Number(req.body.bathrooms)
           : null,
+
       kitchen:
-        req.body.kitchen === "true" || req.body.kitchen === true || req.body.kitchen === "on",
+        req.body.kitchen === "true" ||
+        req.body.kitchen === true ||
+        req.body.kitchen === "on",
+
       size:
         req.body.size !== undefined && req.body.size !== ""
           ? Number(req.body.size)
           : null,
+
       sizeUnit: req.body.sizeUnit || null,
       video: req.body.video || null,
       amenities: parsedAmenities,
@@ -225,7 +238,7 @@ exports.createListing = async (req, res, next) => {
       unlistReason: null
     });
 
-    if (req.user?.email) {
+    if (req.user?.email && listingSubmittedEmail) {
       await sendEmail({
         to: req.user.email,
         subject: "Listing Submitted for Review",
@@ -239,14 +252,15 @@ exports.createListing = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: "Listing created and submitted for approval",
-      listing
+      listing,
+      usage: permission.usage
     });
   } catch (error) {
     next(error);
   }
 };
 
-// landlord - get own listings
+// Landlord - get own listings
 exports.getMyListings = async (req, res, next) => {
   try {
     const listings = await Listing.find({
@@ -262,7 +276,7 @@ exports.getMyListings = async (req, res, next) => {
   }
 };
 
-// landlord - update own listing
+// Landlord - update own listing
 exports.updateListing = async (req, res, next) => {
   try {
     const listing = await Listing.findOne({
@@ -278,43 +292,57 @@ exports.updateListing = async (req, res, next) => {
     }
 
     let parsedAmenities = listing.amenities;
+
     if (req.body.amenities) {
       try {
         parsedAmenities = JSON.parse(req.body.amenities);
       } catch (error) {
-        return res.status(400).json({ message: "Invalid amenities format" });
+        return res.status(400).json({
+          success: false,
+          message: "Invalid amenities format"
+        });
       }
     }
 
-    const imageUrls = req.files?.map((file) => file.path).filter(Boolean) || [];
+    const imageUrls =
+      req.files?.map((file) => file.path).filter(Boolean) || [];
 
     listing.title = req.body.title ?? listing.title;
     listing.description = req.body.description ?? listing.description;
     listing.purpose = req.body.purpose ?? listing.purpose;
+
     listing.price =
       req.body.price !== undefined && req.body.price !== ""
         ? Number(req.body.price)
         : listing.price;
+
     listing.county = req.body.county ?? listing.county;
     listing.town = req.body.town ?? listing.town;
     listing.area = req.body.area ?? listing.area;
     listing.type = req.body.type ?? listing.type;
+
     listing.bedrooms =
       req.body.bedrooms !== undefined && req.body.bedrooms !== ""
         ? Number(req.body.bedrooms)
         : null;
+
     listing.bathrooms =
       req.body.bathrooms !== undefined && req.body.bathrooms !== ""
         ? Number(req.body.bathrooms)
         : null;
+
     listing.kitchen =
       req.body.kitchen !== undefined
-        ? req.body.kitchen === "true" || req.body.kitchen === true || req.body.kitchen === "on"
+        ? req.body.kitchen === "true" ||
+          req.body.kitchen === true ||
+          req.body.kitchen === "on"
         : listing.kitchen;
+
     listing.size =
       req.body.size !== undefined && req.body.size !== ""
         ? Number(req.body.size)
         : null;
+
     listing.sizeUnit = req.body.sizeUnit ?? listing.sizeUnit;
     listing.video = req.body.video ?? listing.video;
     listing.amenities = parsedAmenities;
@@ -324,10 +352,10 @@ exports.updateListing = async (req, res, next) => {
       listing.images = imageUrls;
     }
 
-    // Optional: re-review if landlord edits already approved listing
     if (listing.status === "approved") {
       listing.status = "pending";
       listing.isActive = true;
+      listing.availability = "available";
       listing.unlistReason = null;
     }
 
@@ -343,7 +371,7 @@ exports.updateListing = async (req, res, next) => {
   }
 };
 
-// landlord - soft delete
+// Landlord - delete listing
 exports.deleteListing = async (req, res, next) => {
   try {
     const listing = await Listing.findOneAndDelete({
@@ -367,15 +395,28 @@ exports.deleteListing = async (req, res, next) => {
   }
 };
 
-// landlord - mark taken / available
+// Landlord - update availability
 exports.updateListingAvailability = async (req, res, next) => {
   try {
     const { availability } = req.body;
 
     if (!["available", "taken"].includes(availability)) {
       return res.status(400).json({
+        success: false,
         message: "Invalid availability value"
       });
+    }
+
+    if (availability === "available") {
+      const permission = await canCreateListing(req.user);
+
+      if (!permission.allowed) {
+        return res.status(403).json({
+          success: false,
+          code: permission.code || "LISTING_NOT_ALLOWED",
+          message: permission.message
+        });
+      }
     }
 
     const listing = await Listing.findOne({
@@ -385,11 +426,13 @@ exports.updateListingAvailability = async (req, res, next) => {
 
     if (!listing) {
       return res.status(404).json({
+        success: false,
         message: "Listing not found"
       });
     }
 
     listing.availability = availability;
+    listing.isActive = availability === "available";
     listing.unlistReason = availability === "taken" ? "taken" : null;
 
     await listing.save();
@@ -407,16 +450,23 @@ exports.updateListingAvailability = async (req, res, next) => {
 exports.markListingTaken = async (req, res, next) => {
   try {
     const listing = await Listing.findOneAndUpdate(
-      { _id: req.params.id, landlord: req.user._id },
+      {
+        _id: req.params.id,
+        landlord: req.user._id
+      },
       {
         availability: "taken",
+        isActive: false,
         unlistReason: "taken"
       },
       { new: true }
     );
 
     if (!listing) {
-      return res.status(404).json({ message: "Listing not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Listing not found"
+      });
     }
 
     res.json({
@@ -434,11 +484,18 @@ exports.markListingAvailable = async (req, res, next) => {
     const permission = await canCreateListing(req.user);
 
     if (!permission.allowed) {
-      return res.status(403).json({ message: permission.message });
+      return res.status(403).json({
+        success: false,
+        code: permission.code || "LISTING_NOT_ALLOWED",
+        message: permission.message
+      });
     }
 
     const listing = await Listing.findOneAndUpdate(
-      { _id: req.params.id, landlord: req.user._id },
+      {
+        _id: req.params.id,
+        landlord: req.user._id
+      },
       {
         availability: "available",
         isActive: true,
@@ -448,7 +505,10 @@ exports.markListingAvailable = async (req, res, next) => {
     );
 
     if (!listing) {
-      return res.status(404).json({ message: "Listing not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Listing not found"
+      });
     }
 
     res.json({
@@ -461,40 +521,46 @@ exports.markListingAvailable = async (req, res, next) => {
   }
 };
 
-
-
-exports.getFeaturedListings = async (req, res) => {
+// Public - featured listings from premium/pro landlords
+exports.getFeaturedListings = async (req, res, next) => {
   try {
     const planWeight = {
       pro: 2,
       premium: 1
     };
+
     const activeSubscriptions = await Subscription.find({
       status: "active",
       plan: { $in: ["premium", "pro"] }
-    }).select("landlord");
+    }).select("user plan");
 
-    const landlordIds = activeSubscriptions.map((sub) => sub.landlord);
+    const landlordIds = activeSubscriptions.map((sub) => sub.user);
+
+    const landlordPlanMap = new Map(
+      activeSubscriptions.map((sub) => [String(sub.user), sub.plan])
+    );
 
     const listings = await Listing.find({
-      landlord: { $in: activeSubscriptions.map((sub) => sub.landlord) },
+      landlord: { $in: landlordIds },
       status: "approved",
       availability: "available",
       isActive: true
-    }).lean();
+    })
+      .populate("landlord", "name businessName")
+      .lean();
 
     const sortedListings = listings.sort((a, b) => {
-      const aPlan = landlordPlanMap.get(String(a.landlord)) || "premium";
-      const bPlan = landlordPlanMap.get(String(b.landlord)) || "premium";
+      const aPlan = landlordPlanMap.get(String(a.landlord?._id || a.landlord)) || "premium";
+      const bPlan = landlordPlanMap.get(String(b.landlord?._id || b.landlord)) || "premium";
 
       return planWeight[bPlan] - planWeight[aPlan];
     });
 
-    return res.status(200).json({ listings });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Failed to fetch featured listings"
+    res.status(200).json({
+      success: true,
+      listings: sortedListings
     });
+  } catch (error) {
+    next(error);
   }
 };
-

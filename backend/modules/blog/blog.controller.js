@@ -14,12 +14,36 @@ const slugify = (text) =>
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
+const normalizeTags = (tags) => {
+  if (!tags) return [];
+
+  if (Array.isArray(tags)) {
+    return tags.map((tag) => String(tag).trim()).filter(Boolean);
+  }
+
+  return String(tags)
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+};
+
+const getUploadedFileUrl = (file) => {
+  if (!file) return "";
+
+  return (
+    file.secure_url ||
+    file.url ||
+    file.path ||
+    file.location ||
+    file.filename ||
+    ""
+  );
+};
+
 const sendBlogNotificationToSubscribers = async (blog) => {
   const subscribers = await NewsletterSubscriber.find({ isActive: true });
 
   if (!subscribers.length) return;
-
-  const blogUrl = `${process.env.CLIENT_URL}/blog/${blog.slug}`;
 
   for (const subscriber of subscribers) {
     try {
@@ -33,12 +57,14 @@ const sendBlogNotificationToSubscribers = async (blog) => {
         })
       });
     } catch (error) {
-      console.error(`Failed to send blog email to ${subscriber.email}:`, error.message);
+      console.error(
+        `Failed to send blog email to ${subscriber.email}:`,
+        error.message
+      );
     }
   }
 };
 
-// public - get all published blogs
 exports.getPublishedBlogs = async (req, res, next) => {
   try {
     const blogs = await Blog.find({ status: "published" })
@@ -54,7 +80,6 @@ exports.getPublishedBlogs = async (req, res, next) => {
   }
 };
 
-// public - get single published blog by slug
 exports.getPublishedBlogBySlug = async (req, res, next) => {
   try {
     const blog = await Blog.findOne({
@@ -75,7 +100,6 @@ exports.getPublishedBlogBySlug = async (req, res, next) => {
   }
 };
 
-// public - subscribe to newsletter
 exports.subscribeToNewsletter = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -116,7 +140,6 @@ exports.subscribeToNewsletter = async (req, res, next) => {
   }
 };
 
-// admin - get all blogs
 exports.getAdminBlogs = async (req, res, next) => {
   try {
     const blogs = await Blog.find()
@@ -132,10 +155,12 @@ exports.getAdminBlogs = async (req, res, next) => {
   }
 };
 
-// admin - get single blog
 exports.getAdminBlogById = async (req, res, next) => {
   try {
-    const blog = await Blog.findById(req.params.id).populate("author", "name email");
+    const blog = await Blog.findById(req.params.id).populate(
+      "author",
+      "name email"
+    );
 
     if (!blog) {
       return res.status(404).json({ message: "Blog not found" });
@@ -150,10 +175,18 @@ exports.getAdminBlogById = async (req, res, next) => {
   }
 };
 
-// admin - create blog
 exports.createBlog = async (req, res, next) => {
   try {
-    const { title, excerpt, content, status } = req.body;
+    const {
+      title,
+      excerpt,
+      content,
+      status,
+      category,
+      tags,
+      metaTitle,
+      metaDescription
+    } = req.body;
 
     if (!title || !excerpt || !content) {
       return res.status(400).json({
@@ -162,14 +195,14 @@ exports.createBlog = async (req, res, next) => {
     }
 
     let slug = slugify(title);
+
     const existingSlug = await Blog.findOne({ slug });
+
     if (existingSlug) {
       slug = `${slug}-${Date.now()}`;
     }
 
-    const coverImage = req.file?.path || "";
-
-    if (req.file) blog.coverImage = req.file.path || "";
+    const coverImage = getUploadedFileUrl(req.file);
 
     const blog = await Blog.create({
       title,
@@ -177,6 +210,10 @@ exports.createBlog = async (req, res, next) => {
       excerpt,
       content,
       coverImage,
+      category: category || "",
+      tags: normalizeTags(tags),
+      metaTitle: metaTitle || "",
+      metaDescription: metaDescription || "",
       author: req.user._id,
       status: status === "published" ? "published" : "draft",
       publishedAt: status === "published" ? new Date() : null
@@ -196,10 +233,18 @@ exports.createBlog = async (req, res, next) => {
   }
 };
 
-// admin - update blog
 exports.updateBlog = async (req, res, next) => {
   try {
-    const { title, excerpt, content, status } = req.body;
+    const {
+      title,
+      excerpt,
+      content,
+      status,
+      category,
+      tags,
+      metaTitle,
+      metaDescription
+    } = req.body;
 
     const blog = await Blog.findById(req.params.id);
 
@@ -211,6 +256,7 @@ exports.updateBlog = async (req, res, next) => {
 
     if (title && title !== blog.title) {
       let newSlug = slugify(title);
+
       const existingSlug = await Blog.findOne({
         slug: newSlug,
         _id: { $ne: blog._id }
@@ -226,7 +272,18 @@ exports.updateBlog = async (req, res, next) => {
 
     if (typeof excerpt === "string") blog.excerpt = excerpt;
     if (typeof content === "string") blog.content = content;
-    if (req.file) blog.coverImage = req.file.path || req.file.originalname || "";
+    if (typeof category === "string") blog.category = category;
+    if (typeof tags !== "undefined") blog.tags = normalizeTags(tags);
+    if (typeof metaTitle === "string") blog.metaTitle = metaTitle;
+    if (typeof metaDescription === "string") {
+      blog.metaDescription = metaDescription;
+    }
+
+    const uploadedCover = getUploadedFileUrl(req.file);
+
+    if (uploadedCover) {
+      blog.coverImage = uploadedCover;
+    }
 
     if (status && ["draft", "published"].includes(status)) {
       blog.status = status;
@@ -252,7 +309,6 @@ exports.updateBlog = async (req, res, next) => {
   }
 };
 
-// admin - delete blog
 exports.deleteBlog = async (req, res, next) => {
   try {
     const blog = await Blog.findByIdAndDelete(req.params.id);
@@ -270,10 +326,11 @@ exports.deleteBlog = async (req, res, next) => {
   }
 };
 
-// admin - get newsletter subscribers
 exports.getNewsletterSubscribers = async (req, res, next) => {
   try {
-    const subscribers = await NewsletterSubscriber.find().sort({ createdAt: -1 });
+    const subscribers = await NewsletterSubscriber.find().sort({
+      createdAt: -1
+    });
 
     res.json({
       success: true,

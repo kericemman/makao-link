@@ -3,26 +3,30 @@ import api from "../api/api";
 
 const AuthContext = createContext(null);
 
+const defaultUsage = { used: 0, limit: 0, remaining: 0 };
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [subscription, setSubscription] = useState(null);
-  const [usage, setUsage] = useState({ used: 0, limit: 0, remaining: 0 });
+  const [usage, setUsage] = useState(defaultUsage);
   const [loading, setLoading] = useState(true);
-
-  const token = localStorage.getItem("makao_token");
 
   const fetchMe = async () => {
     try {
       const { data } = await api.get("/auth/me");
-      setUser(data.user);
-      setSubscription(data.subscription);
-      setUsage(data.usage || { used: 0, limit: 0, remaining: 0 });
+
+      setUser(data.user || null);
+      setSubscription(data.subscription || null);
+      setUsage(data.usage || defaultUsage);
+
       return data;
     } catch (error) {
       localStorage.removeItem("makao_token");
+
       setUser(null);
       setSubscription(null);
-      setUsage({ used: 0, limit: 0, remaining: 0 });
+      setUsage(defaultUsage);
+
       throw error;
     } finally {
       setLoading(false);
@@ -30,6 +34,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    const token = localStorage.getItem("makao_token");
+
     if (token) {
       fetchMe().catch(() => {});
     } else {
@@ -39,19 +45,25 @@ export const AuthProvider = ({ children }) => {
 
   const login = ({ token, user, subscription, usage }) => {
     localStorage.setItem("makao_token", token);
-    setUser(user);
-    setSubscription(subscription);
-    setUsage(usage || { used: 0, limit: 0, remaining: 0 });
+
+    setUser(user || null);
+    setSubscription(subscription || null);
+    setUsage(usage || defaultUsage);
   };
 
   const logout = () => {
     localStorage.removeItem("makao_token");
+
     setUser(null);
     setSubscription(null);
-    setUsage({ used: 0, limit: 0, remaining: 0 });
+    setUsage(defaultUsage);
   };
 
   const refreshAuth = async () => {
+    return fetchMe();
+  };
+
+  const refreshSubscription = async () => {
     return fetchMe();
   };
 
@@ -63,7 +75,8 @@ export const AuthProvider = ({ children }) => {
       loading,
       login,
       logout,
-      refreshAuth
+      refreshAuth,
+      refreshSubscription
     }),
     [user, subscription, usage, loading]
   );

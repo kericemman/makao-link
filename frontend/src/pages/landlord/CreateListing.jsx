@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createListing, getListingMeta } from "../../services/listings.service";
+import { getMySubscription } from "../../services/payment.service";
 import { useAuth } from "../../context/AuthContext";
 import imageCompression from "browser-image-compression";
 import {
@@ -29,20 +30,25 @@ import {
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 
-const prettifyLabel = (value) =>
+const prettifyLabel = (value = "") =>
   value
     .split("-")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 
 const CreateListingPage = () => {
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
   const navigate = useNavigate();
-  const { subscription, usage } = useAuth();
 
+  const { subscription: authSubscription, usage: authUsage } = useAuth();
+
+  const [freshSubscription, setFreshSubscription] = useState(null);
+  const [freshUsage, setFreshUsage] = useState({
+    used: 0,
+    limit: 0,
+    remaining: 0
+  });
+
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [metaLoading, setMetaLoading] = useState(true);
   const [images, setImages] = useState([]);
@@ -57,11 +63,6 @@ const CreateListingPage = () => {
     listingPurposes: [],
     officeSizeUnits: []
   });
-
-  const blocked =
-    !subscription ||
-    ["pending_payment", "grace", "expired", "cancelled"].includes(subscription.status) ||
-    usage.used >= usage.limit;
 
   const [formData, setFormData] = useState({
     title: "",
@@ -90,20 +91,42 @@ const CreateListingPage = () => {
     }
   });
 
-  const amenitiesList = [
-    { key: "garden", label: "Garden" },
-    { key: "tarmacAccess", label: "Tarmac Access" },
-    { key: "nearSchools", label: "Near Schools" },
-    { key: "nearShoppingCentre", label: "Near Shopping Centre" },
-    { key: "nearHospital", label: "Near Hospital" },
-    { key: "waterAvailable", label: "Water Available" },
-    { key: "electricityAvailable", label: "Electricity Available" }
-  ];
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    const fetchFreshSubscription = async () => {
+      try {
+        setSubscriptionLoading(true);
+
+        const data = await getMySubscription();
+
+        setFreshSubscription(data.subscription || null);
+        setFreshUsage(
+          data.usage || {
+            used: 0,
+            limit: 0,
+            remaining: 0
+          }
+        );
+      } catch (error) {
+        toast.error("Failed to load subscription status", {
+          style: { background: "#013E43", color: "#fff" }
+        });
+      } finally {
+        setSubscriptionLoading(false);
+      }
+    };
+
+    fetchFreshSubscription();
+  }, []);
 
   useEffect(() => {
     const fetchMeta = async () => {
       try {
         setMetaLoading(true);
+
         const data = await getListingMeta();
 
         const meta = data.meta || {
@@ -135,6 +158,42 @@ const CreateListingPage = () => {
     fetchMeta();
   }, []);
 
+  const activeSubscription = freshSubscription || authSubscription || null;
+
+  const activeUsage = freshSubscription
+    ? freshUsage
+    : authUsage || {
+        used: 0,
+        limit: 0,
+        remaining: 0
+      };
+
+  const activeStatus = activeSubscription?.status;
+
+  const subscriptionInactive =
+    !activeSubscription ||
+    ["pending_payment", "grace", "expired", "cancelled"].includes(activeStatus);
+
+  const hasValidLimit = Number(activeUsage?.limit) > 0;
+
+  const listingLimitReached =
+    hasValidLimit && Number(activeUsage.used) >= Number(activeUsage.limit);
+
+  const blocked =
+    subscriptionLoading || subscriptionInactive || listingLimitReached;
+
+  const isPageLoading = metaLoading || subscriptionLoading;
+
+  const amenitiesList = [
+    { key: "garden", label: "Garden" },
+    { key: "tarmacAccess", label: "Tarmac Access" },
+    { key: "nearSchools", label: "Near Schools" },
+    { key: "nearShoppingCentre", label: "Near Shopping Centre" },
+    { key: "nearHospital", label: "Near Hospital" },
+    { key: "waterAvailable", label: "Water Available" },
+    { key: "electricityAvailable", label: "Electricity Available" }
+  ];
+
   const countyOptions = useMemo(() => {
     return (listingMeta.counties || []).map((county) => ({
       value: county,
@@ -144,6 +203,7 @@ const CreateListingPage = () => {
 
   const townOptions = useMemo(() => {
     const towns = listingMeta.countyTowns?.[formData.county] || [];
+
     return towns.map((town) => ({
       value: town,
       label: prettifyLabel(town)
@@ -168,6 +228,20 @@ const CreateListingPage = () => {
   const isResidential = residentialTypes.includes(formData.type);
   const isOffice = formData.type === "office";
 
+  const handleBlockedRedirect = () => {
+    navigate("/landlord/subscription", {
+      state: {
+        reason: listingLimitReached
+          ? "limit_reached"
+          : activeStatus === "pending_payment"
+          ? "pending_payment"
+          : activeStatus === "grace"
+          ? "grace_block"
+          : "expired"
+      }
+    });
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -180,13 +254,17 @@ const CreateListingPage = () => {
       }));
     } else if (name === "type") {
       const nextType = value;
+
       setFormData((prev) => ({
         ...prev,
         type: nextType,
         bedrooms: residentialTypes.includes(nextType) ? prev.bedrooms : "",
         bathrooms: residentialTypes.includes(nextType) ? prev.bathrooms : "",
         size: nextType === "office" ? prev.size : "",
-        sizeUnit: nextType === "office" ? prev.sizeUnit || (listingMeta.officeSizeUnits?.[0] || "sqft") : prev.sizeUnit
+        sizeUnit:
+          nextType === "office"
+            ? prev.sizeUnit || listingMeta.officeSizeUnits?.[0] || "sqft"
+            : prev.sizeUnit
       }));
     } else {
       setFormData((prev) => ({
@@ -196,7 +274,10 @@ const CreateListingPage = () => {
     }
 
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: ""
+      }));
     }
   };
 
@@ -210,47 +291,53 @@ const CreateListingPage = () => {
     }));
   };
 
- const handleImages = async (e) => {
-  const files = Array.from(e.target.files || []);
+  const handleImages = async (e) => {
+    const files = Array.from(e.target.files || []);
+    const compressedFiles = [];
 
-  const compressedFiles = [];
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not an image file`);
+        continue;
+      }
 
-  for (const file of files) {
-    if (!file.type.startsWith("image/")) {
-      toast.error(`${file.name} is not an image file`);
-      continue;
+      try {
+        const compressed = await imageCompression(file, {
+          maxSizeMB: 1.5,
+          maxWidthOrHeight: 1600,
+          useWebWorker: true
+        });
+
+        compressedFiles.push(compressed);
+      } catch (error) {
+        toast.error(`Failed to process ${file.name}`);
+      }
     }
 
-    try {
-      const compressed = await imageCompression(file, {
-        maxSizeMB: 1.5,
-        maxWidthOrHeight: 1600,
-        useWebWorker: true
-      });
-
-      compressedFiles.push(compressed);
-    } catch (error) {
-      toast.error(`Failed to process ${file.name}`);
+    if (compressedFiles.length + images.length > 5) {
+      toast.error("Maximum 5 images allowed");
+      return;
     }
-  }
 
-  if (compressedFiles.length + images.length > 5) {
-    toast.error("Maximum 5 images allowed");
-    return;
-  }
+    setImages((prev) => [...prev, ...compressedFiles]);
 
-  setImages((prev) => [...prev, ...compressedFiles]);
+    const newPreviews = compressedFiles.map((file) =>
+      URL.createObjectURL(file)
+    );
 
-  const newPreviews = compressedFiles.map((file) => URL.createObjectURL(file));
-  setPreview((prev) => [...prev, ...newPreviews]);
+    setPreview((prev) => [...prev, ...newPreviews]);
 
-  if (errors.images) {
-    setErrors((prev) => ({ ...prev, images: "" }));
-  }
-};
+    if (errors.images) {
+      setErrors((prev) => ({
+        ...prev,
+        images: ""
+      }));
+    }
+  };
 
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
+
     setPreview((prev) => {
       URL.revokeObjectURL(prev[index]);
       return prev.filter((_, i) => i !== index);
@@ -261,33 +348,40 @@ const CreateListingPage = () => {
     const newErrors = {};
 
     if (!formData.title.trim()) newErrors.title = "Title is required";
-    if (!formData.description.trim()) newErrors.description = "Description is required";
+    if (!formData.description.trim())
+      newErrors.description = "Description is required";
+
     if (!formData.price) newErrors.price = "Price is required";
-    if (formData.price && Number(formData.price) < 0) newErrors.price = "Price must be positive";
+    if (formData.price && Number(formData.price) < 0)
+      newErrors.price = "Price must be positive";
 
     if (!formData.county) newErrors.county = "County is required";
     if (!formData.town) newErrors.town = "Town/Location is required";
     if (!formData.type) newErrors.type = "Property type is required";
     if (!formData.purpose) newErrors.purpose = "Purpose is required";
-    if (!formData.contactPhone.trim()) newErrors.contactPhone = "Contact phone is required";
-    if (images.length === 0) newErrors.images = "At least one image is required";
+
+    if (!formData.contactPhone.trim())
+      newErrors.contactPhone = "Contact phone is required";
+
+    if (images.length === 0)
+      newErrors.images = "At least one image is required";
 
     if (isResidential) {
       if (formData.bedrooms === "" || formData.bedrooms === null) {
         newErrors.bedrooms = "Number of bedrooms is required";
       }
+
       if (formData.bathrooms === "" || formData.bathrooms === null) {
         newErrors.bathrooms = "Number of bathrooms is required";
       }
     }
 
-    if (isOffice) {
-      if (!formData.size) {
-        newErrors.size = "Office size is required";
-      }
+    if (isOffice && !formData.size) {
+      newErrors.size = "Office size is required";
     }
 
     setErrors(newErrors);
+
     return Object.keys(newErrors).length === 0;
   };
 
@@ -295,18 +389,7 @@ const CreateListingPage = () => {
     e.preventDefault();
 
     if (blocked) {
-      navigate("/landlord/subscription", {
-        state: {
-          reason:
-            usage.used >= usage.limit
-              ? "limit_reached"
-              : subscription?.status === "pending_payment"
-              ? "pending_payment"
-              : subscription?.status === "grace"
-              ? "grace_block"
-              : "expired"
-        }
-      });
+      handleBlockedRedirect();
       return;
     }
 
@@ -328,25 +411,24 @@ const CreateListingPage = () => {
       payload.append("price", formData.price);
       payload.append("county", formData.county);
       payload.append("town", formData.town);
-      if (formData.area) payload.append("area", formData.area);
       payload.append("type", formData.type);
+      payload.append("kitchen", formData.kitchen);
+      payload.append("amenities", JSON.stringify(formData.amenities));
+      payload.append("contactPhone", formData.contactPhone);
+
+      if (formData.area) payload.append("area", formData.area);
 
       if (isResidential) {
         payload.append("bedrooms", formData.bedrooms);
         payload.append("bathrooms", formData.bathrooms);
       }
 
-      payload.append("kitchen", formData.kitchen);
-
-      if (isOffice && formData.size) {
+      if (isOffice) {
         payload.append("size", formData.size);
         payload.append("sizeUnit", formData.sizeUnit);
       }
 
       if (formData.video) payload.append("video", formData.video);
-
-      payload.append("amenities", JSON.stringify(formData.amenities));
-      payload.append("contactPhone", formData.contactPhone);
 
       images.forEach((image) => {
         payload.append("images", image);
@@ -366,7 +448,7 @@ const CreateListingPage = () => {
 
       setTimeout(() => {
         navigate("/landlord/listings");
-      }, 2000);
+      }, 1500);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to create listing", {
         style: { background: "#013E43", color: "#fff" }
@@ -388,30 +470,43 @@ const CreateListingPage = () => {
           </button>
 
           <div>
-            <h1 className="text-xl font-bold text-[#013E43]">Add New Listing</h1>
-            <p className="text-sm text-[#065A57]">List your property for tenants to find</p>
+            <h1 className="text-xl font-bold text-[#013E43]">
+              Add New Listing
+            </h1>
+            <p className="text-sm text-[#065A57]">
+              List your property for tenants to find
+            </p>
           </div>
         </div>
       </div>
 
-      {metaLoading ? (
+      {isPageLoading ? (
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1] text-[#065A57]">
-          Loading listing options...
+          Loading listing and subscription options...
         </div>
       ) : null}
 
-      {blocked ? (
-        <div className="mb-6 rounded-xl bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200">
+      {!isPageLoading && blocked ? (
+        <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200">
           <div className="flex items-start gap-3">
             <FiInfo className="text-amber-500 mt-0.5" />
             <div>
-              You cannot create a new listing right now. Please review your subscription status first.
+              You cannot create a new listing right now. Please review your
+              subscription status first.
+              <button
+                type="button"
+                onClick={handleBlockedRedirect}
+                className="ml-2 font-semibold underline"
+              >
+                Go to subscription
+              </button>
             </div>
           </div>
         </div>
       ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* keep your existing form JSX from Basic Information downwards */}
         <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
           <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
             <FiFileText className="mr-2 text-[#02BB31]" />
@@ -586,7 +681,7 @@ const CreateListingPage = () => {
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-[#013E43] mb-1">
-                Specific Area (Optional)
+                Specific Area / Landmark (Optional)
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

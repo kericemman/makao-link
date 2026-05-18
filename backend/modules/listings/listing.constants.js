@@ -45,6 +45,66 @@ const COUNTY_TOWNS = {
     "kajiado-town",
     "isinya",
     "namanga"
+  ], 
+
+  eldoret: [
+    "eldoret-town",
+    "ainabkoi",
+    "kapseret",
+    "kipkaren",
+    "langas",
+    "tulwet",
+    "sosiani"
+  ],
+  mombasa: [
+    "mombasa-town",
+    "likoni",
+    "kisauni",
+    "nyali",
+    "changamwe",
+    "jomvu",
+    "mvita"
+  ],
+  kisumu: [
+    "kisumu-town",
+    "migosi",
+    "nyalenda",
+    "obunga",
+    "kondele",
+    "nyakach"
+  ],
+  nakuru: [
+    "nakuru-town",
+    "naivasha",
+    "eldama-ravine",
+    "molo",
+    "njoro",
+    "limuru"
+  ],
+  naivasha: [
+    "naivasha-town",
+    "nakuru-road",
+    "maai-mai",
+    "karagita",
+    "njoro",
+    "limuru"
+  ],
+  kisii: [
+    "kisii-town",
+    "bobasi",
+    "kitutu-chache",
+    "kitutu-south",
+    "nyaribari-chache",
+    "nyaribari-moranga"
+  ],
+  meru: [
+    "meru-town",
+    "tigania-east",
+    "tigania-west",
+    "buuri-east",
+    "buuri-west",
+    "imenti-north",
+    "imenti-south"
   ]
 };
 

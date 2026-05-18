@@ -53,7 +53,7 @@ exports.subscriptionActivatedEmail = ({ name, plan, billingEndDate }) => {
       <p><strong>Billing period ends:</strong> ${billingEndDate}</p>
       <p>You can now continue listing properties under your plan benefits.</p>
     `,
-    ctaText: "Open Dashboard",
+    ctaText: "Continue Listing Properties",
     ctaUrl: `${clientUrl}/landlord/dashboard`
   });
 };
@@ -264,7 +264,7 @@ exports.newsletterWelcomeEmail = () => {
     body: `
       <p>You’ll receive an email every time we publish a new article.</p>
     `,
-    ctaText: "Visit Blog",
+    ctaText: "Check Out Our Latest Articles",
     ctaUrl: `${clientUrl}/blog`
   });
 };

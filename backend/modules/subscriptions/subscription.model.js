@@ -51,6 +51,11 @@ const subscriptionSchema = new mongoose.Schema(
     paystackSubscriptionCode: {
       type: String,
       default: null
+    },
+
+    paystackEmailToken: {
+      type: String,
+      default: null
     }
   },
   { timestamps: true }

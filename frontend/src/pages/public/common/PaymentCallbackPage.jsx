@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { verifyPayment } from "../../services/payment.service";
+import { useAuth } from "../../context/AuthContext";
 import toast from "react-hot-toast";
 
 const PaymentCallbackPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { refreshSubscription } = useAuth();
 
   const [message, setMessage] = useState("Verifying your payment...");
 
@@ -22,12 +24,17 @@ const PaymentCallbackPage = () => {
       try {
         await verifyPayment(reference);
 
-        setMessage("Payment verified successfully. Redirecting...");
-        toast.success("Payment verified successfully");
+        if (refreshSubscription) {
+          await refreshSubscription();
+        }
 
-        setTimeout(() => {
-          navigate("/landlord/subscription", { replace: true });
-        }, 1200);
+        setMessage("Payment verified successfully. Redirecting...");
+        toast.success("Subscription activated successfully");
+
+        navigate("/landlord/subscription", {
+          replace: true,
+          state: {}
+        });
       } catch (error) {
         const errorMessage =
           error.response?.data?.message ||
@@ -39,7 +46,7 @@ const PaymentCallbackPage = () => {
     };
 
     runVerification();
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, refreshSubscription]);
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center bg-[#F0F7F4] px-4">
