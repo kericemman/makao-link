@@ -47,7 +47,7 @@ const partnerSchema = new mongoose.Schema(
 
   applicationFee: {
     type: Number,
-    default: 5000
+    default: 1000
   },
 
   paymentStatus: {
