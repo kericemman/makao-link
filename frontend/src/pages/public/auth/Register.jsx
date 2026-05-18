@@ -136,7 +136,20 @@ const RegisterLandlordPage = () => {
 
       login(data);
 
+     
+
+    // Google Ads landlord signup conversion
+    if (typeof window !== "undefined" && window.gtag) {
+      window.gtag("event", "conversion", {
+        send_to: "AW-18171252157/BjG5CJmRma8cEL2b3dhD",
+      });
+    }
+
+
       toast.success("Account created successfully!", {
+
+      
+
         style: { background: "#02BB31", color: "#fff" }
       });
 
