@@ -220,9 +220,9 @@ exports.verifyPaymentByReference = async (req, res, next) => {
     const response = await paystack.get(`/transaction/verify/${reference}`);
     const data = response.data?.data;
 
-    console.log("PAYSTACK VERIFY STATUS:", data?.status);
-    console.log("PAYSTACK VERIFY METADATA:", data?.metadata);
-    console.log("PAYSTACK VERIFY SUBSCRIPTION:", data?.subscription);
+    // console.log("PAYSTACK VERIFY STATUS:", data?.status);
+    // console.log("PAYSTACK VERIFY METADATA:", data?.metadata);
+    // console.log("PAYSTACK VERIFY SUBSCRIPTION:", data?.subscription);
 
     if (!data || data.status !== "success") {
       return res.status(400).json({ message: "Payment not successful" });
