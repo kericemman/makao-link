@@ -65,6 +65,7 @@ import ContactInfoPage from "../pages/admin/app/ContactInfoPage";
 import PolicyPagesPage from "../pages/admin/app/PolicyPage";
 import SubscribersPage from "../pages/admin/app/SubscriberPage";
 import AppUpdatesPage from "../pages/admin/app/AppPage";
+import SupportHelpPage from "../pages/admin/app/SupportHelpPage";
 
 
 
@@ -147,6 +148,7 @@ const AppRoutes = () => {
             <Route path="/admin/app/policies" element={<PolicyPagesPage />} />
             <Route path="/admin/app/updates" element={<AppUpdatesPage />} />
             <Route path="/admin/app/subscribers" element={<SubscribersPage />} />
+            <Route path="/admin/app/support-help" element={<SupportHelpPage />} />
            </Route>
             
         </Route>

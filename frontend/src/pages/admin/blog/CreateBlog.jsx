@@ -123,8 +123,8 @@ const AdminBlogEditorPage = () => {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Image must be less than 2MB", {
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Image must be less than 20MB", {
         style: { background: "#013E43", color: "#fff" }
       });
       return;
@@ -379,7 +379,7 @@ const AdminBlogEditorPage = () => {
               />
 
               <p className="mt-1 text-xs text-[#065A57]">
-                PNG, JPG up to 2MB.
+                PNG, JPG, JFIF, WEBP, or AVIF up to 20MB.
               </p>
 
               {coverPreview ? (

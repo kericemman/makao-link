@@ -7,9 +7,12 @@ const {
   updateSupportCategory,
   deleteSupportCategory,
 
-  // getAppTickets,
-  // updateAppTicket,
-  // deleteAppTicket,
+  getSupportTickets,
+  updateSupportTicket,
+  deleteSupportTicket,
+  getHelpRequests,
+  updateHelpRequest,
+  deleteHelpRequest,
 
   getContactInfo,
   updateContactInfo,
@@ -42,9 +45,13 @@ router
   .patch(updateSupportCategory)
   .delete(deleteSupportCategory);
 
-// router.get("/app-tickets", getAppTickets);
-// router.patch("/app-tickets/:id", updateAppTicket);
-// router.delete("/app-tickets/:id", deleteAppTicket);
+router.get("/support-tickets", getSupportTickets);
+router.patch("/support-tickets/:id", updateSupportTicket);
+router.delete("/support-tickets/:id", deleteSupportTicket);
+
+router.get("/help-requests", getHelpRequests);
+router.patch("/help-requests/:id", updateHelpRequest);
+router.delete("/help-requests/:id", deleteHelpRequest);
 
 router.get("/contact-info", getContactInfo);
 router.patch("/contact-info", updateContactInfo);

@@ -7,7 +7,7 @@ const storage = new CloudinaryStorage({
   params: async (req, file) => ({
     folder: "rendahomes/listings",
     resource_type: "image",
-    allowed_formats: ["jpg", "jpeg", "png", "webp", "avif"]
+    allowed_formats: ["jpg", "jpeg", "jfif", "png", "webp", "avif"]
   })
 });
 

@@ -1,5 +1,6 @@
 const Property = require("../listings/listings.model");
 const Inquiry = require("../inquiries/inquiry.model");
+const AppAlert = require("../alerts/alert.model");
 const Subscription = require("../subscriptions/subscription.model");
 
 exports.getDashboardStats = async (req, res) => {
@@ -15,11 +16,27 @@ exports.getDashboardStats = async (req, res) => {
     });
 
     const subscription = await Subscription.findOne({
-      landlord: req.user._id,
+      user: req.user._id,
       status: "active"
     });
+    
+    const recentInquiries = await AppAlert.find({
+      landlord: req.user._id
+    })
+      .populate(
+        "listing",
+        "title price purpose type county town area images availability status isActive contactPhone"
+      )
+      .populate("user", "name email phone role avatar")
+      .sort({ updatedAt: -1 })
+      .limit(10);
 
     res.json({
+      stats: {
+        totalProperties,
+        totalInquiries
+      },
+      recentInquiries,
       totalProperties,
       totalInquiries,
       subscription

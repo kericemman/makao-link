@@ -28,7 +28,7 @@ router.get("/profile", protect, requireRole("landlord", "admin", "user"), getPro
 router.patch(
   "/profile",
   protect,
-  requireRole("landlord", "admin"),
+  requireRole("landlord", "admin", "user"),
   upload.single("avatar"),
   updateProfile
 );

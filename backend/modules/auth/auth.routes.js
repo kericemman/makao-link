@@ -4,8 +4,6 @@ const {
   registerLandlord,
   loginLandlord,
   register,
-  login,
-  me,
   getMe,
   socialLogin,
   forgotPassword,
@@ -19,8 +17,6 @@ router.get("/me", protect, getMe);
 
 
 router.post("/user/register", register);
-router.post("/login", login);
-router.get("/me", protect, me);
 
 router.post("/social-login", socialLogin);
 

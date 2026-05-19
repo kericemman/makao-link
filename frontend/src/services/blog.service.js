@@ -26,20 +26,12 @@ export const getAdminBlogById = async (id) => {
 };
 
 export const createBlog = async (formData) => {
-  const response = await api.post("/blog/admin", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data"
-    }
-  });
+  const response = await api.post("/blog/admin", formData);
   return response.data;
 };
 
 export const updateBlog = async (id, formData) => {
-  const response = await api.patch(`/blog/admin/${id}`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data"
-    }
-  });
+  const response = await api.patch(`/blog/admin/${id}`, formData);
   return response.data;
 };
 
@@ -57,11 +49,7 @@ export const updateBlogStatus = async (id, status) => {
   const formData = new FormData();
   formData.append("status", status);
 
-  const response = await api.patch(`/blog/admin/${id}`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data"
-    }
-  });
+  const response = await api.patch(`/blog/admin/${id}`, formData);
 
   return response.data;
 };

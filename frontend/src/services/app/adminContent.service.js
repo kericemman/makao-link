@@ -26,6 +26,15 @@ export const updateSupportTicket = (id, payload) =>
 export const deleteSupportTicket = (id) =>
   api.delete(`${BASE}/support-tickets/${id}`);
 
+// Help Requests
+export const getHelpRequests = () =>
+  api.get(`${BASE}/help-requests`);
+
+export const updateHelpRequest = (id, payload) =>
+  api.patch(`${BASE}/help-requests/${id}`, payload);
+
+export const deleteHelpRequest = (id) =>
+  api.delete(`${BASE}/help-requests/${id}`);
 
 // Contact Info
 export const getContactInfo = () =>

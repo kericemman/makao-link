@@ -153,6 +153,12 @@ const AdminLayout = () => {
           icon: FiHelpCircle,
           description: "Manage support categories"
         },
+        { 
+          label: "Support & Help", 
+          path: "/admin/app/support-help", 
+          icon: FiMessageSquare,
+          description: "Tickets and help requests"
+        },
        
         { 
           label: "Contact Info", 

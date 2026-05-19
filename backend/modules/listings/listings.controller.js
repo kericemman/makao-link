@@ -82,6 +82,25 @@ exports.getPublicListings = async (req, res, next) => {
   }
 };
 
+exports.getNearbyListings = async (req, res, next) => {
+  try {
+    const { limit = 12 } = req.query;
+    const filter = buildListingFilter(req.query);
+
+    const listings = await Listing.find(filter)
+      .populate("landlord", "name businessName phone")
+      .sort({ createdAt: -1 })
+      .limit(Math.max(Number(limit) || 12, 1));
+
+    res.json({
+      success: true,
+      listings
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Public - recently viewed listings
 exports.getRecentListings = async (req, res, next) => {
   try {

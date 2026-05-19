@@ -10,6 +10,18 @@ const {
 const plans = require("../payments/plan.config");
 const { createInitialSubscription } = require("../subscriptions/subscription.service");
 
+const buildAuthUser = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  role: user.role,
+  avatar: user.avatar,
+  businessName: user.businessName,
+  bio: user.bio,
+  location: user.location
+});
+
 exports.registerLandlord = async (req, res, next) => {
   try {
     const { name, email, password, phone, plan } = req.body;
@@ -77,7 +89,13 @@ exports.loginLandlord = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).populate("subscription");
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required"
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() }).populate("subscription");
 
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -102,13 +120,7 @@ exports.loginLandlord = async (req, res, next) => {
     res.json({
       success: true,
       token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role
-      },
+      user: buildAuthUser(user),
       subscription: user.subscription,
       usage: {
         used: usedListings,
@@ -134,13 +146,7 @@ exports.getMe = async (req, res, next) => {
 
     res.json({
       success: true,
-      user: {
-        _id: req.user._id,
-        name: req.user.name,
-        email: req.user.email,
-        phone: req.user.phone,
-        role: req.user.role
-      },
+      user: buildAuthUser(req.user),
       subscription,
       usage: {
         used: usedListings,
@@ -185,19 +191,11 @@ exports.register = async (req, res) => {
       role: safeRole
     });
 
-    const token = generateToken(user._id);
+    const token = generateToken(user);
 
     return res.status(201).json({
       token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        businessName: user.businessName,
-        avatar: user.avatar
-      }
+      user: buildAuthUser(user)
     });
   } catch (error) {
     return res.status(500).json({
@@ -232,19 +230,11 @@ exports.login = async (req, res) => {
       });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user);
 
     return res.status(200).json({
       token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        businessName: user.businessName,
-        avatar: user.avatar
-      }
+      user: buildAuthUser(user)
     });
   } catch (error) {
     return res.status(500).json({
@@ -255,15 +245,7 @@ exports.login = async (req, res) => {
 
 exports.me = async (req, res) => {
   return res.status(200).json({
-    user: {
-      _id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      phone: req.user.phone,
-      role: req.user.role,
-      businessName: req.user.businessName,
-      avatar: req.user.avatar
-    }
+    user: buildAuthUser(req.user)
   });
 };
 
@@ -360,7 +342,7 @@ exports.resetPassword = async (req, res, next) => {
 
 exports.socialLogin = async (req, res) => {
   try {
-    const { provider, providerId, name, email, avatar } = req.body;
+    const { provider, providerId, name, email, avatar, role } = req.body;
 
     if (!provider || !providerId || !email) {
       return res.status(400).json({
@@ -371,29 +353,24 @@ exports.socialLogin = async (req, res) => {
     let user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
+      const allowedRoles = ["user", "landlord"];
+      const safeRole = allowedRoles.includes(role) ? role : "user";
+
       user = await User.create({
         name: name || "RendaHomes User",
         email: email.toLowerCase(),
         phone: "N/A",
         password: `${provider}-${providerId}-${Date.now()}`,
-        role: "user",
+        role: safeRole,
         avatar: avatar || ""
       });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user);
 
     return res.status(200).json({
       token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        businessName: user.businessName,
-        avatar: user.avatar
-      }
+      user: buildAuthUser(user)
     });
   } catch (error) {
     return res.status(500).json({

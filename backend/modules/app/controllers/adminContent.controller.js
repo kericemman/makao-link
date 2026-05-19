@@ -4,6 +4,7 @@ const ContactInfo = require("../models/contactInfo.model");
 const AppUpdate = require("../models/appUpdate.model");
 const Subscriber = require("../models/subscriber.model");
 const PolicyPage = require("../models/policyPage.model");
+const HelpRequest = require("../models/helpRequest.model");
 
 /* SUPPORT CATEGORIES */
 exports.getSupportCategories = async (req, res) => {
@@ -36,7 +37,7 @@ exports.deleteSupportCategory = async (req, res) => {
 
 /* SUPPORT TICKETS */
 exports.getSupportTickets = async (req, res) => {
-  const tickets = await SupportTicket.find()
+  const tickets = await AppTicket.find()
     .populate("category", "title")
     .populate("user", "name email phone")
     .sort({ createdAt: -1 });
@@ -45,7 +46,7 @@ exports.getSupportTickets = async (req, res) => {
 };
 
 exports.updateSupportTicket = async (req, res) => {
-  const ticket = await SupportTicket.findByIdAndUpdate(req.params.id, req.body, {
+  const ticket = await AppTicket.findByIdAndUpdate(req.params.id, req.body, {
     new: true
   })
     .populate("category", "title")
@@ -57,11 +58,35 @@ exports.updateSupportTicket = async (req, res) => {
 };
 
 exports.deleteSupportTicket = async (req, res) => {
-  const ticket = await SupportTicket.findByIdAndDelete(req.params.id);
+  const ticket = await AppTicket.findByIdAndDelete(req.params.id);
 
   if (!ticket) return res.status(404).json({ message: "Ticket not found" });
 
   res.json({ message: "Ticket deleted" });
+};
+
+/* HELP REQUESTS */
+exports.getHelpRequests = async (req, res) => {
+  const requests = await HelpRequest.find().sort({ createdAt: -1 });
+  res.json({ requests });
+};
+
+exports.updateHelpRequest = async (req, res) => {
+  const request = await HelpRequest.findByIdAndUpdate(req.params.id, req.body, {
+    new: true
+  });
+
+  if (!request) return res.status(404).json({ message: "Help request not found" });
+
+  res.json({ request });
+};
+
+exports.deleteHelpRequest = async (req, res) => {
+  const request = await HelpRequest.findByIdAndDelete(req.params.id);
+
+  if (!request) return res.status(404).json({ message: "Help request not found" });
+
+  res.json({ message: "Help request deleted" });
 };
 
 /* CONTACT INFO */

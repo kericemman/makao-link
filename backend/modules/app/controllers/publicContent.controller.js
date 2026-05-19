@@ -4,6 +4,7 @@ const ContactInfo = require("../models/contactInfo.model");
 const AppUpdate = require("../models/appUpdate.model");
 const Subscriber = require("../models/subscriber.model");
 const PolicyPage = require("../models/policyPage.model");
+const HelpRequest = require("../models/helpRequest.model");
 
 exports.getSupportCategories = async (req, res) => {
   const categories = await SupportCategory.find({ isActive: true }).sort({ createdAt: -1 });
@@ -25,7 +26,64 @@ exports.createAppTicket = async (req, res) => {
     user: req.user?._id || null
   });
 
-  res.status(201).json({ ticket });
+  res.status(201).json({
+    success: true,
+    ticket
+  });
+};
+
+exports.createHelpRequest = async (req, res) => {
+  const {
+    purpose,
+    timeline,
+    name,
+    phone,
+    email,
+    location,
+    monthlyBudget,
+    purchaseBudget,
+    propertyType,
+    bedrooms,
+    leaseTerm,
+    financing,
+    teamSize,
+    officeSetup,
+    businessType,
+    message,
+    source
+  } = req.body;
+
+  if (!purpose || !name || !phone) {
+    return res.status(400).json({
+      message: "Purpose, name and phone are required"
+    });
+  }
+
+  const request = await HelpRequest.create({
+    purpose,
+    timeline,
+    name,
+    phone,
+    email,
+    location,
+    monthlyBudget,
+    purchaseBudget,
+    propertyType,
+    bedrooms,
+    leaseTerm,
+    financing,
+    teamSize,
+    officeSetup,
+    businessType,
+    message,
+    source: source || "mobile_app"
+  });
+
+  res.status(201).json({
+    success: true,
+    message: "Request submitted",
+    request
+  });
 };
 
 exports.getContactInfo = async (req, res) => {

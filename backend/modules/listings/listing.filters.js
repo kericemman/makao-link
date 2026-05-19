@@ -1,6 +1,9 @@
 const buildListingFilter = (query = {}) => {
   const {
     category,
+    status,
+    availability,
+    isActive,
     purpose,
     type,
     county,
@@ -10,7 +13,8 @@ const buildListingFilter = (query = {}) => {
     bedrooms,
     bathrooms,
     minSize,
-    maxSize
+    maxSize,
+    search
   } = query;
 
   const filter = {
@@ -19,10 +23,19 @@ const buildListingFilter = (query = {}) => {
     availability: "available"
   };
 
+  const escapeRegex = (value) =>
+    String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  if (status) filter.status = status;
+  if (availability) filter.availability = availability;
+  if (isActive !== undefined && isActive !== "") {
+    filter.isActive = isActive === true || isActive === "true";
+  }
+
   if (purpose) filter.purpose = purpose;
   if (type) filter.type = type === "office-space" ? "office" : type;
-  if (county) filter.county = county;
-  if (town) filter.town = town;
+  if (county) filter.county = new RegExp(`^${escapeRegex(county)}$`, "i");
+  if (town) filter.town = new RegExp(`^${escapeRegex(town)}$`, "i");
 
   if (bedrooms !== undefined && bedrooms !== "") {
     filter.bedrooms = { $gte: Number(bedrooms) };
@@ -42,6 +55,18 @@ const buildListingFilter = (query = {}) => {
     filter.size = {};
     if (minSize) filter.size.$gte = Number(minSize);
     if (maxSize) filter.size.$lte = Number(maxSize);
+  }
+
+  if (search) {
+    const term = new RegExp(escapeRegex(search), "i");
+    filter.$or = [
+      { title: term },
+      { description: term },
+      { county: term },
+      { town: term },
+      { area: term },
+      { type: term }
+    ];
   }
 
   // Curated categories
