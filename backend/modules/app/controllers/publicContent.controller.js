@@ -5,6 +5,8 @@ const AppUpdate = require("../models/appUpdate.model");
 const Subscriber = require("../models/subscriber.model");
 const PolicyPage = require("../models/policyPage.model");
 const HelpRequest = require("../models/helpRequest.model");
+const sendEmail = require("../../../utils/sendEmail");
+const { appSubscriptionConfirmedEmail } = require("../../../utils/emailTemplates");
 
 exports.getSupportCategories = async (req, res) => {
   const categories = await SupportCategory.find({ isActive: true }).sort({ createdAt: -1 });
@@ -113,11 +115,26 @@ exports.subscribe = async (req, res) => {
     return res.status(400).json({ message: "Email is required" });
   }
 
+  const normalizedEmail = email.toLowerCase();
+  const existingSubscriber = await Subscriber.findOne({ email: normalizedEmail });
+
   const subscriber = await Subscriber.findOneAndUpdate(
-    { email: email.toLowerCase() },
-    { email: email.toLowerCase(), source: source || "mobile_app", isActive: true },
+    { email: normalizedEmail },
+    { email: normalizedEmail, source: source || "mobile_app", isActive: true },
     { new: true, upsert: true }
   );
+
+  if (!existingSubscriber || existingSubscriber.isActive === false) {
+    try {
+      await sendEmail({
+        to: subscriber.email,
+        subject: "You’re subscribed to RendaHomes app updates",
+        html: appSubscriptionConfirmedEmail()
+      });
+    } catch (error) {
+      console.error("Failed to send app subscription email:", error.message);
+    }
+  }
 
   res.status(201).json({ subscriber });
 };

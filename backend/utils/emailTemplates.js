@@ -44,6 +44,23 @@ exports.passwordResetEmail = ({ name, resetUrl }) => {
   });
 };
 
+exports.emailVerificationOtpEmail = ({ name, otp }) => {
+  return buildEmailLayout({
+    title: "Verify Your Email",
+    greeting: `Hello ${name}`,
+    intro: "Use this code to verify your RendaHomes account.",
+    body: `
+      <p style="font-size: 28px; font-weight: 700; letter-spacing: 8px; margin: 16px 0;">
+        ${otp}
+      </p>
+      <p>This code expires in 10 minutes.</p>
+    `,
+    ctaText: "Open RendaHomes",
+    ctaUrl: `${clientUrl}/login`,
+    footerNote: "If you did not create this account, you can safely ignore this email."
+  });
+};
+
 exports.subscriptionActivatedEmail = ({ name, plan, billingEndDate }) => {
   return buildEmailLayout({
     title: "Subscription Activated",
@@ -266,5 +283,29 @@ exports.newsletterWelcomeEmail = () => {
     `,
     ctaText: "Check Out Our Latest Articles",
     ctaUrl: `${clientUrl}/blog`
+  });
+};
+
+exports.appSubscriptionConfirmedEmail = () => {
+  return buildEmailLayout({
+    title: "App Updates Subscription Confirmed",
+    greeting: "Hello",
+    intro: "Thanks for subscribing to RendaHomes app updates.",
+    body: `
+      <p>You’ll receive an email when we post important mobile app updates, announcements, and maintenance notices.</p>
+    `,
+    ctaText: "Open RendaHomes",
+    ctaUrl: clientUrl
+  });
+};
+
+exports.appUpdatePublishedEmail = ({ title, body, category }) => {
+  return buildEmailLayout({
+    title: "New RendaHomes App Update",
+    greeting: "Hello",
+    intro: `We just posted a new ${category || "app"} update: <strong>${title}</strong>.`,
+    body: body || "",
+    ctaText: "Open RendaHomes",
+    ctaUrl: clientUrl
   });
 };

@@ -10,7 +10,8 @@ const appUpdateSchema = new mongoose.Schema(
       default: "Product Update"
     },
     isPublished: { type: Boolean, default: true },
-    publishedAt: { type: Date, default: Date.now }
+    publishedAt: { type: Date, default: null },
+    emailNotifiedAt: { type: Date, default: null }
   },
   { timestamps: true }
 );

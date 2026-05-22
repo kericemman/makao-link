@@ -5,6 +5,33 @@ const AppUpdate = require("../models/appUpdate.model");
 const Subscriber = require("../models/subscriber.model");
 const PolicyPage = require("../models/policyPage.model");
 const HelpRequest = require("../models/helpRequest.model");
+const sendEmail = require("../../../utils/sendEmail");
+const { appUpdatePublishedEmail } = require("../../../utils/emailTemplates");
+
+const sendUpdateNotificationToSubscribers = async (update) => {
+  const subscribers = await Subscriber.find({ isActive: true }).select("email");
+
+  if (!subscribers.length) return;
+
+  for (const subscriber of subscribers) {
+    try {
+      await sendEmail({
+        to: subscriber.email,
+        subject: `New RendaHomes app update: ${update.title}`,
+        html: appUpdatePublishedEmail({
+          title: update.title,
+          body: update.body,
+          category: update.category
+        })
+      });
+    } catch (error) {
+      console.error(
+        `Failed to send app update email to ${subscriber.email}:`,
+        error.message
+      );
+    }
+  }
+};
 
 /* SUPPORT CATEGORIES */
 exports.getSupportCategories = async (req, res) => {
@@ -126,16 +153,47 @@ exports.getUpdates = async (req, res) => {
 };
 
 exports.createUpdate = async (req, res) => {
-  const update = await AppUpdate.create(req.body);
+  const update = await AppUpdate.create({
+    ...req.body,
+    publishedAt: req.body.isPublished === false ? null : new Date()
+  });
+
+  if (update.isPublished) {
+    await sendUpdateNotificationToSubscribers(update);
+    update.emailNotifiedAt = new Date();
+    await update.save();
+  }
+
   res.status(201).json({ update });
 };
 
 exports.updateUpdate = async (req, res) => {
-  const update = await AppUpdate.findByIdAndUpdate(req.params.id, req.body, {
+  const existingUpdate = await AppUpdate.findById(req.params.id);
+
+  if (!existingUpdate) return res.status(404).json({ message: "Update not found" });
+
+  const updatePayload = { ...req.body };
+  const isPublishingNow =
+    req.body.isPublished === true && existingUpdate.isPublished === false;
+
+  if (isPublishingNow) {
+    updatePayload.publishedAt = new Date();
+  }
+
+  const update = await AppUpdate.findByIdAndUpdate(req.params.id, updatePayload, {
     new: true
   });
 
-  if (!update) return res.status(404).json({ message: "Update not found" });
+  const shouldNotify =
+    update.isPublished &&
+    isPublishingNow &&
+    !update.emailNotifiedAt;
+
+  if (shouldNotify) {
+    await sendUpdateNotificationToSubscribers(update);
+    update.emailNotifiedAt = new Date();
+    await update.save();
+  }
 
   res.json({ update });
 };

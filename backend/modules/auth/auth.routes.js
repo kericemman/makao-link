@@ -6,6 +6,8 @@ const {
   register,
   getMe,
   socialLogin,
+  verifyEmail,
+  resendEmailOtp,
   forgotPassword,
   resetPassword
 } = require("./auth.controller");
@@ -19,6 +21,8 @@ router.get("/me", protect, getMe);
 router.post("/user/register", register);
 
 router.post("/social-login", socialLogin);
+router.post("/verify-email", verifyEmail);
+router.post("/resend-email-otp", resendEmailOtp);
 
 
 

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import {
   getPolicies,
+  updatePolicy,
   upsertPolicy
 } from "../../../services/app/adminContent.service";
+import RichText from "../blog/RichText";
 import { 
   FiFileText, 
   FiEdit2, 
@@ -40,6 +42,13 @@ const policyIcons = {
   community: FaHandshake
 };
 
+const stripHtml = (html = "") =>
+  html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 export default function PolicyPagesPage() {
   const [policies, setPolicies] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -69,14 +78,14 @@ export default function PolicyPagesPage() {
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (key === "body") {
-      setCharCount(value.length);
+      setCharCount(stripHtml(value).length);
     }
   };
 
   const submit = async (e) => {
     e.preventDefault();
 
-    if (!form.slug || !form.title.trim() || !form.body.trim()) {
+    if (!form.slug || !form.title.trim() || !stripHtml(form.body)) {
       toast.error("Slug, title and body are required", {
         style: { background: "#013E43", color: "#fff" }
       });
@@ -119,7 +128,7 @@ export default function PolicyPagesPage() {
       body: item.body || "",
       isPublished: item.isPublished
     });
-    setCharCount(item.body?.length || 0);
+    setCharCount(stripHtml(item.body).length);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -201,7 +210,7 @@ export default function PolicyPagesPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Create/Edit Form */}
-        <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden sticky top-24">
+        <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden lg:col-span-2">
           <div className="bg-gradient-to-r from-[#013E43] to-[#005C57] p-6">
             <h2 className="text-xl font-bold text-white flex items-center">
               {editingId ? <FiEdit2 className="mr-2" /> : <FiFileText className="mr-2" />}
@@ -257,21 +266,13 @@ export default function PolicyPagesPage() {
               <label className="block text-sm font-medium text-[#013E43] mb-1">
                 Policy Body <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiFileText className="h-5 w-5 text-[#0D915C]" />
-                </div>
-                <textarea
-                  value={form.body}
-                  onChange={(e) => updateField("body", e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors resize-none"
-                  rows="10"
-                  placeholder="Write the full policy content here..."
-                />
-              </div>
+              <RichText
+                value={form.body}
+                onChange={(html) => updateField("body", html)}
+              />
               <div className="flex justify-between items-center mt-1">
                 <p className="text-xs text-[#065A57]">
-                  {charCount} characters
+                  {charCount} text characters
                 </p>
                 {charCount > 5000 && (
                   <p className="text-xs text-orange-500">Long content may affect readability</p>
@@ -330,7 +331,7 @@ export default function PolicyPagesPage() {
         </div>
 
         {/* Policies List */}
-        <div className="lg:col-span-2">
+        <div>
           <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden">
             <div className="bg-gradient-to-r from-[#F0F7F4] to-white p-6 border-b border-[#A8D8C1]">
               <div className="flex items-center justify-between">
@@ -384,7 +385,7 @@ export default function PolicyPagesPage() {
                             </div>
                             <h3 className="font-bold text-[#013E43] text-lg mb-2">{item.title}</h3>
                             <p className="text-sm text-[#065A57] leading-relaxed line-clamp-3">
-                              {item.body}
+                              {stripHtml(item.body)}
                             </p>
                             <div className="flex items-center gap-3 mt-3 text-xs text-[#065A57]">
                               <span className="flex items-center gap-1">

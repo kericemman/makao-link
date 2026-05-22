@@ -5,7 +5,8 @@ const sendEmail = require("../../utils/sendEmail");
 const generateToken = require("../../utils/generateToken");
 const {
   welcomeEmail,
-  passwordResetEmail
+  passwordResetEmail,
+  emailVerificationOtpEmail
 } = require("../../utils/emailTemplates");
 const plans = require("../payments/plan.config");
 const { createInitialSubscription } = require("../subscriptions/subscription.service");
@@ -19,8 +20,33 @@ const buildAuthUser = (user) => ({
   avatar: user.avatar,
   businessName: user.businessName,
   bio: user.bio,
-  location: user.location
+  location: user.location,
+  isEmailVerified: user.isEmailVerified
 });
+
+const hashOtp = (otp) =>
+  crypto.createHash("sha256").update(String(otp)).digest("hex");
+
+const generateEmailOtp = () =>
+  String(Math.floor(100000 + Math.random() * 900000));
+
+const setEmailOtp = (user) => {
+  const otp = generateEmailOtp();
+  user.emailOtpHash = hashOtp(otp);
+  user.emailOtpExpires = new Date(Date.now() + 1000 * 60 * 10);
+  return otp;
+};
+
+const sendEmailOtp = async (user, otp) => {
+  await sendEmail({
+    to: user.email,
+    subject: "Verify your RendaHomes email",
+    html: emailVerificationOtpEmail({
+      name: user.name,
+      otp
+    })
+  });
+};
 
 exports.registerLandlord = async (req, res, next) => {
   try {
@@ -107,6 +133,19 @@ exports.loginLandlord = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    if (user.isEmailVerified === false) {
+      const otp = setEmailOtp(user);
+      await user.save();
+      await sendEmailOtp(user, otp);
+
+      return res.status(403).json({
+        requiresVerification: true,
+        code: "EMAIL_NOT_VERIFIED",
+        email: user.email,
+        message: "Verify your email before signing in."
+      });
+    }
+
     const token = generateToken(user);
 
     const planConfig = user.subscription ? plans[user.subscription.plan] : null;
@@ -188,14 +227,19 @@ exports.register = async (req, res) => {
       email,
       phone,
       password,
-      role: safeRole
+      role: safeRole,
+      isEmailVerified: false
     });
 
-    const token = generateToken(user);
+    const otp = setEmailOtp(user);
+    await user.save();
+    await sendEmailOtp(user, otp);
 
     return res.status(201).json({
-      token,
-      user: buildAuthUser(user)
+      success: true,
+      requiresVerification: true,
+      email: user.email,
+      message: "We sent a verification code to your email."
     });
   } catch (error) {
     return res.status(500).json({
@@ -227,6 +271,19 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         message: "Invalid email or password"
+      });
+    }
+
+    if (user.isEmailVerified === false) {
+      const otp = setEmailOtp(user);
+      await user.save();
+      await sendEmailOtp(user, otp);
+
+      return res.status(403).json({
+        requiresVerification: true,
+        code: "EMAIL_NOT_VERIFIED",
+        email: user.email,
+        message: "Verify your email before signing in."
       });
     }
 
@@ -335,6 +392,103 @@ exports.resetPassword = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        message: "Email and verification code are required"
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    if (user.isEmailVerified) {
+      const token = generateToken(user);
+
+      return res.json({
+        success: true,
+        token,
+        user: buildAuthUser(user)
+      });
+    }
+
+    if (
+      !user.emailOtpHash ||
+      !user.emailOtpExpires ||
+      user.emailOtpExpires < new Date()
+    ) {
+      return res.status(400).json({
+        message: "Verification code has expired. Please request a new one."
+      });
+    }
+
+    if (hashOtp(otp) !== user.emailOtpHash) {
+      return res.status(400).json({
+        message: "Invalid verification code"
+      });
+    }
+
+    user.isEmailVerified = true;
+    user.emailOtpHash = null;
+    user.emailOtpExpires = null;
+    await user.save();
+
+    const token = generateToken(user);
+
+    return res.json({
+      success: true,
+      token,
+      user: buildAuthUser(user)
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to verify email"
+    });
+  }
+};
+
+exports.resendEmailOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    if (user.isEmailVerified) {
+      return res.json({
+        success: true,
+        message: "Email is already verified."
+      });
+    }
+
+    const otp = setEmailOtp(user);
+    await user.save();
+    await sendEmailOtp(user, otp);
+
+    return res.json({
+      success: true,
+      message: "A new verification code has been sent."
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to resend verification code"
+    });
   }
 };
 
