@@ -18,8 +18,10 @@ jobs:
 
     env:
       NODE_VERSION: "22"
-      VPS_PORT: ${{ secrets.HOSTINGER_SSH_PORT || '22' }}
-      VPS_APP_DIR: ${{ secrets.HOSTINGER_APP_DIR || '/var/www/rendahomes' }}
+      VPS_HOST: ${{ secrets.HOSTINGER_HOST }}
+      VPS_USER: ${{ secrets.HOSTINGER_USER }}
+      VPS_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+      VPS_APP_DIR: ${{ secrets.HOSTINGER_APP_DIR }}
 
     steps:
       - name: Checkout repository
@@ -89,54 +91,40 @@ jobs:
 
       - name: Validate deployment secrets
         env:
-          HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
-          HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
-          HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
           HOSTINGER_SSH_KEY_B64: ${{ secrets.HOSTINGER_SSH_KEY_B64 }}
-          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_LANDLORD_URL: ${{ secrets.VITE_LANDLORD_URL }}
           VITE_USER_URL: ${{ secrets.VITE_USER_URL }}
         run: |
           missing=0
-          for name in HOSTINGER_HOST HOSTINGER_USER VITE_API_URL VITE_LANDLORD_URL VITE_USER_URL; do
+          for name in VPS_HOST VPS_USER VPS_PORT VPS_APP_DIR HOSTINGER_SSH_KEY_B64 VITE_API_URL VITE_LANDLORD_URL VITE_USER_URL; do
             if [ -z "${!name}" ]; then
-              echo "::error::$name is not set in GitHub Secrets"
+              echo "::error::$name is not set"
               missing=1
             fi
           done
-          if [ -z "$HOSTINGER_SSH_KEY" ] && [ -z "$HOSTINGER_SSH_KEY_B64" ]; then
-            echo "::error::Set HOSTINGER_SSH_KEY or HOSTINGER_SSH_KEY_B64 in GitHub Secrets"
-            missing=1
-          fi
           if [ "$missing" -ne 0 ]; then
             exit 1
           fi
-          port="${HOSTINGER_SSH_PORT:-22}"
-          if ! printf '%s' "$port" | grep -Eq '^[0-9]+$'; then
+          if ! printf '%s' "$VPS_PORT" | grep -Eq '^[0-9]+$'; then
             echo "::error::HOSTINGER_SSH_PORT must be a number, for example 22. Check that the SSH private key was not pasted into this secret."
             exit 1
           fi
 
       - name: Configure SSH
         env:
-          HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
           HOSTINGER_SSH_KEY_B64: ${{ secrets.HOSTINGER_SSH_KEY_B64 }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          if [ -n "$HOSTINGER_SSH_KEY_B64" ]; then
-            printf '%s' "$HOSTINGER_SSH_KEY_B64" | base64 --decode > ~/.ssh/hostinger_key
-          else
-            printf '%s\n' "$HOSTINGER_SSH_KEY" | tr -d '\r' > ~/.ssh/hostinger_key
-          fi
+          printf '%s' "$HOSTINGER_SSH_KEY_B64" | base64 --decode > ~/.ssh/hostinger_key
           chmod 600 ~/.ssh/hostinger_key
           ssh-keygen -y -f ~/.ssh/hostinger_key >/dev/null
-          ssh-keyscan -p "${VPS_PORT}" "${{ secrets.HOSTINGER_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${VPS_PORT}" "${VPS_HOST}" >> ~/.ssh/known_hosts
 
       - name: Prepare remote directories
         run: |
-          ssh -i ~/.ssh/hostinger_key -p "${VPS_PORT}" "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}" \
+          ssh -i ~/.ssh/hostinger_key -p "${VPS_PORT}" "${VPS_USER}@${VPS_HOST}" \
             "mkdir -p '${VPS_APP_DIR}/backend' '${VPS_APP_DIR}/frontend-main' '${VPS_APP_DIR}/frontend-landlord' '${VPS_APP_DIR}/frontend-user' '${VPS_APP_DIR}/frontend-app'"
 
       - name: Deploy backend source
@@ -147,18 +135,18 @@ jobs:
             --exclude='uploads/*' \
             --exclude='dist' \
             -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" \
-            backend/ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${VPS_APP_DIR}/backend/"
+            backend/ "${VPS_USER}@${VPS_HOST}:${VPS_APP_DIR}/backend/"
 
       - name: Deploy frontend builds
         run: |
-          rsync -az --delete -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" frontend-main/dist/ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${VPS_APP_DIR}/frontend-main/"
-          rsync -az --delete -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" frontend-landlord/dist/ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${VPS_APP_DIR}/frontend-landlord/"
-          rsync -az --delete -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" frontend-user/dist/ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${VPS_APP_DIR}/frontend-user/"
-          rsync -az --delete -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" frontend-app/dist/ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${VPS_APP_DIR}/frontend-app/"
+          rsync -az --delete -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" frontend-main/dist/ "${VPS_USER}@${VPS_HOST}:${VPS_APP_DIR}/frontend-main/"
+          rsync -az --delete -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" frontend-landlord/dist/ "${VPS_USER}@${VPS_HOST}:${VPS_APP_DIR}/frontend-landlord/"
+          rsync -az --delete -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" frontend-user/dist/ "${VPS_USER}@${VPS_HOST}:${VPS_APP_DIR}/frontend-user/"
+          rsync -az --delete -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" frontend-app/dist/ "${VPS_USER}@${VPS_HOST}:${VPS_APP_DIR}/frontend-app/"
 
       - name: Install backend production dependencies and restart API
         run: |
-          ssh -i ~/.ssh/hostinger_key -p "${VPS_PORT}" "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}" << EOF
+          ssh -i ~/.ssh/hostinger_key -p "${VPS_PORT}" "${VPS_USER}@${VPS_HOST}" << EOF
           set -e
           cd '${VPS_APP_DIR}/backend'
           npm ci --omit=dev --legacy-peer-deps
