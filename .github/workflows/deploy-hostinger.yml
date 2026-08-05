@@ -92,27 +92,46 @@ jobs:
           HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
           HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
           HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          HOSTINGER_SSH_KEY_B64: ${{ secrets.HOSTINGER_SSH_KEY_B64 }}
+          HOSTINGER_SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_LANDLORD_URL: ${{ secrets.VITE_LANDLORD_URL }}
           VITE_USER_URL: ${{ secrets.VITE_USER_URL }}
         run: |
           missing=0
-          for name in HOSTINGER_HOST HOSTINGER_USER HOSTINGER_SSH_KEY VITE_API_URL VITE_LANDLORD_URL VITE_USER_URL; do
+          for name in HOSTINGER_HOST HOSTINGER_USER VITE_API_URL VITE_LANDLORD_URL VITE_USER_URL; do
             if [ -z "${!name}" ]; then
               echo "::error::$name is not set in GitHub Secrets"
               missing=1
             fi
           done
+          if [ -z "$HOSTINGER_SSH_KEY" ] && [ -z "$HOSTINGER_SSH_KEY_B64" ]; then
+            echo "::error::Set HOSTINGER_SSH_KEY or HOSTINGER_SSH_KEY_B64 in GitHub Secrets"
+            missing=1
+          fi
           if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          port="${HOSTINGER_SSH_PORT:-22}"
+          if ! printf '%s' "$port" | grep -Eq '^[0-9]+$'; then
+            echo "::error::HOSTINGER_SSH_PORT must be a number, for example 22. Check that the SSH private key was not pasted into this secret."
             exit 1
           fi
 
       - name: Configure SSH
+        env:
+          HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          HOSTINGER_SSH_KEY_B64: ${{ secrets.HOSTINGER_SSH_KEY_B64 }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/hostinger_key
+          if [ -n "$HOSTINGER_SSH_KEY_B64" ]; then
+            printf '%s' "$HOSTINGER_SSH_KEY_B64" | base64 --decode > ~/.ssh/hostinger_key
+          else
+            printf '%s\n' "$HOSTINGER_SSH_KEY" | tr -d '\r' > ~/.ssh/hostinger_key
+          fi
           chmod 600 ~/.ssh/hostinger_key
+          ssh-keygen -y -f ~/.ssh/hostinger_key >/dev/null
           ssh-keyscan -p "${VPS_PORT}" "${{ secrets.HOSTINGER_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Prepare remote directories
