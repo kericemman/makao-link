@@ -20,7 +20,8 @@ const buildListingFilter = (query = {}) => {
   const filter = {
     status: "approved",
     isActive: true,
-    availability: "available"
+    availability: "available",
+    isDeleted: { $ne: true }
   };
 
   const escapeRegex = (value) =>

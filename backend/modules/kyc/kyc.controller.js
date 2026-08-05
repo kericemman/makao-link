@@ -41,22 +41,22 @@ const submitKyc = async (req, res, next) => {
     const selfiePhoto = req.files?.selfiePhoto?.[0]?.path;
     const proofOfOwnership = req.files?.proofOfOwnership?.[0]?.path || "";
 
-    if (!documentFront || !selfiePhoto) {
+    let existingKyc = await Kyc.findOne({ landlord: req.user._id });
+
+    if ((!documentFront && !existingKyc?.documentFront) || (!selfiePhoto && !existingKyc?.selfiePhoto)) {
       return res.status(400).json({
         success: false,
         message: "Document front and selfie photo are required"
       });
     }
 
-    let existingKyc = await Kyc.findOne({ landlord: req.user._id });
-
     if (existingKyc) {
       existingKyc.idType = idType;
       existingKyc.idNumber = idNumber;
       existingKyc.fullName = fullName;
-      existingKyc.documentFront = documentFront;
+      existingKyc.documentFront = documentFront || existingKyc.documentFront;
       existingKyc.documentBack = documentBack || existingKyc.documentBack;
-      existingKyc.selfiePhoto = selfiePhoto;
+      existingKyc.selfiePhoto = selfiePhoto || existingKyc.selfiePhoto;
       existingKyc.proofOfOwnership = proofOfOwnership || existingKyc.proofOfOwnership;
       existingKyc.status = "pending";
       existingKyc.rejectionReason = "";
@@ -94,7 +94,116 @@ const submitKyc = async (req, res, next) => {
   }
 };
 
+const getAdminKycs = async (req, res, next) => {
+  try {
+    const { status = "", page = 1, limit = 20 } = req.query;
+    const query = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    const safePage = Math.max(Number(page) || 1, 1);
+    const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+    const skip = (safePage - 1) * safeLimit;
+
+    const [kycs, total] = await Promise.all([
+      Kyc.find(query)
+        .populate("landlord", "name email phone businessName location avatar")
+        .populate("reviewedBy", "name email")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(safeLimit)
+        .lean(),
+      Kyc.countDocuments(query)
+    ]);
+
+    res.json({
+      success: true,
+      kycs,
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        pages: Math.ceil(total / safeLimit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAdminKycById = async (req, res, next) => {
+  try {
+    const kyc = await Kyc.findById(req.params.id)
+      .populate("landlord", "name email phone businessName location avatar")
+      .populate("reviewedBy", "name email");
+
+    if (!kyc) {
+      return res.status(404).json({
+        success: false,
+        message: "KYC record not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      kyc
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const reviewKyc = async (req, res, next) => {
+  try {
+    const { status, rejectionReason = "" } = req.body;
+
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Status must be approved or rejected"
+      });
+    }
+
+    if (status === "rejected" && !rejectionReason.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Rejection reason is required"
+      });
+    }
+
+    const kyc = await Kyc.findById(req.params.id);
+
+    if (!kyc) {
+      return res.status(404).json({
+        success: false,
+        message: "KYC record not found"
+      });
+    }
+
+    kyc.status = status;
+    kyc.rejectionReason = status === "rejected" ? rejectionReason.trim() : "";
+    kyc.reviewedBy = req.user._id;
+    kyc.reviewedAt = new Date();
+
+    await kyc.save();
+    await kyc.populate("landlord", "name email phone businessName location avatar");
+
+    res.json({
+      success: true,
+      message: `KYC ${status}`,
+      kyc
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getMyKyc,
-  submitKyc
+  submitKyc,
+  getAdminKycs,
+  getAdminKycById,
+  reviewKyc
 };

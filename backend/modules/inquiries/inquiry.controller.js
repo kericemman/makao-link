@@ -1,6 +1,8 @@
 const Inquiry = require("./inquiry.model");
 const Listing = require("../listings/listings.model");
+const User = require("../users/user.model");
 const sendEmail = require("../../utils/sendEmail");
+const { syncWebsiteInquiriesToAppAlertsForUser } = require("./inquiryBridge.service");
 const {
   inquiryReceivedEmail,
   inquiryConfirmationEmail
@@ -29,6 +31,12 @@ exports.createInquiry = async (req, res, next) => {
       phone,
       message
     });
+
+    const matchingUser = await User.findOne({ email: email.toLowerCase() });
+
+    if (matchingUser) {
+      await syncWebsiteInquiriesToAppAlertsForUser(matchingUser);
+    }
 
     await sendEmail({
       to: listing.landlord.email,

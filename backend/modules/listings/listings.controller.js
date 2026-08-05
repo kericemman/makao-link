@@ -1,4 +1,5 @@
 const Listing = require("./listings.model");
+const Kyc = require("../kyc/kyc.model");
 
 const {
   COUNTY_TOWNS,
@@ -20,6 +21,48 @@ const buildListingFilter = require("./listing.filters");
 const { canCreateListing } = require("../subscriptions/subscription.service");
 
 const Subscription = require("../subscriptions/subscription.model");
+
+const attachTrustSignals = async (listings) => {
+  const list = Array.isArray(listings) ? listings : [listings].filter(Boolean);
+  const landlordIds = [
+    ...new Set(
+      list
+        .map((listing) => listing.landlord?._id || listing.landlord)
+        .filter(Boolean)
+        .map(String)
+    )
+  ];
+
+  const approvedKycs = landlordIds.length
+    ? await Kyc.find({
+        landlord: { $in: landlordIds },
+        status: "approved"
+      })
+        .select("landlord")
+        .lean()
+    : [];
+
+  const kycVerifiedLandlords = new Set(
+    approvedKycs.map((kyc) => String(kyc.landlord))
+  );
+
+  return list.map((listing) => {
+    const plainListing = typeof listing.toObject === "function" ? listing.toObject() : listing;
+    const landlordId = String(plainListing.landlord?._id || plainListing.landlord || "");
+
+    return {
+      ...plainListing,
+      trust: {
+        listingVerified: plainListing.verificationStatus === "verified",
+        listingReviewed: plainListing.status === "approved",
+        availabilityConfirmed: plainListing.availability === "available" && plainListing.isActive === true,
+        directContact: Boolean(plainListing.contactPhone),
+        landlordKycVerified: kycVerifiedLandlords.has(landlordId),
+        lastCheckedAt: plainListing.availabilityCheckedAt || plainListing.reviewedAt || plainListing.updatedAt || plainListing.createdAt
+      }
+    };
+  });
+};
 
 // Public - metadata for frontend filters/forms
 exports.getListingMeta = async (req, res, next) => {
@@ -59,16 +102,17 @@ exports.getPublicListings = async (req, res, next) => {
 
     const [listings, total] = await Promise.all([
       Listing.find(filter)
-        .populate("landlord", "name businessName")
+        .populate("landlord", "name businessName role")
         .sort(sortOption)
         .skip(skip)
-        .limit(perPage),
+        .limit(perPage)
+        .lean(),
       Listing.countDocuments(filter)
     ]);
 
     res.json({
       success: true,
-      listings,
+      listings: await attachTrustSignals(listings),
       pagination: {
         total,
         page: currentPage,
@@ -88,13 +132,14 @@ exports.getNearbyListings = async (req, res, next) => {
     const filter = buildListingFilter(req.query);
 
     const listings = await Listing.find(filter)
-      .populate("landlord", "name businessName phone")
+      .populate("landlord", "name businessName phone role")
       .sort({ createdAt: -1 })
-      .limit(Math.max(Number(limit) || 12, 1));
+      .limit(Math.max(Number(limit) || 12, 1))
+      .lean();
 
     res.json({
       success: true,
-      listings
+      listings: await attachTrustSignals(listings)
     });
   } catch (error) {
     next(error);
@@ -105,11 +150,23 @@ exports.getNearbyListings = async (req, res, next) => {
 exports.getRecentListings = async (req, res, next) => {
   try {
     const ids = req.query.ids ? req.query.ids.split(",") : [];
+    const limit = Math.max(Number(req.query.limit) || 6, 1);
 
     if (!ids.length) {
+      const listings = await Listing.find({
+        status: "approved",
+        isActive: true,
+        availability: "available",
+        isDeleted: { $ne: true }
+      })
+        .populate("landlord", "name businessName role")
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean();
+
       return res.json({
         success: true,
-        listings: []
+        listings: await attachTrustSignals(listings)
       });
     }
 
@@ -117,8 +174,9 @@ exports.getRecentListings = async (req, res, next) => {
       _id: { $in: ids },
       status: "approved",
       isActive: true,
-      availability: "available"
-    });
+      availability: "available",
+      isDeleted: { $ne: true }
+    }).lean();
 
     const orderedListings = ids
       .map((id) => listings.find((listing) => String(listing._id) === id))
@@ -126,7 +184,7 @@ exports.getRecentListings = async (req, res, next) => {
 
     res.json({
       success: true,
-      listings: orderedListings
+      listings: await attachTrustSignals(orderedListings)
     });
   } catch (error) {
     next(error);
@@ -140,8 +198,9 @@ exports.getListingById = async (req, res, next) => {
       _id: req.params.id,
       status: "approved",
       isActive: true,
-      availability: "available"
-    }).populate("landlord", "name email phone businessName");
+      availability: "available",
+      isDeleted: { $ne: true }
+    }).populate("landlord", "name email phone businessName role");
 
     if (!listing) {
       return res.status(404).json({
@@ -155,7 +214,7 @@ exports.getListingById = async (req, res, next) => {
 
     res.json({
       success: true,
-      listing
+      listing: (await attachTrustSignals(listing))[0]
     });
   } catch (error) {
     next(error);
@@ -167,7 +226,8 @@ exports.getMyListingById = async (req, res, next) => {
   try {
     const listing = await Listing.findOne({
       _id: req.params.id,
-      landlord: req.user._id
+      landlord: req.user._id,
+      isDeleted: { $ne: true }
     });
 
     if (!listing) {
@@ -223,6 +283,14 @@ exports.createListing = async (req, res, next) => {
       county: req.body.county,
       town: req.body.town,
       area: req.body.area || "",
+      latitude:
+        req.body.latitude !== undefined && req.body.latitude !== ""
+          ? Number(req.body.latitude)
+          : null,
+      longitude:
+        req.body.longitude !== undefined && req.body.longitude !== ""
+          ? Number(req.body.longitude)
+          : null,
       type: req.body.type,
 
       bedrooms:
@@ -283,7 +351,8 @@ exports.createListing = async (req, res, next) => {
 exports.getMyListings = async (req, res, next) => {
   try {
     const listings = await Listing.find({
-      landlord: req.user._id
+      landlord: req.user._id,
+      isDeleted: { $ne: true }
     }).sort({ createdAt: -1 });
 
     res.json({
@@ -300,7 +369,8 @@ exports.updateListing = async (req, res, next) => {
   try {
     const listing = await Listing.findOne({
       _id: req.params.id,
-      landlord: req.user._id
+      landlord: req.user._id,
+      isDeleted: { $ne: true }
     });
 
     if (!listing) {
@@ -338,6 +408,18 @@ exports.updateListing = async (req, res, next) => {
     listing.county = req.body.county ?? listing.county;
     listing.town = req.body.town ?? listing.town;
     listing.area = req.body.area ?? listing.area;
+    listing.latitude =
+      req.body.latitude !== undefined && req.body.latitude !== ""
+        ? Number(req.body.latitude)
+        : req.body.latitude === ""
+          ? null
+          : listing.latitude;
+    listing.longitude =
+      req.body.longitude !== undefined && req.body.longitude !== ""
+        ? Number(req.body.longitude)
+        : req.body.longitude === ""
+          ? null
+          : listing.longitude;
     listing.type = req.body.type ?? listing.type;
 
     listing.bedrooms =
@@ -440,7 +522,8 @@ exports.updateListingAvailability = async (req, res, next) => {
 
     const listing = await Listing.findOne({
       _id: req.params.id,
-      landlord: req.user._id
+      landlord: req.user._id,
+      isDeleted: { $ne: true }
     });
 
     if (!listing) {
@@ -471,7 +554,8 @@ exports.markListingTaken = async (req, res, next) => {
     const listing = await Listing.findOneAndUpdate(
       {
         _id: req.params.id,
-        landlord: req.user._id
+        landlord: req.user._id,
+        isDeleted: { $ne: true }
       },
       {
         availability: "taken",
@@ -513,7 +597,8 @@ exports.markListingAvailable = async (req, res, next) => {
     const listing = await Listing.findOneAndUpdate(
       {
         _id: req.params.id,
-        landlord: req.user._id
+        landlord: req.user._id,
+        isDeleted: { $ne: true }
       },
       {
         availability: "available",
@@ -563,9 +648,10 @@ exports.getFeaturedListings = async (req, res, next) => {
       landlord: { $in: landlordIds },
       status: "approved",
       availability: "available",
-      isActive: true
+      isActive: true,
+      isDeleted: { $ne: true }
     })
-      .populate("landlord", "name businessName")
+      .populate("landlord", "name businessName role")
       .lean();
 
     const sortedListings = listings.sort((a, b) => {
@@ -577,7 +663,7 @@ exports.getFeaturedListings = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      listings: sortedListings
+      listings: await attachTrustSignals(sortedListings)
     });
   } catch (error) {
     next(error);

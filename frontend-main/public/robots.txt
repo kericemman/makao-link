@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Disallow: /services/apply/callback
+Disallow: /services/apply/payment/callback
+
+Sitemap: https://rendahomes.com/sitemap.xml

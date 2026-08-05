@@ -38,7 +38,7 @@ router.post(
   "/",
   protect,
   requireRole("landlord"),
-  upload.array("images", 5),
+  upload.array("images", 10),
   createListing
 );
 
@@ -62,7 +62,7 @@ router.put(
   "/:id",
   protect,
   requireRole("landlord"),
-  upload.array("images", 5),
+  upload.array("images", 10),
   updateListing
 );
 

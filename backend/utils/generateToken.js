@@ -7,7 +7,7 @@ const generateToken = (user) => {
       role: user.role
     },
     process.env.JWT_SECRET,
-    { expiresIn: "30d" }
+    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
   );
 };
 

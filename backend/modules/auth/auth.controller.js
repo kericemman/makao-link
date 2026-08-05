@@ -10,6 +10,7 @@ const {
 } = require("../../utils/emailTemplates");
 const plans = require("../payments/plan.config");
 const { createInitialSubscription } = require("../subscriptions/subscription.service");
+const { syncWebsiteInquiriesToAppAlertsForUser } = require("../inquiries/inquiryBridge.service");
 
 const buildAuthUser = (user) => ({
   _id: user._id,
@@ -26,6 +27,13 @@ const buildAuthUser = (user) => ({
 
 const hashOtp = (otp) =>
   crypto.createHash("sha256").update(String(otp)).digest("hex");
+
+const otpMatches = (enteredOtp, storedHash) => {
+  const enteredHash = Buffer.from(hashOtp(enteredOtp), "hex");
+  const savedHash = Buffer.from(storedHash || "", "hex");
+
+  return enteredHash.length === savedHash.length && crypto.timingSafeEqual(enteredHash, savedHash);
+};
 
 const generateEmailOtp = () =>
   String(Math.floor(100000 + Math.random() * 900000));
@@ -50,28 +58,44 @@ const sendEmailOtp = async (user, otp) => {
 
 exports.registerLandlord = async (req, res, next) => {
   try {
-    const { name, email, password, phone, plan } = req.body;
+    const { name, email, password, phone, plan, agentCode } = req.body;
+    const normalizedEmail = String(email || "").toLowerCase().trim();
 
     if (!name || !email || !password || !phone || !plan) {
       return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters long" });
     }
 
     if (!plans[plan]) {
       return res.status(400).json({ message: "Invalid plan selected" });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
       return res.status(400).json({ message: "Email already exists" });
     }
 
+    const agent = agentCode
+      ? await User.findOne({
+          role: "agent",
+          agentCode: String(agentCode).toUpperCase(),
+          agentStatus: "active"
+        })
+      : null;
+
     const user = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       password,
       phone,
-      role: "landlord"
+      role: "landlord",
+      onboardedByAgent: agent?._id || null,
+      onboardingSource: agent ? "agent" : "direct",
+      agentCodeUsed: agent?.agentCode || ""
     });
 
     const subscription = await createInitialSubscription(user._id, plan);
@@ -121,7 +145,7 @@ exports.loginLandlord = async (req, res, next) => {
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() }).populate("subscription");
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).populate("subscription");
 
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -131,6 +155,10 @@ exports.loginLandlord = async (req, res, next) => {
 
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (user.role === "agent" && user.agentStatus === "suspended") {
+      return res.status(403).json({ message: "Your agent account is suspended" });
     }
 
     if (user.isEmailVerified === false) {
@@ -204,6 +232,7 @@ exports.getMe = async (req, res, next) => {
 exports.register = async (req, res) => {
   try {
     const { name, email, phone, password, role } = req.body;
+    const normalizedEmail = String(email || "").toLowerCase().trim();
 
     if (!name || !email || !phone || !password) {
       return res.status(400).json({
@@ -211,7 +240,13 @@ exports.register = async (req, res) => {
       });
     }
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (password.length < 8) {
+      return res.status(400).json({
+        message: "Password must be at least 8 characters long"
+      });
+    }
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
       return res.status(409).json({
@@ -224,12 +259,14 @@ exports.register = async (req, res) => {
 
     const user = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       phone,
       password,
       role: safeRole,
       isEmailVerified: false
     });
+
+    await syncWebsiteInquiriesToAppAlertsForUser(user);
 
     const otp = setEmailOtp(user);
     await user.save();
@@ -258,7 +295,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (!user) {
       return res.status(401).json({
@@ -314,7 +351,7 @@ exports.forgotPassword = async (req, res, next) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
 
     // Always return same response to avoid email enumeration
     const genericResponse = {
@@ -336,7 +373,14 @@ exports.forgotPassword = async (req, res, next) => {
     user.passwordResetExpires = Date.now() + 1000 * 60 * 30; // 30 minutes
     await user.save();
 
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${rawToken}`;
+    const mainClientUrl = process.env.CLIENT_URL || "https://rendahomes.com";
+    const portalUrl =
+      user.role === "landlord"
+        ? process.env.LANDLORD_CLIENT_URL || mainClientUrl
+        : user.role === "admin" || user.role === "app_manager"
+          ? process.env.ADMIN_CLIENT_URL || mainClientUrl
+          : process.env.USER_CLIENT_URL || mainClientUrl;
+    const resetUrl = `${portalUrl}/reset-password/${rawToken}`;
 
     await sendEmail({
       to: user.email,
@@ -358,9 +402,9 @@ exports.resetPassword = async (req, res, next) => {
     const { token } = req.params;
     const { password } = req.body;
 
-    if (!password || password.length < 6) {
+    if (!password || password.length < 8) {
       return res.status(400).json({
-        message: "Password must be at least 6 characters long"
+        message: "Password must be at least 8 characters long"
       });
     }
 
@@ -405,20 +449,10 @@ exports.verifyEmail = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (!user) {
-      return res.status(404).json({ message: "Account not found" });
-    }
-
-    if (user.isEmailVerified) {
-      const token = generateToken(user);
-
-      return res.json({
-        success: true,
-        token,
-        user: buildAuthUser(user)
-      });
+      return res.status(400).json({ message: "Invalid or expired verification code" });
     }
 
     if (
@@ -431,7 +465,7 @@ exports.verifyEmail = async (req, res) => {
       });
     }
 
-    if (hashOtp(otp) !== user.emailOtpHash) {
+    if (!otpMatches(otp, user.emailOtpHash)) {
       return res.status(400).json({
         message: "Invalid verification code"
       });
@@ -464,10 +498,13 @@ exports.resendEmailOtp = async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (!user) {
-      return res.status(404).json({ message: "Account not found" });
+      return res.json({
+        success: true,
+        message: "If the account exists and is not verified, a new verification code has been sent."
+      });
     }
 
     if (user.isEmailVerified) {
@@ -497,6 +534,7 @@ exports.resendEmailOtp = async (req, res) => {
 exports.socialLogin = async (req, res) => {
   try {
     const { provider, providerId, name, email, avatar, role } = req.body;
+    const allowedProviders = ["google", "apple", "facebook"];
 
     if (!provider || !providerId || !email) {
       return res.status(400).json({
@@ -504,7 +542,13 @@ exports.socialLogin = async (req, res) => {
       });
     }
 
-    let user = await User.findOne({ email: email.toLowerCase() });
+    if (!allowedProviders.includes(provider)) {
+      return res.status(400).json({
+        message: "Unsupported social login provider"
+      });
+    }
+
+    let user = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (!user) {
       const allowedRoles = ["user", "landlord"];
@@ -512,19 +556,64 @@ exports.socialLogin = async (req, res) => {
 
       user = await User.create({
         name: name || "RendaHomes User",
-        email: email.toLowerCase(),
+        email: email.toLowerCase().trim(),
         phone: "N/A",
         password: `${provider}-${providerId}-${Date.now()}`,
         role: safeRole,
-        avatar: avatar || ""
+        avatar: avatar || "",
+        socialProvider: provider,
+        socialProviderId: String(providerId),
+        isEmailVerified: false
+      });
+
+      const otp = setEmailOtp(user);
+      await user.save();
+      await sendEmailOtp(user, otp);
+
+      return res.status(201).json({
+        success: true,
+        requiresVerification: true,
+        email: user.email,
+        message: "We sent a verification code to your email."
       });
     }
 
-    const token = generateToken(user);
+    const fullUser = await User.findById(user._id).select("+socialProviderId");
 
-    return res.status(200).json({
-      token,
-      user: buildAuthUser(user)
+    if (!fullUser.isEmailVerified) {
+      const otp = setEmailOtp(fullUser);
+      await fullUser.save();
+      await sendEmailOtp(fullUser, otp);
+
+      return res.status(403).json({
+        requiresVerification: true,
+        code: "EMAIL_NOT_VERIFIED",
+        email: fullUser.email,
+        message: "Verify your email before signing in."
+      });
+    }
+
+    if (!fullUser.socialProvider || !fullUser.socialProviderId) {
+      return res.status(409).json({
+        message: "This email already uses password login. Please sign in with your password."
+      });
+    }
+
+    if (fullUser.socialProvider !== provider || fullUser.socialProviderId !== String(providerId)) {
+      return res.status(401).json({
+        message: "Invalid social login"
+      });
+    }
+
+    const otp = setEmailOtp(fullUser);
+    await fullUser.save();
+    await sendEmailOtp(fullUser, otp);
+
+    return res.status(202).json({
+      success: true,
+      requiresVerification: true,
+      email: fullUser.email,
+      message: "We sent a verification code to your email."
     });
   } catch (error) {
     return res.status(500).json({

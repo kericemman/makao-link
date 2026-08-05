@@ -2,15 +2,17 @@ require("dotenv").config();
 
 const app = require("./app");
 const connectDB = require("./config/db");
+const cron = require("node-cron");
+const purgeDeletedListings = require("./jobs/purgeDeletedListings");
 
 const PORT = process.env.PORT || 5000;
 
 connectDB();
 
-// app.listen(PORT, () => {
-//   console.log(`Server running on port ${PORT}`);
-// });
+cron.schedule("15 3 * * *", purgeDeletedListings);
 
-app.listen(PORT, "127.0.0.1", () => {
-  console.log(`Server running on port ${PORT}`);
+const HOST = process.env.HOST || (process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1");
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on ${HOST}:${PORT}`);
 });

@@ -1,7 +1,9 @@
 const buildEmailLayout = require("./emailLayout");
 
-const appName = "Makao";
 const clientUrl = process.env.CLIENT_URL || "https://rendahomes.com";
+const landlordClientUrl = process.env.LANDLORD_CLIENT_URL || "https://landlord.rendahomes.com";
+const adminClientUrl = process.env.ADMIN_CLIENT_URL || clientUrl;
+const userClientUrl = process.env.USER_CLIENT_URL || "https://user.rendahomes.com";
 
 exports.welcomeEmail = ({ name, planName, isFreePlan }) => {
   return buildEmailLayout({
@@ -24,7 +26,7 @@ exports.welcomeEmail = ({ name, planName, isFreePlan }) => {
       </p>
     `,
     ctaText: "Go to RendaHomes",
-    ctaUrl: `${clientUrl}/login`,
+    ctaUrl: `${landlordClientUrl}/login`,
     footerNote: "If you did not create this account, you can ignore this email."
   });
 };
@@ -56,7 +58,7 @@ exports.emailVerificationOtpEmail = ({ name, otp }) => {
       <p>This code expires in 10 minutes.</p>
     `,
     ctaText: "Open RendaHomes",
-    ctaUrl: `${clientUrl}/login`,
+    ctaUrl: `${landlordClientUrl}/login`,
     footerNote: "If you did not create this account, you can safely ignore this email."
   });
 };
@@ -71,7 +73,7 @@ exports.subscriptionActivatedEmail = ({ name, plan, billingEndDate }) => {
       <p>You can now continue listing properties under your plan benefits.</p>
     `,
     ctaText: "Continue Listing Properties",
-    ctaUrl: `${clientUrl}/landlord/dashboard`
+    ctaUrl: `${landlordClientUrl}/dashboard`
   });
 };
 
@@ -85,7 +87,7 @@ exports.gracePeriodEmail = ({ name, graceEndDate }) => {
       <p>Your current listings remain visible for now, but you cannot add new ones until you renew.</p>
     `,
     ctaText: "Renew Subscription",
-    ctaUrl: `${clientUrl}/landlord/subscription`
+    ctaUrl: `${landlordClientUrl}/subscription`
   });
 };
 
@@ -98,7 +100,7 @@ exports.subscriptionExpiredEmail = ({ name }) => {
       <p>Your public listings have been temporarily removed until you renew your plan.</p>
     `,
     ctaText: "Renew Now",
-    ctaUrl: `${clientUrl}/landlord/subscription`
+    ctaUrl: `${landlordClientUrl}/subscription`
   });
 };
 
@@ -111,7 +113,7 @@ exports.listingSubmittedEmail = ({ name, listingTitle }) => {
       <p>Our team will review it and notify you once it has been approved.</p>
     `,
     ctaText: "View My Listings",
-    ctaUrl: `${clientUrl}/landlord/listings`
+    ctaUrl: `${landlordClientUrl}/listings`
   });
 };
 
@@ -124,7 +126,7 @@ exports.listingApprovedEmail = ({ name, listingTitle }) => {
       <p>Your listing is now live and visible to users on the platform.</p>
     `,
     ctaText: "Open Dashboard",
-    ctaUrl: `${clientUrl}/landlord/dashboard`
+    ctaUrl: `${landlordClientUrl}/dashboard`
   });
 };
 
@@ -137,7 +139,7 @@ exports.listingRejectedEmail = ({ name, listingTitle }) => {
       <p>Please review your submission and make any needed corrections before trying again.</p>
     `,
     ctaText: "Review Listings",
-    ctaUrl: `${clientUrl}/landlord/properties`
+    ctaUrl: `${landlordClientUrl}/listings`
   });
 };
 
@@ -154,7 +156,7 @@ exports.inquiryReceivedEmail = ({ landlordName, listingTitle, senderName, sender
       <p>${message}</p>
     `,
     ctaText: "View Inquiries",
-    ctaUrl: `${clientUrl}/landlord/inquiries`
+    ctaUrl: `${landlordClientUrl}/inquiries`
   });
 };
 
@@ -167,7 +169,7 @@ exports.inquiryConfirmationEmail = ({ name, listingTitle }) => {
       <p>They should contact you using the details you provided if the property is still available.</p>
     `,
     ctaText: "Browse More Listings",
-    ctaUrl: `${clientUrl}/properties`
+    ctaUrl: `${clientUrl}/listings`
   });
 };
 
@@ -199,7 +201,7 @@ exports.adminContactNotificationEmail = ({ name, email, phone, subject, message 
       <p>${message}</p>
     `,
     ctaText: "Open Admin Inbox",
-    ctaUrl: `${clientUrl}/admin/contact`
+    ctaUrl: `${adminClientUrl}/admin/contact`
   });
 };
 
@@ -214,7 +216,7 @@ exports.supportReplyEmail = ({ name, subject, reply }) => {
       <p>Please log in to your dashboard if you want to continue the conversation.</p>
     `,
     ctaText: "Open Support",
-    ctaUrl: `${clientUrl}/landlord/support`
+    ctaUrl: `${landlordClientUrl}/support`
   });
 };
 
@@ -222,7 +224,7 @@ exports.partnerPaymentConfirmedEmail = ({ contactPerson, companyName, category }
   return buildEmailLayout({
     title: "Partner Application Payment Confirmed",
     greeting: `Hello ${contactPerson}`,
-    intro: "Your payment for joining Makao as a service partner has been confirmed successfully.",
+    intro: "Your payment for joining RendaHomes as a service partner has been confirmed successfully.",
     body: `
       <p><strong>Company:</strong> ${companyName}</p>
       <p><strong>Category:</strong> ${category}</p>
@@ -237,7 +239,7 @@ exports.partnerApprovedEmail = ({ contactPerson, companyName, category }) => {
   return buildEmailLayout({
     title: "Partner Application Approved",
     greeting: `Hello ${contactPerson}`,
-    intro: `Your company <strong>${companyName}</strong> has been approved as a Makao service partner.`,
+    intro: `Your company <strong>${companyName}</strong> has been approved as a RendaHomes service partner.`,
     body: `
       <p>Your details can now be displayed under the <strong>${category}</strong> category on our platform.</p>
     `,
@@ -307,5 +309,40 @@ exports.appUpdatePublishedEmail = ({ title, body, category }) => {
     body: body || "",
     ctaText: "Open RendaHomes",
     ctaUrl: clientUrl
+  });
+};
+
+exports.agentInviteEmail = ({ name, agentCode, password, landlordLink, loginUrl }) => {
+  return buildEmailLayout({
+    title: "Your RendaHomes Agent Account",
+    greeting: `Hello ${name}`,
+    intro: "Your agent account has been created. You can now onboard landlords and track your commission from the agent portal.",
+    body: `
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;">
+        <tr>
+          <td style="padding:12px 14px; border:1px solid #DDEAE3; border-radius:10px; background:#F8FAF8;">
+            <p style="margin:0 0 8px; color:#647C75; font-size:13px;">Agent code</p>
+            <p style="margin:0; color:#013E43; font-size:20px; font-weight:800; letter-spacing:1px;">${agentCode}</p>
+          </td>
+        </tr>
+      </table>
+      <p><strong>Temporary password:</strong> ${password}</p>
+      <p><strong>Landlord referral link:</strong><br /><a href="${landlordLink}" style="color:#013E43; font-weight:700;">${landlordLink}</a></p>
+      <p>After logging in, open your instructions page to read onboarding guides shared by admin.</p>
+    `,
+    ctaText: "Open Agent Portal",
+    ctaUrl: loginUrl || `${userClientUrl}/login`,
+    footerNote: "For security, change your password after your first login."
+  });
+};
+
+exports.agentInstructionEmail = ({ name, title, content }) => {
+  return buildEmailLayout({
+    title: "New Agent Update",
+    greeting: `Hello ${name}`,
+    intro: `<strong>${title}</strong>`,
+    body: content,
+    ctaText: "Read in Agent Portal",
+    ctaUrl: `${userClientUrl}/agent/instructions`
   });
 };

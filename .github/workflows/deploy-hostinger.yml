@@ -1,0 +1,154 @@
+name: Deploy RendaHomes to Hostinger VPS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: hostinger-production
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+
+    env:
+      NODE_VERSION: "22"
+      VPS_PORT: ${{ secrets.HOSTINGER_SSH_PORT || '22' }}
+      VPS_APP_DIR: ${{ secrets.HOSTINGER_APP_DIR || '/var/www/rendahomes' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend-main/package-lock.json
+            frontend-landlord/package-lock.json
+            frontend-user/package-lock.json
+            frontend-app/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend-main dependencies
+        working-directory: frontend-main
+        run: npm ci
+
+      - name: Install frontend-landlord dependencies
+        working-directory: frontend-landlord
+        run: npm ci
+
+      - name: Install frontend-user dependencies
+        working-directory: frontend-user
+        run: npm ci
+
+      - name: Install frontend-app dependencies
+        working-directory: frontend-app
+        run: npm ci
+
+      - name: Check backend syntax
+        run: find backend -path 'backend/node_modules' -prune -o -name '*.js' -print | xargs -n 20 node --check
+
+      - name: Build frontend-main
+        working-directory: frontend-main
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_LANDLORD_URL: ${{ secrets.VITE_LANDLORD_URL }}
+          VITE_USER_URL: ${{ secrets.VITE_USER_URL }}
+        run: npm run build
+
+      - name: Build frontend-landlord
+        working-directory: frontend-landlord
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: npm run build
+
+      - name: Build frontend-user
+        working-directory: frontend-user
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_LANDLORD_URL: ${{ secrets.VITE_LANDLORD_URL }}
+        run: npm run build
+
+      - name: Build frontend-app
+        working-directory: frontend-app
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: npm run build
+
+      - name: Validate deployment secrets
+        env:
+          HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
+          HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
+          HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_LANDLORD_URL: ${{ secrets.VITE_LANDLORD_URL }}
+          VITE_USER_URL: ${{ secrets.VITE_USER_URL }}
+        run: |
+          missing=0
+          for name in HOSTINGER_HOST HOSTINGER_USER HOSTINGER_SSH_KEY VITE_API_URL VITE_LANDLORD_URL VITE_USER_URL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not set in GitHub Secrets"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/hostinger_key
+          chmod 600 ~/.ssh/hostinger_key
+          ssh-keyscan -p "${VPS_PORT}" "${{ secrets.HOSTINGER_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Prepare remote directories
+        run: |
+          ssh -i ~/.ssh/hostinger_key -p "${VPS_PORT}" "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}" \
+            "mkdir -p '${VPS_APP_DIR}/backend' '${VPS_APP_DIR}/frontend-main' '${VPS_APP_DIR}/frontend-landlord' '${VPS_APP_DIR}/frontend-user' '${VPS_APP_DIR}/frontend-app'"
+
+      - name: Deploy backend source
+        run: |
+          rsync -az --delete \
+            --exclude='.env' \
+            --exclude='node_modules' \
+            --exclude='uploads/*' \
+            --exclude='dist' \
+            -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" \
+            backend/ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${VPS_APP_DIR}/backend/"
+
+      - name: Deploy frontend builds
+        run: |
+          rsync -az --delete -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" frontend-main/dist/ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${VPS_APP_DIR}/frontend-main/"
+          rsync -az --delete -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" frontend-landlord/dist/ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${VPS_APP_DIR}/frontend-landlord/"
+          rsync -az --delete -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" frontend-user/dist/ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${VPS_APP_DIR}/frontend-user/"
+          rsync -az --delete -e "ssh -i ~/.ssh/hostinger_key -p ${VPS_PORT}" frontend-app/dist/ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${VPS_APP_DIR}/frontend-app/"
+
+      - name: Install backend production dependencies and restart API
+        run: |
+          ssh -i ~/.ssh/hostinger_key -p "${VPS_PORT}" "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}" << EOF
+          set -e
+          cd '${VPS_APP_DIR}/backend'
+          npm ci --omit=dev
+          mkdir -p uploads
+          if command -v pm2 >/dev/null 2>&1; then
+            pm2 reload rendahomes-api --update-env || pm2 start server.js --name rendahomes-api
+            pm2 save
+          else
+            echo "PM2 is not installed on the VPS. Install it with: npm install -g pm2"
+            exit 1
+          fi
+          EOF

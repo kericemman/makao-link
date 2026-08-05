@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+:root {
+  --rh-deep: #013e43;
+  --rh-deeper: #001a1c;
+  --rh-mid: #065a57;
+  --rh-bright: #02bb31;
+  --rh-green: #0d915c;
+  --rh-mint: #f0f7f4;
+  --rh-soft: #a8d8c1;
+  --rh-bg: #f0f7f4;
+  --rh-panel: #ffffff;
+  --rh-line: #d7e8df;
+  --rh-muted: #065a57;
+}
+
+.admin-sleek {
+  background: var(--rh-bg);
+  color: var(--rh-deep);
+}
+
+.admin-sleek main {
+  background: var(--rh-bg);
+}
+
+.admin-sleek main h1,
+.admin-sleek main h2,
+.admin-sleek main h3 {
+  letter-spacing: -0.01em;
+}
+
+.admin-sleek main [class*="shadow"] {
+  box-shadow: 0 8px 24px rgba(1, 62, 67, 0.06) !important;
+}
+
+.admin-sleek main [class*="rounded-2xl"] {
+  border-radius: 0.875rem !important;
+}
+
+.admin-sleek main [class*="rounded-xl"] {
+  border-radius: 0.75rem !important;
+}
+
+.admin-sleek main [class*="bg-white"] {
+  background: var(--rh-panel) !important;
+}
+
+.admin-sleek main [class~="bg-[#013E43]"] {
+  background-color: var(--rh-deep) !important;
+}
+
+.admin-sleek main [class~="bg-[#02BB31]"] {
+  background-color: var(--rh-bright) !important;
+  color: #ffffff !important;
+}
+
+.admin-sleek main [class*="bg-[#F0F7F4]"],
+.admin-sleek main [class*="bg-[#F8FAF8]"] {
+  background-color: var(--rh-mint) !important;
+}
+
+.admin-sleek main [class*="border-[#E4EEE8]"],
+.admin-sleek main [class*="border-[#DDEAE3]"],
+.admin-sleek main [class*="border-[#A8D8C1]"],
+.admin-sleek main [class*="border-[#CFE0D6]"] {
+  border-color: var(--rh-line) !important;
+}
+
+.admin-sleek main [class*="text-[#065A57]"] {
+  color: var(--rh-muted) !important;
+}
+
+.admin-sleek main [class~="text-[#02BB31]"] {
+  color: var(--rh-green) !important;
+}
+
+.admin-sleek main a[class*="bg-white"],
+.admin-sleek main div[class*="bg-white"],
+.admin-sleek main section[class*="bg-white"] {
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    background-color 180ms ease;
+}
+
+.admin-sleek main a[class*="bg-white"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(1, 62, 67, 0.09) !important;
+}
+
+.admin-sleek main input,
+.admin-sleek main select,
+.admin-sleek main textarea {
+  background-color: #ffffff;
+  border-color: var(--rh-line) !important;
+  color: var(--rh-deep);
+}
+
+.admin-sleek main input:focus,
+.admin-sleek main select:focus,
+.admin-sleek main textarea:focus {
+  border-color: var(--rh-bright) !important;
+  box-shadow: 0 0 0 3px rgba(2, 187, 49, 0.12) !important;
+}
+
+.admin-sleek main table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-sleek main thead,
+.admin-sleek main thead[class*="bg-[#013E43]"] {
+  background: #f1f5f3 !important;
+  color: var(--rh-deep) !important;
+}
+
+.admin-sleek main table th {
+  border-bottom: 1px solid var(--rh-line);
+  color: var(--rh-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-sleek main table td {
+  border-bottom: 1px solid #edf2ef;
+}
+
+.admin-sleek main tbody tr:hover {
+  background: #f9fbfa;
+}
+
+.admin-sleek main [class*="divide-y"] > * {
+  border-color: #edf2ef !important;
+}

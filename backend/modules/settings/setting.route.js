@@ -1,7 +1,7 @@
 const express = require("express")
 const router = express.Router()
 
-const auth = require("../../middleware/auth.middleware")
+const { protect } = require("../../middleware/auth.middleware")
 const role = require("../../middleware/role.middleware")
 
 const {
@@ -10,8 +10,8 @@ const {
 } = require("./setting.controller")
 
 
-router.get("/", auth, role("admin"), getSettings)
+router.get("/", protect, role("admin"), getSettings)
 
-router.put("/", auth, role("admin"), updateSettings)
+router.put("/", protect, role("admin"), updateSettings)
 
 module.exports = router

@@ -31,8 +31,56 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["user", "landlord", "admin"],
+      enum: ["user", "tenant", "landlord", "admin", "service_provider", "agent", "app_manager"],
       default: "user"
+    },
+
+    agentCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+      uppercase: true,
+      trim: true
+    },
+
+    agentStatus: {
+      type: String,
+      enum: ["active", "suspended"],
+      default: "active"
+    },
+
+    commissionRate: {
+      type: Number,
+      default: 10,
+      min: 0,
+      max: 100
+    },
+
+    createdByAdmin: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
+    },
+
+    onboardedByAgent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true
+    },
+
+    onboardingSource: {
+      type: String,
+      enum: ["direct", "agent", "admin"],
+      default: "direct",
+      index: true
+    },
+
+    agentCodeUsed: {
+      type: String,
+      default: "",
+      uppercase: true,
+      trim: true
     },
 
     subscription: {
@@ -67,6 +115,19 @@ const userSchema = new mongoose.Schema(
     isEmailVerified: {
       type: Boolean,
       default: true
+    },
+
+    socialProvider: {
+      type: String,
+      enum: ["google", "apple", "facebook", null],
+      default: null,
+      index: true
+    },
+
+    socialProviderId: {
+      type: String,
+      default: "",
+      select: false
     },
 
     emailOtpHash: {

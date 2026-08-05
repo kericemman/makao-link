@@ -4,7 +4,7 @@ const {
   listingApprovedEmail,
   listingRejectedEmail,
   partnerApprovedEmail,
- 
+  partnerRejectedEmail
 } = require("../../utils/emailTemplates");
 const User = require("../users/user.model");
 const Subscription = require("../subscriptions/subscription.model");
@@ -14,11 +14,23 @@ const Inquiry = require("../inquiries/inquiry.model");
 const SupportTicket = require("../support/support.model");
 const PartnerApplication = require("../services/partnerApplication.model");
 const ServicePartner = require("../services/servicePartner.model");
+const ListingReport = require("../listingReports/listingReport.model");
+
+const LISTING_TRASH_RETENTION_DAYS = 30;
+
+const purgeExpiredDeletedListings = async () => {
+  await Listing.deleteMany({
+    isDeleted: true,
+    deleteExpiresAt: { $lte: new Date() }
+  });
+};
 
 
 exports.getPendingListings = async (req, res, next) => {
   try {
-    const listings = await Listing.find({ status: "pending" })
+    await purgeExpiredDeletedListings();
+
+    const listings = await Listing.find({ status: "pending", isDeleted: { $ne: true } })
       .populate("landlord", "name email phone")
       .sort({ createdAt: -1 });
 
@@ -42,6 +54,10 @@ exports.approveListing = async (req, res, next) => {
     listing.status = "approved";
     listing.isActive = true;
     listing.unlistReason = null;
+    listing.verificationStatus = listing.verificationStatus === "verified" ? "verified" : "reviewed";
+    listing.reviewedByAdmin = req.user._id;
+    listing.reviewedAt = new Date();
+    listing.availabilityCheckedAt = listing.availabilityCheckedAt || new Date();
     await listing.save();
 
     await sendEmail({
@@ -73,6 +89,9 @@ exports.rejectListing = async (req, res, next) => {
 
     listing.status = "rejected";
     listing.isActive = false;
+    listing.verificationStatus = "flagged";
+    listing.reviewedByAdmin = req.user._id;
+    listing.reviewedAt = new Date();
     await listing.save();
 
      await sendEmail({
@@ -109,10 +128,10 @@ exports.getAdminSummary = async (req, res, next) => {
       openSupportTickets,
       revenueAgg
     ] = await Promise.all([
-      Listing.countDocuments({ status: "pending" }),
-      Listing.countDocuments({ status: "approved" }),
-      Listing.countDocuments({ status: "rejected" }),
-      Listing.countDocuments(),
+      Listing.countDocuments({ status: "pending", isDeleted: { $ne: true } }),
+      Listing.countDocuments({ status: "approved", isDeleted: { $ne: true } }),
+      Listing.countDocuments({ status: "rejected", isDeleted: { $ne: true } }),
+      Listing.countDocuments({ isDeleted: { $ne: true } }),
       User.countDocuments({ role: "landlord" }),
       Inquiry.countDocuments(),
       Subscription.countDocuments({ status: "active" }),
@@ -159,11 +178,15 @@ exports.getAdminSummary = async (req, res, next) => {
 
 exports.getRecentActivity = async (req, res, next) => {
   try {
-    const [recentListings, recentPayments, recentInquiries, recentSupport] = await Promise.all([
-      Listing.find().sort({ createdAt: -1 }).limit(5).populate("landlord", "name"),
+    const [recentListings, recentPayments, recentInquiries, recentSupport, recentReports] = await Promise.all([
+      Listing.find({ isDeleted: { $ne: true } }).sort({ createdAt: -1 }).limit(5).populate("landlord", "name"),
       Payment.find({ status: "success" }).sort({ createdAt: -1 }).limit(5),
       Inquiry.find().sort({ createdAt: -1 }).limit(5),
-      SupportTicket.find().sort({ updatedAt: -1 }).limit(5).populate("landlord", "name")
+      SupportTicket.find().sort({ updatedAt: -1 }).limit(5).populate("landlord", "name"),
+      ListingReport.find({ status: { $in: ["new", "reviewing"] } })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate("listing", "title")
     ]);
 
     const activities = [
@@ -190,6 +213,12 @@ exports.getRecentActivity = async (req, res, next) => {
         description: "Support ticket updated",
         details: `${item.subject} • ${item.landlord?.name || "Unknown landlord"}`,
         createdAt: item.updatedAt
+      })),
+      ...recentReports.map((item) => ({
+        type: "listing_report",
+        description: "Listing report received",
+        details: `${item.listing?.title || "Listing"} • ${item.reason.replace(/_/g, " ")}`,
+        createdAt: item.createdAt
       }))
     ]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -366,7 +395,8 @@ exports.getListingHistory = async (req, res, next) => {
     const { status } = req.query;
 
     const filter = {
-      status: { $in: ["approved", "rejected"] }
+      status: { $in: ["approved", "rejected"] },
+      isDeleted: { $ne: true }
     };
 
     if (status && ["approved", "rejected"].includes(status)) {
@@ -601,13 +631,11 @@ exports.rejectServiceApplication = async (req, res, next) => {
 
     await sendEmail({
       to: application.email,
-      subject: "Update on Your Renda Partner Application",
-      html: `
-        <h2>Application Update</h2>
-        <p>Hello ${application.contactPerson},</p>
-        <p>Your partner application for <strong>${application.companyName}</strong> was not approved at this time.</p>
-        <p>If needed, our team may contact you with more details.</p>
-      `
+      subject: "Update on Your RendaHomes Partner Application",
+      html: partnerRejectedEmail({
+        contactPerson: application.contactPerson,
+        companyName: application.companyName
+      })
     });
 
     res.json({
@@ -623,9 +651,12 @@ exports.rejectServiceApplication = async (req, res, next) => {
 
 exports.getAllListings = async (req, res, next) => {
   try {
-    const { status, availability, purpose } = req.query;
+    await purgeExpiredDeletedListings();
 
-    const filter = {};
+    const { status, availability, purpose, trash } = req.query;
+
+    const isTrashView = trash === true || trash === "true";
+    const filter = isTrashView ? { isDeleted: true } : { isDeleted: { $ne: true } };
 
     if (status && ["pending", "approved", "rejected"].includes(status)) {
       filter.status = status;
@@ -641,11 +672,168 @@ exports.getAllListings = async (req, res, next) => {
 
     const listings = await Listing.find(filter)
       .populate("landlord", "name email phone")
+      .populate("deletedByAdmin", "name email")
+      .populate("reviewedByAdmin", "name email")
       .sort({ createdAt: -1 });
 
     res.json({
       success: true,
       listings
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateListingTrust = async (req, res, next) => {
+  try {
+    const {
+      verificationStatus,
+      listingSource,
+      adminNote,
+      availability,
+      isActive,
+      markAvailabilityChecked
+    } = req.body;
+
+    const listing = await Listing.findById(req.params.id);
+
+    if (!listing) {
+      return res.status(404).json({ message: "Listing not found" });
+    }
+
+    if (verificationStatus) {
+      if (!["unverified", "reviewed", "verified", "flagged"].includes(verificationStatus)) {
+        return res.status(400).json({ message: "Invalid verification status" });
+      }
+      listing.verificationStatus = verificationStatus;
+    }
+
+    if (listingSource) {
+      if (!["landlord", "agent", "admin_assisted", "app", "unknown"].includes(listingSource)) {
+        return res.status(400).json({ message: "Invalid listing source" });
+      }
+      listing.listingSource = listingSource;
+    }
+
+    if (adminNote !== undefined) {
+      listing.adminNote = adminNote;
+    }
+
+    if (availability !== undefined) {
+      if (!["available", "taken"].includes(availability)) {
+        return res.status(400).json({ message: "Invalid availability" });
+      }
+      listing.availability = availability;
+      listing.unlistReason = availability === "taken" ? "taken" : null;
+    }
+
+    if (isActive !== undefined) {
+      listing.isActive = Boolean(isActive);
+      if (!listing.isActive) {
+        listing.unlistReason = listing.unlistReason || "admin_action";
+      } else if (listing.availability === "available") {
+        listing.unlistReason = null;
+      }
+    }
+
+    if (markAvailabilityChecked) {
+      listing.availabilityCheckedAt = new Date();
+    }
+
+    listing.reviewedByAdmin = req.user._id;
+    listing.reviewedAt = new Date();
+
+    await listing.save();
+    await listing.populate("landlord", "name email phone");
+    await listing.populate("reviewedByAdmin", "name email");
+
+    res.json({
+      success: true,
+      message: "Listing trust details updated",
+      listing
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.moveListingToTrash = async (req, res, next) => {
+  try {
+    const listing = await Listing.findById(req.params.id);
+
+    if (!listing) {
+      return res.status(404).json({ message: "Listing not found" });
+    }
+
+    const deletedAt = new Date();
+    const deleteExpiresAt = new Date(deletedAt.getTime() + LISTING_TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+
+    listing.isDeleted = true;
+    listing.deletedAt = deletedAt;
+    listing.deleteExpiresAt = deleteExpiresAt;
+    listing.deletedByAdmin = req.user._id;
+    listing.deletionReason = req.body?.reason || "Removed by admin";
+    listing.isActive = false;
+    listing.unlistReason = "admin_action";
+
+    await listing.save();
+
+    res.json({
+      success: true,
+      message: "Listing moved to trash and removed from public listings",
+      listing
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.restoreListingFromTrash = async (req, res, next) => {
+  try {
+    const listing = await Listing.findOne({
+      _id: req.params.id,
+      isDeleted: true
+    });
+
+    if (!listing) {
+      return res.status(404).json({ message: "Trash listing not found" });
+    }
+
+    listing.isDeleted = false;
+    listing.deletedAt = null;
+    listing.deleteExpiresAt = null;
+    listing.deletedByAdmin = null;
+    listing.deletionReason = "";
+    listing.isActive = listing.status === "approved";
+    listing.unlistReason = null;
+
+    await listing.save();
+
+    res.json({
+      success: true,
+      message: "Listing restored",
+      listing
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.permanentlyDeleteListing = async (req, res, next) => {
+  try {
+    const listing = await Listing.findOneAndDelete({
+      _id: req.params.id,
+      isDeleted: true
+    });
+
+    if (!listing) {
+      return res.status(404).json({ message: "Trash listing not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Listing permanently deleted"
     });
   } catch (error) {
     next(error);

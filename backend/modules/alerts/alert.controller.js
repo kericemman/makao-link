@@ -1,5 +1,6 @@
 const AppAlert = require("./alert.model");
 const Listing = require("../listings/listings.model");
+const { syncWebsiteInquiriesToAppAlertsForUser } = require("../inquiries/inquiryBridge.service");
 
 const alertPopulate = [
   {
@@ -74,6 +75,8 @@ exports.createListingInquiry = async (req, res, next) => {
 
 exports.getMyAlerts = async (req, res, next) => {
   try {
+    await syncWebsiteInquiriesToAppAlertsForUser(req.user);
+
     const inquiries = await populateAlert(
       AppAlert.find({ user: req.user._id }).sort({ updatedAt: -1 })
     );

@@ -10,10 +10,20 @@ const seedAdmin = async () => {
     await mongoose.connect(MONGO_URI);
     console.log("MongoDB connected");
 
-    const email = process.env.ADMIN_EMAIL || "admin@makao.com";
-    const password = process.env.ADMIN_PASSWORD || "admin123";
-    const name = process.env.ADMIN_NAME || "Super Admin";
-    const phone = process.env.ADMIN_PHONE || "0700000000";
+    const { ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME, ADMIN_PHONE } = process.env;
+
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD || !ADMIN_NAME || !ADMIN_PHONE) {
+      throw new Error("ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME and ADMIN_PHONE are required");
+    }
+
+    if (ADMIN_PASSWORD.length < 12) {
+      throw new Error("ADMIN_PASSWORD must be at least 12 characters long");
+    }
+
+    const email = ADMIN_EMAIL;
+    const password = ADMIN_PASSWORD;
+    const name = ADMIN_NAME;
+    const phone = ADMIN_PHONE;
 
     const existingAdmin = await User.findOne({ email });
 

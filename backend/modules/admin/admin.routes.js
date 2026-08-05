@@ -15,7 +15,11 @@ const {
   rejectServiceApplication,
   getAllListings,
   getAdminSubscriptions,
-  getRecentActivity
+  getRecentActivity,
+  moveListingToTrash,
+  restoreListingFromTrash,
+  permanentlyDeleteListing,
+  updateListingTrust
 } = require("./admin.controller");
 const { protect } = require("../../middleware/auth.middleware");
 const requireRole = require("../../middleware/role.middleware");
@@ -36,5 +40,9 @@ router.patch("/service-applications/:id/approve", protect, requireRole("admin"),
 router.patch("/service-applications/:id/reject", protect, requireRole("admin"), rejectServiceApplication);
 router.get("/activity", protect, requireRole("admin"), getRecentActivity);
 router.get("/listings", protect, requireRole("admin"), getAllListings);
+router.patch("/listings/:id/trash", protect, requireRole("admin"), moveListingToTrash);
+router.patch("/listings/:id/restore", protect, requireRole("admin"), restoreListingFromTrash);
+router.patch("/listings/:id/trust", protect, requireRole("admin"), updateListingTrust);
+router.delete("/listings/:id/permanent", protect, requireRole("admin"), permanentlyDeleteListing);
 router.get("/subscriptions", protect, requireRole("admin"), getAdminSubscriptions);
 module.exports = router;

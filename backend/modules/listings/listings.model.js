@@ -9,7 +9,7 @@ const {
 } = require("./listing.constants");
 
 function arrayLimit(val) {
-  return val.length <= 5;
+  return val.length <= 10;
 }
 
 const listingSchema = new mongoose.Schema(
@@ -60,6 +60,20 @@ const listingSchema = new mongoose.Schema(
       trim: true
     },
 
+    latitude: {
+      type: Number,
+      min: -90,
+      max: 90,
+      default: null
+    },
+
+    longitude: {
+      type: Number,
+      min: -180,
+      max: 180,
+      default: null
+    },
+
     type: {
       type: String,
       enum: LISTING_TYPES,
@@ -99,7 +113,7 @@ const listingSchema = new mongoose.Schema(
     images: {
       type: [String],
       default: [],
-      validate: [arrayLimit, "Maximum 5 images allowed"]
+      validate: [arrayLimit, "Maximum 10 images allowed"]
     },
 
     video: {
@@ -150,10 +164,76 @@ const listingSchema = new mongoose.Schema(
       index: true
     },
 
+    verificationStatus: {
+      type: String,
+      enum: ["unverified", "reviewed", "verified", "flagged"],
+      default: "unverified",
+      index: true
+    },
+
+    listingSource: {
+      type: String,
+      enum: ["landlord", "agent", "admin_assisted", "app", "unknown"],
+      default: "landlord",
+      index: true
+    },
+
+    adminNote: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 1200
+    },
+
+    availabilityCheckedAt: {
+      type: Date,
+      default: null
+    },
+
+    reviewedByAdmin: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
+    },
+
+    reviewedAt: {
+      type: Date,
+      default: null
+    },
+
     unlistReason: {
       type: String,
       enum: ["taken", "expired_subscription", "admin_action", null],
       default: null
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+
+    deletedAt: {
+      type: Date,
+      default: null
+    },
+
+    deleteExpiresAt: {
+      type: Date,
+      default: null,
+      index: true
+    },
+
+    deletedByAdmin: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
+    },
+
+    deletionReason: {
+      type: String,
+      default: "",
+      trim: true
     },
 
     views: {

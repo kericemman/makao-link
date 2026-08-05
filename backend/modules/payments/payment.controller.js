@@ -114,8 +114,15 @@ exports.changeSubscriptionPlan = async (req, res, next) => {
       return res.status(404).json({ message: "Subscription not found" });
     }
 
+    const currentPlan = plans[subscription.plan] || plans.normal;
+    const nextPlan = plans[plan];
+    const isDowngrade =
+      nextPlan.price <= currentPlan.price &&
+      ["active", "free"].includes(subscription.status);
+    const requiresPayment = plan !== "normal" && !isDowngrade;
+
     subscription.plan = plan;
-    subscription.status = plan === "normal" ? "free" : "pending_payment";
+    subscription.status = plan === "normal" ? "free" : requiresPayment ? "pending_payment" : "active";
 
     if (plan === "normal") {
       subscription.currentPeriodStart = null;
@@ -132,7 +139,10 @@ exports.changeSubscriptionPlan = async (req, res, next) => {
       message:
         plan === "normal"
           ? "Changed to free plan"
-          : `Plan changed to ${plans[plan].name}. Complete payment to activate.`,
+          : requiresPayment
+            ? `Plan changed to ${plans[plan].name}. Complete payment to activate.`
+            : `Plan changed to ${plans[plan].name}.`,
+      requiresPayment,
       subscription
     });
   } catch (error) {

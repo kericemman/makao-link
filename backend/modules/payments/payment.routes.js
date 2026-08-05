@@ -43,6 +43,6 @@ router.get(
 
 router.post("/paystack-webhook", paystackWebhook);
 
-router.post("/run-expiry-check", runExpiryCheck);
+router.post("/run-expiry-check", protect, requireRole("admin"), runExpiryCheck);
 
 module.exports = router;
