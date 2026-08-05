@@ -39,7 +39,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Install frontend-main dependencies
         working-directory: frontend-main
@@ -142,7 +142,7 @@ jobs:
           ssh -i ~/.ssh/hostinger_key -p "${VPS_PORT}" "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}" << EOF
           set -e
           cd '${VPS_APP_DIR}/backend'
-          npm ci --omit=dev
+          npm ci --omit=dev --legacy-peer-deps
           mkdir -p uploads
           if command -v pm2 >/dev/null 2>&1; then
             pm2 reload rendahomes-api --update-env || pm2 start server.js --name rendahomes-api
