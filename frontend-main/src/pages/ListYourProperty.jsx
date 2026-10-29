@@ -6,6 +6,8 @@ import WhatsAppListingWalkthrough from "../components/WhatsAppListingWalkthrough
 import { landlordListPropertyUrl, portalLinks } from "../config/portals";
 import { useSeo } from "../utils/seo";
 
+import { useEffect } from "react";
+
 const whatsappUrl =
   "https://wa.me/254738388000?text=Hello%20RendaHomes%2C%20I%20want%20help%20listing%20my%20property.";
 
