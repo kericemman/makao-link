@@ -86,6 +86,9 @@ const packages = [
 ];
 
 export default function ListYourProperty() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const [expandedPlans, setExpandedPlans] = useState({});
   const landlordUrl = landlordListPropertyUrl();
 
@@ -208,7 +211,7 @@ export default function ListYourProperty() {
               Start with the space you have.
             </h2>
             <p className="mt-3 text-base leading-7 text-[#536C61]">
-              Choose a plan for your active property listings. You can change plans later from your landlord dashboard. Planned WhatsApp listing and notification features are for Premium and Pro; the WhatChimp API integration is not live yet.
+              Choose a plan for your active property listings. You can change plans later from your landlord dashboard. Planned WhatsApp listing and notification features are for Premium and Pro.
             </p>
           </div>
 
