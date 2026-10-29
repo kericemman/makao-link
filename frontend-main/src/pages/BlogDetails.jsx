@@ -44,7 +44,7 @@ export default function BlogDetails() {
             <h1 className="mt-7 text-4xl font-extrabold tracking-tight text-[#013E43]">{blog?.title}</h1>
             <p className="mt-3 text-sm font-semibold text-[#065A57]">{blog?.publishedAt ? new Date(blog.publishedAt).toLocaleDateString() : "RendaHomes"}</p>
             <div
-              className="prose prose-lg mt-8 max-w-none prose-headings:text-[#013E43] prose-p:text-[#065A57] prose-a:text-[#013E43]"
+              className="rich-content mt-8"
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(blog?.content || blog?.excerpt || "") }}
             />
           </>

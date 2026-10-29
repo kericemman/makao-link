@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createListing, getListingMeta } from "../../services/listings.service";
-import { getMySubscription } from "../../services/payment.service";
+import { getMySubscription, getWhatsAppListingAddon } from "../../services/payment.service";
 import { useAuth } from "../../context/AuthContext";
 import imageCompression from "browser-image-compression";
 import { FaWhatsapp } from "react-icons/fa";
 import { buildWhatsAppUrl, listingDraftMessage } from "../../utils/whatsapp";
+import { getTeamMembers } from "../../services/team.service";
+import ListingSetupChecklist from "./ListingSetupChecklist";
 import {
   FiMapPin,
   FiDollarSign,
@@ -58,6 +60,8 @@ const CreateListingPage = () => {
     limit: 0,
     remaining: 0
   });
+  const [whatsappAddon, setWhatsappAddon] = useState(null);
+  const [whatsappAddonLoading, setWhatsappAddonLoading] = useState(true);
 
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -65,6 +69,10 @@ const CreateListingPage = () => {
   const [images, setImages] = useState([]);
   const [preview, setPreview] = useState([]);
   const [errors, setErrors] = useState({});
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [inventoryMode, setInventoryMode] = useState(false);
+  const [inventory, setInventory] = useState({ building: "", category: "", totalUnits: "", availableUnits: "", assignedAgent: "" });
+  const [setupComplete, setSetupComplete] = useState(false);
 
   const [listingMeta, setListingMeta] = useState({
     counties: [],
@@ -79,6 +87,10 @@ const CreateListingPage = () => {
     title: "",
     description: "",
     purpose: "rent",
+    maxGuests: "",
+    minNights: "1",
+    checkInTime: "15:00",
+    checkOutTime: "10:00",
     price: "",
     county: "",
     town: "",
@@ -123,12 +135,18 @@ const CreateListingPage = () => {
             remaining: 0
           }
         );
+        try {
+          setWhatsappAddon(await getWhatsAppListingAddon());
+        } catch {
+          setWhatsappAddon(null);
+        }
       } catch (error) {
         toast.error("Failed to load subscription status", {
-          style: { background: "#013E43", color: "#fff" }
+          style: { background: "#0F172A", color: "#fff" }
         });
       } finally {
         setSubscriptionLoading(false);
+        setWhatsappAddonLoading(false);
       }
     };
 
@@ -161,7 +179,7 @@ const CreateListingPage = () => {
         }));
       } catch (error) {
         toast.error("Failed to load listing options", {
-          style: { background: "#013E43", color: "#fff" }
+          style: { background: "#0F172A", color: "#fff" }
         });
       } finally {
         setMetaLoading(false);
@@ -195,8 +213,17 @@ const CreateListingPage = () => {
   const blocked =
     subscriptionLoading || subscriptionInactive || listingLimitReached;
 
-  const isPageLoading = metaLoading || subscriptionLoading;
+  const planHasWhatsAppAssistance =
+    ["premium", "pro"].includes(activeSubscription?.plan) && activeStatus === "active";
+  const advancedWorkspace = ["premium", "pro"].includes(activeSubscription?.plan) && activeStatus === "active";
+  const whatsappAssistanceEnabled = planHasWhatsAppAssistance || Boolean(whatsappAddon?.active);
+  const isPageLoading = metaLoading || subscriptionLoading || whatsappAddonLoading;
   const draftWhatsAppUrl = buildWhatsAppUrl(listingDraftMessage(user, formData));
+
+  useEffect(() => {
+    if (!advancedWorkspace || user?.role !== "landlord") return;
+    getTeamMembers().then((result) => setTeamMembers(result.members || [])).catch(() => {});
+  }, [advancedWorkspace, user?.role]);
 
   const amenitiesList = [
     { key: "garden", label: "Garden" },
@@ -234,7 +261,7 @@ const CreateListingPage = () => {
   const purposes = useMemo(() => {
     return (listingMeta.listingPurposes || []).map((purpose) => ({
       value: purpose,
-      label: purpose === "rent" ? "For Rent" : "For Sale"
+      label: purpose === "rent" ? "For Rent" : purpose === "sale" ? "For Sale" : "Short-term stay"
     }));
   }, [listingMeta.listingPurposes]);
 
@@ -257,6 +284,13 @@ const CreateListingPage = () => {
           : "expired"
       }
     });
+  };
+
+  const continueFromSetup = (setup) => {
+    setInventoryMode(Boolean(setup.inventoryMode));
+    setInventory((current) => ({ ...current, ...setup.inventory }));
+    setSetupComplete(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleChange = (e) => {
@@ -322,7 +356,7 @@ const CreateListingPage = () => {
           longitude: position.coords.longitude.toFixed(6)
         }));
         toast.success("Map location added", {
-          style: { background: "#02BB31", color: "#fff" }
+          style: { background: "#126542", color: "#fff" }
         });
       },
       () => {
@@ -401,9 +435,22 @@ const CreateListingPage = () => {
     if (!formData.town) newErrors.town = "Town/Location is required";
     if (!formData.type) newErrors.type = "Property type is required";
     if (!formData.purpose) newErrors.purpose = "Purpose is required";
+    if (formData.purpose === "short_stay") {
+      if (!Number.isInteger(Number(formData.maxGuests)) || Number(formData.maxGuests) < 1) newErrors.maxGuests = "Enter the maximum number of guests";
+      if (!Number.isInteger(Number(formData.minNights)) || Number(formData.minNights) < 1) newErrors.minNights = "Minimum stay must be at least one night";
+    }
 
     if (!formData.contactPhone.trim())
       newErrors.contactPhone = "Contact phone is required";
+
+    if (inventoryMode) {
+      const total = Number(inventory.totalUnits);
+      const available = Number(inventory.availableUnits || inventory.totalUnits);
+      if (!inventory.building.trim()) newErrors.building = "Building name is required";
+      if (!inventory.category.trim()) newErrors.category = "Unit category is required";
+      if (!Number.isInteger(total) || total < 1 || total > 5000) newErrors.totalUnits = "Enter a whole number from 1 to 5,000";
+      if (!Number.isInteger(available) || available < 0 || available > total) newErrors.availableUnits = "Available units must be between 0 and total units";
+    }
 
     if (images.length === 0)
       newErrors.images = "At least one image is required";
@@ -437,7 +484,7 @@ const CreateListingPage = () => {
 
     if (!validateForm()) {
       toast.error("Please fill in all required fields", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
       return;
     }
@@ -450,6 +497,12 @@ const CreateListingPage = () => {
       payload.append("title", formData.title);
       payload.append("description", formData.description);
       payload.append("purpose", formData.purpose);
+      if (formData.purpose === "short_stay") {
+        payload.append("maxGuests", formData.maxGuests);
+        payload.append("minNights", formData.minNights);
+        payload.append("checkInTime", formData.checkInTime);
+        payload.append("checkOutTime", formData.checkOutTime);
+      }
       payload.append("price", formData.price);
       payload.append("county", formData.county);
       payload.append("town", formData.town);
@@ -457,6 +510,14 @@ const CreateListingPage = () => {
       payload.append("kitchen", formData.kitchen);
       payload.append("amenities", JSON.stringify(formData.amenities));
       payload.append("contactPhone", formData.contactPhone);
+
+      if (inventoryMode && advancedWorkspace) {
+        payload.append("portfolioName", inventory.building.trim());
+        payload.append("portfolioCategory", inventory.category.trim());
+        payload.append("totalUnits", inventory.totalUnits);
+        payload.append("availableUnits", inventory.availableUnits || inventory.totalUnits);
+        if (inventory.assignedAgent) payload.append("assignedAgent", inventory.assignedAgent);
+      }
 
       if (formData.area) payload.append("area", formData.area);
       if (formData.latitude) payload.append("latitude", formData.latitude);
@@ -482,7 +543,7 @@ const CreateListingPage = () => {
 
       toast.success("Property listed successfully! Pending approval.", {
         style: {
-          background: "#02BB31",
+          background: "#126542",
           color: "#fff"
         },
         duration: 3000
@@ -495,29 +556,36 @@ const CreateListingPage = () => {
       }, 1500);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to create listing", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     } finally {
       setLoading(false);
     }
   };
 
+  if (!isPageLoading && !blocked && !setupComplete) {
+    return <ListingSetupChecklist
+      onContinue={continueFromSetup}
+      onSkip={() => { setInventoryMode(false); setSetupComplete(true); }}
+    />;
+  }
+
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
+      <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/listings")}
-            className="p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
+            className="p-2 hover:bg-[#F8FAFC] rounded-lg transition-colors"
           >
-            <FiArrowLeft className="text-xl text-[#065A57]" />
+            <FiArrowLeft className="text-xl text-[#475569]" />
           </button>
 
           <div>
-            <h1 className="text-xl font-bold text-[#013E43]">
+            <h1 className="text-xl font-bold text-[#0F172A]">
               Add New Listing
             </h1>
-            <p className="text-sm text-[#065A57]">
+            <p className="text-sm text-[#475569]">
               List your property for tenants to find
             </p>
           </div>
@@ -525,13 +593,13 @@ const CreateListingPage = () => {
       </div>
 
       {isPageLoading ? (
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1] text-[#065A57]">
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0] text-[#475569]">
           Loading listing and subscription options...
         </div>
       ) : null}
 
       {!isPageLoading && blocked ? (
-        <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200">
+        <div className="rounded-md bg-amber-50 p-4 text-sm text-amber-700 border border-amber-200">
           <div className="flex items-start gap-3">
             <FiInfo className="text-amber-500 mt-0.5" />
             <div>
@@ -550,39 +618,69 @@ const CreateListingPage = () => {
       ) : null}
 
       {!isPageLoading && !blocked ? (
-        <section className="rounded-2xl border border-[#DDEBE4] bg-white p-5 shadow-sm">
+        <section className="rounded-md border border-[#DDEBE4] bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0D915C]">Assisted listing</p>
-              <h2 className="mt-2 text-lg font-bold text-[#013E43]">Want RendaHomes to review your details first?</h2>
-              <p className="mt-1 text-sm leading-6 text-[#065A57]">
-                Send your draft on WhatsApp before submitting. We can guide you on price, photos, location details, and missing information.
-              </p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0D915C]">WhatsApp listing</p>
+              {whatsappAssistanceEnabled ? (
+                <>
+                  <h2 className="mt-2 text-lg font-bold text-[#0F172A]">List your property directly on WhatsApp</h2>
+                  <p className="mt-1 text-sm leading-6 text-[#475569]">
+                    Open WhatsApp, follow the listing prompts, and share your property details and photos. You can track submitted listings from your dashboard.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2 className="mt-2 text-lg font-bold text-[#0F172A]">List your property directly on WhatsApp</h2>
+                  <p className="mt-1 text-sm leading-6 text-[#475569]">
+                    WhatsApp listing availability depends on your plan. Review your options from the landlord dashboard.
+                  </p>
+                </>
+              )}
             </div>
-            <a
-              href={draftWhatsAppUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#02BB31] px-4 py-3 text-sm font-bold text-white"
-            >
-              <FaWhatsapp />
-              Review on WhatsApp
-            </a>
+            {whatsappAssistanceEnabled ? (
+              <a
+                href={draftWhatsAppUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#126542] px-4 py-3 text-sm font-bold text-white"
+              >
+                <FaWhatsapp />
+                Continue on WhatsApp
+              </a>
+            ) : (
+              <Link to="/dashboard" className="inline-flex items-center justify-center rounded-lg border border-[#E2E8F0] px-4 py-3 text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC]">
+                View WhatsApp options
+              </Link>
+            )}
           </div>
         </section>
       ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {advancedWorkspace && <section className="border border-emerald-200 bg-emerald-50/60 p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div><p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Building inventory</p><h2 className="mt-1 text-lg font-bold text-slate-950">List by unit category</h2><p className="mt-1 max-w-2xl text-sm text-slate-600">For a larger building, create one public listing for each type of home and keep its available-unit count up to date. You do not need to enter every room separately.</p></div>
+            <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 border border-emerald-800 bg-white px-3 text-sm font-semibold text-emerald-900"><input type="checkbox" checked={inventoryMode} onChange={(event) => setInventoryMode(event.target.checked)} className="h-4 w-4 accent-emerald-800" />Create a building category</label>
+          </div>
+          {inventoryMode && <div className="mt-5 grid gap-4 border-t border-emerald-200 pt-5 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="text-sm font-semibold text-slate-800">Building name<input value={inventory.building} onChange={(event) => setInventory({ ...inventory, building: event.target.value })} placeholder="e.g. River Park Apartments" className="mt-1 block h-10 w-full border border-slate-300 bg-white px-3 font-normal" />{errors.building && <span className="mt-1 block text-xs text-red-700">{errors.building}</span>}</label>
+            <label className="text-sm font-semibold text-slate-800">Unit category<input value={inventory.category} onChange={(event) => setInventory({ ...inventory, category: event.target.value })} placeholder="e.g. 1-bedroom apartments" className="mt-1 block h-10 w-full border border-slate-300 bg-white px-3 font-normal" />{errors.category && <span className="mt-1 block text-xs text-red-700">{errors.category}</span>}</label>
+            <label className="text-sm font-semibold text-slate-800">Total units<input type="number" min="1" max="5000" value={inventory.totalUnits} onChange={(event) => setInventory({ ...inventory, totalUnits: event.target.value, availableUnits: inventory.availableUnits || event.target.value })} placeholder="e.g. 24" className="mt-1 block h-10 w-full border border-slate-300 bg-white px-3 font-normal" />{errors.totalUnits && <span className="mt-1 block text-xs text-red-700">{errors.totalUnits}</span>}</label>
+            <label className="text-sm font-semibold text-slate-800">Currently available<input type="number" min="0" max={inventory.totalUnits || 5000} value={inventory.availableUnits} onChange={(event) => setInventory({ ...inventory, availableUnits: event.target.value })} placeholder="Defaults to total units" className="mt-1 block h-10 w-full border border-slate-300 bg-white px-3 font-normal" />{errors.availableUnits && <span className="mt-1 block text-xs text-red-700">{errors.availableUnits}</span>}</label>
+            {user?.role === "landlord" && <label className="text-sm font-semibold text-slate-800">Assign to agent<select value={inventory.assignedAgent} onChange={(event) => setInventory({ ...inventory, assignedAgent: event.target.value })} className="mt-1 block h-10 w-full border border-slate-300 bg-white px-3 font-normal"><option value="">Keep unassigned</option>{teamMembers.filter((member) => member.status === "active").map((member) => <option key={member._id} value={member._id}>{member.name} · {member.role}</option>)}</select></label>}
+          </div>}
+        </section>}
         {/* keep your existing form JSX from Basic Information downwards */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiFileText className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiFileText className="mr-2 text-[#126542]" />
             Basic Information
           </h2>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Title <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -597,7 +695,7 @@ const CreateListingPage = () => {
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
                     errors.title
                       ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      : "border-[#E2E8F0] focus:border-[#126542]"
                   }`}
                   disabled={loading || metaLoading}
                 />
@@ -606,7 +704,7 @@ const CreateListingPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Description <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -618,7 +716,7 @@ const CreateListingPage = () => {
                 className={`w-full px-4 py-3 rounded-lg border-2 outline-none transition-all resize-none ${
                   errors.description
                     ? "border-red-400 focus:border-red-500 bg-red-50"
-                    : "border-[#A8D8C1] focus:border-[#02BB31]"
+                    : "border-[#E2E8F0] focus:border-[#126542]"
                 }`}
                 disabled={loading || metaLoading}
               />
@@ -629,15 +727,15 @@ const CreateListingPage = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiMapPin className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiMapPin className="mr-2 text-[#126542]" />
             Location & Price
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Purpose <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -648,7 +746,7 @@ const CreateListingPage = () => {
                   name="purpose"
                   value={formData.purpose}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none appearance-none bg-white"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#E2E8F0] focus:border-[#126542] outline-none appearance-none bg-white"
                   disabled={loading || metaLoading}
                 >
                   {purposes.map((purpose) => (
@@ -662,8 +760,8 @@ const CreateListingPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
-                Price (KES) <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
+                {formData.purpose === "short_stay" ? "Price per night (KES)" : "Price (KES)"} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -674,11 +772,11 @@ const CreateListingPage = () => {
                   type="number"
                   value={formData.price}
                   onChange={handleChange}
-                  placeholder="e.g., 25000"
+                  placeholder={formData.purpose === "short_stay" ? "e.g., 8500 per night" : "e.g., 25000"}
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
                     errors.price
                       ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      : "border-[#E2E8F0] focus:border-[#126542]"
                   }`}
                   disabled={loading || metaLoading}
                 />
@@ -686,8 +784,31 @@ const CreateListingPage = () => {
               {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price}</p>}
             </div>
 
+            {formData.purpose === "short_stay" && (
+              <div className="md:col-span-2 grid grid-cols-2 gap-4 rounded-xl bg-[#F3F8F5] p-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[#0F172A]">Maximum guests</label>
+                  <input name="maxGuests" type="number" min="1" value={formData.maxGuests} onChange={handleChange} className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2.5" />
+                  {errors.maxGuests && <p className="mt-1 text-sm text-red-600">{errors.maxGuests}</p>}
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[#0F172A]">Minimum nights</label>
+                  <input name="minNights" type="number" min="1" value={formData.minNights} onChange={handleChange} className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2.5" />
+                  {errors.minNights && <p className="mt-1 text-sm text-red-600">{errors.minNights}</p>}
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[#0F172A]">Check-in from</label>
+                  <input name="checkInTime" type="time" value={formData.checkInTime} onChange={handleChange} className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2.5" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[#0F172A]">Check-out by</label>
+                  <input name="checkOutTime" type="time" value={formData.checkOutTime} onChange={handleChange} className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2.5" />
+                </div>
+              </div>
+            )}
+
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 County <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -701,7 +822,7 @@ const CreateListingPage = () => {
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
                     errors.county
                       ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      : "border-[#E2E8F0] focus:border-[#126542]"
                   }`}
                   disabled={loading || metaLoading}
                 >
@@ -717,7 +838,7 @@ const CreateListingPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Town / Location <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -732,7 +853,7 @@ const CreateListingPage = () => {
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
                     errors.town
                       ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      : "border-[#E2E8F0] focus:border-[#126542]"
                   }`}
                 >
                   <option value="">Select Town</option>
@@ -747,7 +868,7 @@ const CreateListingPage = () => {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Specific Area / Landmark (Optional)
               </label>
               <div className="relative">
@@ -759,27 +880,27 @@ const CreateListingPage = () => {
                   value={formData.area}
                   onChange={handleChange}
                   placeholder="e.g., Next to Garden City Mall"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#E2E8F0] focus:border-[#126542] outline-none transition-colors"
                   disabled={loading || metaLoading}
                 />
               </div>
-              <p className="text-xs text-[#065A57] mt-1">Optional: Add specific directions or landmark</p>
+              <p className="text-xs text-[#475569] mt-1">Optional: Add specific directions or landmark</p>
             </div>
 
-            <div className="md:col-span-2 rounded-xl border border-[#A8D8C1] bg-[#F0F7F4] p-4">
+            <div className="md:col-span-2 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-4">
               <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <label className="block text-sm font-medium text-[#013E43]">
+                  <label className="block text-sm font-medium text-[#0F172A]">
                     Map Location (Optional)
                   </label>
-                  <p className="mt-1 text-xs text-[#065A57]">
+                  <p className="mt-1 text-xs text-[#475569]">
                     Add coordinates so tenants can understand the property area better.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={handleUseCurrentLocation}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#013E43] px-4 py-2 text-sm font-semibold text-white hover:bg-[#005C57]"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#164E3B]"
                 >
                   <FiCrosshair />
                   Use my location
@@ -788,7 +909,7 @@ const CreateListingPage = () => {
 
               <div className="grid gap-3 md:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide text-[#065A57]">
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-[#475569]">
                     Latitude
                   </label>
                   <input
@@ -800,13 +921,13 @@ const CreateListingPage = () => {
                     value={formData.latitude}
                     onChange={handleChange}
                     placeholder="-1.286389"
-                    className="mt-1 w-full rounded-lg border-2 border-[#A8D8C1] bg-white px-4 py-3 outline-none transition-colors focus:border-[#02BB31]"
+                    className="mt-1 w-full rounded-lg border-2 border-[#E2E8F0] bg-white px-4 py-3 outline-none transition-colors focus:border-[#126542]"
                     disabled={loading || metaLoading}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide text-[#065A57]">
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-[#475569]">
                     Longitude
                   </label>
                   <input
@@ -818,13 +939,13 @@ const CreateListingPage = () => {
                     value={formData.longitude}
                     onChange={handleChange}
                     placeholder="36.817223"
-                    className="mt-1 w-full rounded-lg border-2 border-[#A8D8C1] bg-white px-4 py-3 outline-none transition-colors focus:border-[#02BB31]"
+                    className="mt-1 w-full rounded-lg border-2 border-[#E2E8F0] bg-white px-4 py-3 outline-none transition-colors focus:border-[#126542]"
                     disabled={loading || metaLoading}
                   />
                 </div>
               </div>
 
-              <div className="mt-4 overflow-hidden rounded-xl border border-[#A8D8C1] bg-white">
+              <div className="mt-4 overflow-hidden rounded-md border border-[#E2E8F0] bg-white">
                 <iframe
                   title="Property map preview"
                   src={mapSrc}
@@ -837,7 +958,7 @@ const CreateListingPage = () => {
                 href={`https://www.openstreetmap.org/?mlat=${mapLatitude}&mlon=${mapLongitude}#map=16/${mapLatitude}/${mapLongitude}`}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#065A57] hover:text-[#013E43]"
+                className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#475569] hover:text-[#0F172A]"
               >
                 <FiNavigation />
                 Open map in new tab
@@ -846,15 +967,15 @@ const CreateListingPage = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiGrid className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiGrid className="mr-2 text-[#126542]" />
             Property Details
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Property Type <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -868,7 +989,7 @@ const CreateListingPage = () => {
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
                     errors.type
                       ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      : "border-[#E2E8F0] focus:border-[#126542]"
                   }`}
                   disabled={loading || metaLoading}
                 >
@@ -886,7 +1007,7 @@ const CreateListingPage = () => {
             {isResidential ? (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1">
                     Bedrooms <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -903,7 +1024,7 @@ const CreateListingPage = () => {
                       className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
                         errors.bedrooms
                           ? "border-red-400 focus:border-red-500 bg-red-50"
-                          : "border-[#A8D8C1] focus:border-[#02BB31]"
+                          : "border-[#E2E8F0] focus:border-[#126542]"
                       }`}
                       disabled={loading || metaLoading}
                     />
@@ -914,7 +1035,7 @@ const CreateListingPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1">
                     Bathrooms <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -931,7 +1052,7 @@ const CreateListingPage = () => {
                       className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
                         errors.bathrooms
                           ? "border-red-400 focus:border-red-500 bg-red-50"
-                          : "border-[#A8D8C1] focus:border-[#02BB31]"
+                          : "border-[#E2E8F0] focus:border-[#126542]"
                       }`}
                       disabled={loading || metaLoading}
                     />
@@ -946,7 +1067,7 @@ const CreateListingPage = () => {
             {isOffice ? (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1">
                     Size <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -963,7 +1084,7 @@ const CreateListingPage = () => {
                       className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
                         errors.size
                           ? "border-red-400 focus:border-red-500 bg-red-50"
-                          : "border-[#A8D8C1] focus:border-[#02BB31]"
+                          : "border-[#E2E8F0] focus:border-[#126542]"
                       }`}
                       disabled={loading || metaLoading}
                     />
@@ -972,7 +1093,7 @@ const CreateListingPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1">
                     Size Unit
                   </label>
                   <div className="relative">
@@ -983,7 +1104,7 @@ const CreateListingPage = () => {
                       name="sizeUnit"
                       value={formData.sizeUnit}
                       onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none appearance-none bg-white"
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#E2E8F0] focus:border-[#126542] outline-none appearance-none bg-white"
                       disabled={loading || metaLoading}
                     >
                       {(listingMeta.officeSizeUnits || []).map((unit) => (
@@ -998,7 +1119,7 @@ const CreateListingPage = () => {
             ) : null}
 
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Contact Phone <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -1013,7 +1134,7 @@ const CreateListingPage = () => {
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
                     errors.contactPhone
                       ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      : "border-[#E2E8F0] focus:border-[#126542]"
                   }`}
                   disabled={loading || metaLoading}
                 />
@@ -1030,9 +1151,9 @@ const CreateListingPage = () => {
                   name="kitchen"
                   checked={formData.kitchen}
                   onChange={handleChange}
-                  className="w-5 h-5 text-[#02BB31] border-[#A8D8C1] rounded focus:ring-[#02BB31]"
+                  className="w-5 h-5 text-[#126542] border-[#E2E8F0] rounded focus:ring-[#126542]"
                 />
-                <span className="text-sm text-[#065A57] flex items-center">
+                <span className="text-sm text-[#475569] flex items-center">
                   <FaUtensils className="mr-2" />
                   Kitchen available
                 </span>
@@ -1041,14 +1162,14 @@ const CreateListingPage = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiVideo className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiVideo className="mr-2 text-[#126542]" />
             Virtual Tour (Optional)
           </h2>
 
           <div>
-            <label className="block text-sm font-medium text-[#013E43] mb-1">
+            <label className="block text-sm font-medium text-[#0F172A] mb-1">
               Video URL
             </label>
             <div className="relative">
@@ -1060,19 +1181,19 @@ const CreateListingPage = () => {
                 value={formData.video}
                 onChange={handleChange}
                 placeholder="https://youtube.com/watch?v=..."
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#E2E8F0] focus:border-[#126542] outline-none transition-colors"
                 disabled={loading || metaLoading}
               />
             </div>
-            <p className="text-xs text-[#065A57] mt-1">
+            <p className="text-xs text-[#475569] mt-1">
               Add a YouTube or Vimeo link for a virtual tour of your property
             </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiCheckCircle className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiCheckCircle className="mr-2 text-[#126542]" />
             Amenities
           </h2>
 
@@ -1083,24 +1204,24 @@ const CreateListingPage = () => {
                   type="checkbox"
                   checked={formData.amenities[amenity.key]}
                   onChange={() => handleAmenityChange(amenity.key)}
-                  className="w-5 h-5 text-[#02BB31] border-[#A8D8C1] rounded focus:ring-[#02BB31]"
+                  className="w-5 h-5 text-[#126542] border-[#E2E8F0] rounded focus:ring-[#126542]"
                 />
-                <span className="text-sm text-[#065A57]">{amenity.label}</span>
+                <span className="text-sm text-[#475569]">{amenity.label}</span>
               </label>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiCamera className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiCamera className="mr-2 text-[#126542]" />
             Property Images <span className="text-red-500 ml-1">*</span>
           </h2>
 
           <div className="mb-4">
             <div
-              className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
-                errors.images ? "border-red-300 bg-red-50" : "border-[#A8D8C1] hover:border-[#02BB31]"
+              className={`border-2 border-dashed rounded-md p-6 text-center transition-all ${
+                errors.images ? "border-red-300 bg-red-50" : "border-[#E2E8F0] hover:border-[#126542]"
               }`}
             >
               <input
@@ -1113,15 +1234,15 @@ const CreateListingPage = () => {
                 disabled={loading || metaLoading}
               />
               <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center">
-                <FiUpload className="text-3xl text-[#065A57] mb-2" />
-                <span className="text-sm text-[#065A57]">Click to upload or drag and drop</span>
-                <span className="text-xs text-[#065A57] mt-1">
+                <FiUpload className="text-3xl text-[#475569] mb-2" />
+                <span className="text-sm text-[#475569]">Click to upload or drag and drop</span>
+                <span className="text-xs text-[#475569] mt-1">
                   Select multiple images. Large files are compressed before upload. Max {MAX_LISTING_IMAGES} images.
                 </span>
               </label>
             </div>
             {errors.images && <p className="text-sm text-red-500 mt-1">{errors.images}</p>}
-            <p className="text-xs text-[#065A57] mt-2">{images.length}/{MAX_LISTING_IMAGES} image(s) selected</p>
+            <p className="text-xs text-[#475569] mt-2">{images.length}/{MAX_LISTING_IMAGES} image(s) selected</p>
           </div>
 
           {preview.length > 0 && (
@@ -1131,7 +1252,7 @@ const CreateListingPage = () => {
                   <img
                     src={img}
                     alt={`Preview ${index + 1}`}
-                    className="h-24 w-full object-cover rounded-lg border border-[#A8D8C1]"
+                    className="h-24 w-full object-cover rounded-lg border border-[#E2E8F0]"
                   />
                   <button
                     type="button"
@@ -1147,19 +1268,25 @@ const CreateListingPage = () => {
         </div>
 
         <div className="flex justify-end space-x-3">
-          <a
-            href={draftWhatsAppUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-[#02BB31] px-6 py-3 text-sm font-semibold text-[#013E43] hover:bg-[#F0F7F4]"
-          >
-            <FaWhatsapp />
-            WhatsApp help
-          </a>
+          {whatsappAssistanceEnabled ? (
+            <a
+              href={draftWhatsAppUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-[#126542] px-6 py-3 text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC]"
+            >
+              <FaWhatsapp />
+              List on WhatsApp
+            </a>
+          ) : (
+            <Link to="/dashboard" className="inline-flex items-center rounded-lg border border-[#E2E8F0] px-4 py-3 text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC]">
+              WhatsApp options
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => navigate("/listings")}
-            className="px-6 py-3 text-[#065A57] border border-[#A8D8C1] rounded-lg hover:bg-[#F0F7F4] transition-colors"
+            className="px-6 py-3 text-[#475569] border border-[#E2E8F0] rounded-lg hover:bg-[#F8FAFC] transition-colors"
             disabled={loading || metaLoading}
           >
             Cancel
@@ -1167,7 +1294,7 @@ const CreateListingPage = () => {
           <button
             type="submit"
             disabled={loading || blocked || metaLoading}
-            className="px-6 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-3 bg-[#126542] text-white rounded-lg font-semibold hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {loading ? (
               <>

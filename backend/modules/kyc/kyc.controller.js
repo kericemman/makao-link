@@ -1,5 +1,6 @@
 const Kyc = require("./kyc.model");
 const Subscription = require("../subscriptions/subscription.model");
+const { recordAdminActivity } = require("../admin/adminActivity.service");
 
 const paidPlans = ["basic", "premium", "pro"];
 
@@ -64,6 +65,17 @@ const submitKyc = async (req, res, next) => {
       existingKyc.reviewedAt = undefined;
 
       await existingKyc.save();
+      await recordAdminActivity({
+        eventType: "kyc_submission",
+        description: "Landlord verification resubmitted",
+        details: `${existingKyc.fullName} sent updated documents`,
+        path: "/admin/kyc",
+        actor: req.user._id,
+        actorName: req.user.name,
+        entityType: "kyc",
+        entityId: String(existingKyc._id),
+        dedupeKey: `kyc_submission:${existingKyc._id}:${existingKyc.updatedAt.getTime()}`
+      });
 
       return res.json({
         success: true,
@@ -82,6 +94,17 @@ const submitKyc = async (req, res, next) => {
       selfiePhoto,
       proofOfOwnership,
       status: "pending"
+    });
+
+    await recordAdminActivity({
+      eventType: "kyc_submission",
+      description: "Landlord verification submitted",
+      details: `${kyc.fullName} submitted verification documents`,
+      path: "/admin/kyc",
+      actor: req.user._id,
+      actorName: req.user.name,
+      entityType: "kyc",
+      entityId: String(kyc._id)
     });
 
     res.status(201).json({
@@ -188,6 +211,18 @@ const reviewKyc = async (req, res, next) => {
     kyc.reviewedAt = new Date();
 
     await kyc.save();
+    await recordAdminActivity({
+      eventType: `kyc_${status}`,
+      description: `Landlord KYC ${status}`,
+      details: `${kyc.fullName} • ${status}`,
+      path: "/admin/kyc",
+      actor: req.user._id,
+      actorName: req.user.name,
+      readBy: [req.user._id],
+      entityType: "kyc",
+      entityId: String(kyc._id),
+      dedupeKey: `kyc_${status}:${kyc._id}:${kyc.reviewedAt.getTime()}`
+    });
     await kyc.populate("landlord", "name email phone businessName location avatar");
 
     res.json({

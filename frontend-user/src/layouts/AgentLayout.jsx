@@ -37,8 +37,8 @@ export default function AgentLayout() {
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
   const currentPage = items.find((item) => isActive(item.path)) || items[0];
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 

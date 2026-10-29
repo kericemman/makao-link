@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   getAllListings,
   moveListingToTrash,
@@ -27,11 +28,12 @@ const statusStyle = {
 };
 
 const AdminAllListingsPage = () => {
+  const [searchParams] = useSearchParams();
   const [listings, setListings] = useState([]);
   const [status, setStatus] = useState("all");
   const [availability, setAvailability] = useState("all");
   const [purpose, setPurpose] = useState("all");
-  const [viewMode, setViewMode] = useState("active");
+  const [viewMode, setViewMode] = useState(searchParams.get("view") === "trash" ? "trash" : "active");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedListing, setSelectedListing] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -46,7 +48,7 @@ const AdminAllListingsPage = () => {
   const [actionLoadingId, setActionLoadingId] = useState("");
   const [error, setError] = useState("");
 
-  const fetchListings = async () => {
+  const fetchListings = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -65,11 +67,11 @@ const AdminAllListingsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [status, availability, purpose, viewMode]);
 
   useEffect(() => {
     fetchListings();
-  }, [status, availability, purpose, viewMode]);
+  }, [fetchListings]);
 
   const filteredListings = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -312,7 +314,7 @@ const AdminAllListingsPage = () => {
       {loading ? (
         <div className="flex h-64 items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-[#CDE6D8] border-t-[#02BB31]" />
+            <div className="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-[#CDE6D8] border-t-[#0D915C]" />
             <p className="text-sm text-[#647C75]">Loading listings...</p>
           </div>
         </div>
@@ -523,7 +525,7 @@ const AdminAllListingsPage = () => {
                       type="button"
                       onClick={() => handleTrustSave()}
                       disabled={actionLoadingId === selectedListing._id}
-                      className="flex-1 rounded-lg bg-[#013E43] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#065A57] disabled:opacity-50"
+                      className="flex-1 rounded-lg bg-[#013E43] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#41635A] disabled:opacity-50"
                     >
                       Save trust details
                     </button>
@@ -531,9 +533,9 @@ const AdminAllListingsPage = () => {
                       type="button"
                       onClick={() => handleTrustSave({ markAvailabilityChecked: true })}
                       disabled={actionLoadingId === selectedListing._id}
-                      className="flex-1 rounded-lg border border-[#02BB31] bg-white px-4 py-3 text-sm font-semibold text-[#013E43] transition hover:bg-[#F0F7F4] disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-[#0D915C] bg-white px-4 py-3 text-sm font-semibold text-[#013E43] transition hover:bg-[#F1F7F3] disabled:opacity-50"
                     >
-                      <FiCheckCircle className="mr-2 inline text-[#02BB31]" />
+                      <FiCheckCircle className="mr-2 inline text-[#0D915C]" />
                       Mark availability checked
                     </button>
                   </div>

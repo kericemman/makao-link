@@ -15,8 +15,8 @@ export default function Footer() {
   return (
     <footer className="relative overflow-hidden bg-gradient-to-b from-[#013E43] to-[#001A1C] text-white">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-9 sm:grid-cols-2 lg:grid-cols-[1.25fr_0.8fr_0.8fr_0.8fr_0.8fr]">
-          <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-9 sm:gap-9 lg:grid-cols-[1.25fr_0.8fr_0.8fr_0.8fr_0.8fr]">
+          <div className="col-span-2 space-y-4 sm:col-span-1">
            
             <p className="max-w-sm text-sm leading-6 text-[#A8D8C1]">
               Discover verified homes, rentals, office spaces, and move-in services across Kenya.

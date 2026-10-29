@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { createElement, useEffect, useMemo, useState } from "react";
 import {
   FiAlertCircle,
   FiCheckCircle,
@@ -80,7 +80,7 @@ export default function AdminKycPage() {
       setReviewingId(item._id);
       await reviewAdminKyc(item._id, { status: nextStatus, rejectionReason });
       toast.success(`KYC ${nextStatus}`, {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
       loadKycs();
     } catch (error) {
@@ -94,7 +94,7 @@ export default function AdminKycPage() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-lg border border-[#E4EEE8] bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-[#DDEAE3] bg-white p-5 shadow-none">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0D915C]">Trust review</p>
@@ -119,22 +119,22 @@ export default function AdminKycPage() {
         <Stat label="Rejected" value={stats.rejected} icon={FiAlertCircle} tone="text-red-600" />
       </section>
 
-      <section className="rounded-lg border border-[#E4EEE8] bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-[#E4EEE8] p-4 md:flex-row md:items-center">
+      <section className="rounded-lg border border-[#DDEAE3] bg-white shadow-none">
+        <div className="flex flex-col gap-3 border-b border-[#DDEAE3] p-4 md:flex-row md:items-center">
           <div className="relative flex-1">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#647C75]" />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search landlord, email, phone, ID..."
-              className="w-full rounded-lg border border-[#DDEAE3] py-2.5 pl-10 pr-3 text-sm outline-none focus:border-[#02BB31]"
+              className="w-full rounded-lg border border-[#DDEAE3] py-2.5 pl-10 pr-3 text-sm outline-none focus:border-[#0D915C]"
             />
           </div>
 
           <select
             value={status}
             onChange={(event) => setStatus(event.target.value)}
-            className="rounded-lg border border-[#DDEAE3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#02BB31]"
+            className="rounded-lg border border-[#DDEAE3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0D915C]"
           >
             <option value="">All statuses</option>
             <option value="pending">Pending</option>
@@ -144,7 +144,7 @@ export default function AdminKycPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-[#E4EEE8] text-sm">
+          <table className="min-w-full divide-y divide-[#DDEAE3] text-sm">
             <thead className="bg-[#F8FAF8] text-left text-xs font-bold uppercase tracking-[0.12em] text-[#647C75]">
               <tr>
                 <th className="px-4 py-3">Landlord</th>
@@ -190,7 +190,7 @@ export default function AdminKycPage() {
                         <button
                           onClick={() => review(item, "approved")}
                           disabled={reviewingId === item._id || item.status === "approved"}
-                          className="inline-flex items-center gap-1 rounded-lg bg-[#02BB31] px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg bg-[#0D915C] px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
                         >
                           <FiCheckCircle />
                           Approve
@@ -220,12 +220,12 @@ export default function AdminKycPage() {
   );
 }
 
-function Stat({ label, value, icon: Icon, tone = "text-[#013E43]" }) {
+function Stat({ label, value, icon, tone = "text-[#013E43]" }) {
   return (
-    <div className="rounded-lg border border-[#E4EEE8] bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-[#DDEAE3] bg-white p-4 shadow-none">
       <div className="flex items-center justify-between">
         <p className="text-sm text-[#647C75]">{label}</p>
-        <Icon className={tone} />
+        {createElement(icon, { className: tone })}
       </div>
       <p className={`mt-2 text-2xl font-bold ${tone}`}>{value}</p>
     </div>
@@ -240,7 +240,7 @@ function FileLink({ href, label }) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center gap-1 rounded-md bg-[#F0F7F4] px-2.5 py-1.5 text-xs font-bold text-[#065A57] hover:text-[#013E43]"
+      className="inline-flex items-center gap-1 rounded-md bg-[#F1F7F3] px-2.5 py-1.5 text-xs font-bold text-[#41635A] hover:text-[#013E43]"
     >
       {label}
       <FiExternalLink />

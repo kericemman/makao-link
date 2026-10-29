@@ -51,10 +51,10 @@ const RegisterLandlordPage = () => {
 
   const getPlanDetails = (plan) => {
     const plans = {
-      normal: { name: "Normal", price: "Free", limit: "2 properties", color: "text-gray-600", bgColor: "bg-gray-100" },
-      basic: { name: "Basic", price: "KES 500", limit: "5 properties", color: "text-[#02BB31]", bgColor: "bg-[#02BB31]/10" },
+      normal: { name: "Free", price: "Free", limit: "2 active listings", color: "text-gray-600", bgColor: "bg-gray-100" },
+      basic: { name: "Basic", price: "KES 500", limit: "7 active listings", color: "text-[#02BB31]", bgColor: "bg-[#02BB31]/10" },
       premium: { name: "Premium", price: "KES 1,500", limit: "15 properties", color: "text-purple-600", bgColor: "bg-purple-100" },
-      pro: { name: "Pro", price: "KES 2,500", limit: "100+ properties", color: "text-[#013E43]", bgColor: "bg-[#013E43]/10" }
+      pro: { name: "Pro", price: "KES 2,500", limit: "50 active listings", color: "text-[#013E43]", bgColor: "bg-[#013E43]/10" }
     };
     return plans[plan] || plans.normal;
   };

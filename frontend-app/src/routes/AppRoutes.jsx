@@ -5,6 +5,8 @@ import ProtectedRoute from "./protextedRoute";
 import RoleRoute from "./RoleRoute";
 
 import LoginPage from "../pages/public/auth/Login";
+import ForgotPasswordPage from "../pages/public/auth/ForgotPassword";
+import ResetPasswordPage from "../pages/public/auth/ResetPassword";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import PendingListingsPage from "../pages/admin/AdminPendingPage";
 import AdminAllListingsPage from "../pages/admin/AdminListingPage";
@@ -20,22 +22,24 @@ import AdminContactMessagesPage from "../pages/admin/AdminContact";
 import AdminContactMessageDetailPage from "../pages/admin/AdminContactDetails";
 import AdminBlogsPage from "../pages/admin/blog/AdminBlog";
 import AdminBlogEditorPage from "../pages/admin/blog/CreateBlog";
-import AdminNewsletterSubscribersPage from "../pages/admin/AdminSubscribersPage";
+import AdminSubscribersPage from "../pages/admin/AdminSubscribersPage";
 import AdminSubscriptionsPage from "../pages/admin/AdminSubscriptionPage";
 import AdminAgentsPage from "../pages/admin/AdminAgentsPage";
 import AdminKycPage from "../pages/admin/AdminKycPage";
 import SupportCategoriesPage from "../pages/admin/app/SupportCategoriesPage";
 import ContactInfoPage from "../pages/admin/app/ContactInfoPage";
 import PolicyPagesPage from "../pages/admin/app/PolicyPage";
-import SubscribersPage from "../pages/admin/app/SubscriberPage";
 import AppUpdatesPage from "../pages/admin/app/AppPage";
 import SupportHelpPage from "../pages/admin/app/SupportHelpPage";
+import AdminStayRequestsPage from "../pages/admin/AdminStayRequestsPage";
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<RoleRoute allowedRole="admin" />}>
@@ -44,6 +48,7 @@ const AppRoutes = () => {
             <Route path="/admin/listings" element={<AdminAllListingsPage />} />
             <Route path="/admin/listings/pending" element={<PendingListingsPage />} />
             <Route path="/admin/listings/reports" element={<AdminListingReportsPage />} />
+            <Route path="/admin/stay-requests" element={<AdminStayRequestsPage />} />
             <Route path="/admin/landlords" element={<AdminLandlordsPage />} />
             <Route path="/admin/kyc" element={<AdminKycPage />} />
             <Route path="/admin/agents" element={<AdminAgentsPage />} />
@@ -65,12 +70,12 @@ const AppRoutes = () => {
             <Route path="/admin/blog/new" element={<AdminBlogEditorPage />} />
             <Route path="/admin/blog/create" element={<AdminBlogEditorPage />} />
             <Route path="/admin/blog/:id" element={<AdminBlogEditorPage />} />
-            <Route path="/admin/subscribers" element={<AdminNewsletterSubscribersPage />} />
+            <Route path="/admin/subscribers" element={<AdminSubscribersPage />} />
             <Route path="/admin/app/categories" element={<SupportCategoriesPage />} />
             <Route path="/admin/app/support-help" element={<SupportHelpPage />} />
             <Route path="/admin/contact-info" element={<ContactInfoPage />} />
             <Route path="/admin/app/updates" element={<AppUpdatesPage />} />
-            <Route path="/admin/app/subscribers" element={<SubscribersPage />} />
+            <Route path="/admin/app/subscribers" element={<Navigate to="/admin/subscribers" replace />} />
             <Route path="/admin/app/policies" element={<PolicyPagesPage />} />
           </Route>
         </Route>

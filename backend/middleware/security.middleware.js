@@ -52,11 +52,16 @@ const generalApiLimiter = createRateLimiter({
   message: "Too many requests. Please try again shortly."
 });
 
-const authLimiter = createRateLimiter({
+const productionAuthLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 40,
   message: "Too many authentication attempts. Please try again shortly."
 });
+
+const authLimiter = (req, res, next) => {
+  if (process.env.NODE_ENV !== "production") return next();
+  return productionAuthLimiter(req, res, next);
+};
 
 const otpLimiter = createRateLimiter({
   windowMs: 10 * 60 * 1000,

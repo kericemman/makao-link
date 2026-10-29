@@ -327,7 +327,7 @@ const BlogDetailPage = () => {
           <main className="lg:w-[70%]">
             <div className="p-3 md:p-8">
               <div
-                className="blog-content"
+                className="blog-content rich-content"
                 dangerouslySetInnerHTML={{ __html: processedContent }}
               />
             </div>

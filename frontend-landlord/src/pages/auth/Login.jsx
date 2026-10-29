@@ -38,7 +38,7 @@ const LoginPage = () => {
   const nextPath = getSafeNext(searchParams.get("next") || location.state?.from || "/dashboard");
 
   useEffect(() => {
-    if (!authLoading && user?.role === "landlord") {
+    if (!authLoading && ["landlord", "landlord_staff"].includes(user?.role)) {
       navigate(nextPath, { replace: true });
     }
   }, [authLoading, navigate, nextPath, user?.role]);
@@ -89,7 +89,7 @@ const LoginPage = () => {
 
       const data = await loginLandlord(formData);
 
-      if (data.user?.role !== "landlord") {
+      if (!["landlord", "landlord_staff"].includes(data.user?.role)) {
         setError("Please use the correct RendaHomes portal for this account.");
         toast.error("Please use the correct RendaHomes portal for this account.", {
           style: {

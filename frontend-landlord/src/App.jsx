@@ -18,6 +18,8 @@ import LandlordSupportPage from "./pages/landlord/Support";
 import LandlordSupportDetailPage from "./pages/landlord/SupportDetails";
 import LandlordProfilePage from "./pages/landlord/LandlordProfile";
 import LandlordKycPage from "./pages/landlord/Kyc";
+import CompanyWorkspace from "./pages/landlord/CompanyWorkspace";
+import StayRequests from "./pages/landlord/StayRequests";
 
 export default function App() {
   return (
@@ -30,12 +32,14 @@ export default function App() {
       <Route path="/payment/callback" element={<PaymentCallbackPage />} />
 
       <Route element={<ProtectedRoute />}>
-        <Route element={<RoleRoute allowedRole="landlord" />}>
+        <Route element={<RoleRoute allowedRole={["landlord", "landlord_staff"]} />}>
           <Route element={<LandlordLayout />}>
             <Route path="/dashboard" element={<DashboardHome />} />
             <Route path="/listings" element={<Listings />} />
             <Route path="/listings/:id/edit" element={<EditListingPage />} />
             <Route path="/inquiries" element={<LandlordInquiries />} />
+            <Route path="/stay-requests" element={<StayRequests />} />
+            <Route path="/team" element={<CompanyWorkspace />} />
             <Route path="/subscription" element={<LandlordSubscription />} />
             <Route path="/support" element={<LandlordSupportPage />} />
             <Route path="/support/:id" element={<LandlordSupportDetailPage />} />

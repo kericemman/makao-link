@@ -67,7 +67,7 @@ function CreateTicket() {
 
     if (!validateForm()) {
       toast.error("Please fill in all required fields correctly", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       })
       return
     }
@@ -78,7 +78,7 @@ function CreateTicket() {
       
       toast.success("Support ticket created successfully! We'll get back to you soon.", {
         style: {
-          background: "#02BB31",
+          background: "#126542",
           color: "#fff",
         },
         duration: 5000
@@ -91,7 +91,7 @@ function CreateTicket() {
         error.response?.data?.message || "Failed to create ticket. Please try again.",
         {
           style: {
-            background: "#013E43",
+            background: "#0F172A",
             color: "#fff",
           }
         }
@@ -140,20 +140,20 @@ function CreateTicket() {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
+      <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
         <div className="flex items-center space-x-4">
           <Link
             to="/dashboard/support"
-            className="p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
+            className="p-2 hover:bg-[#F8FAFC] rounded-lg transition-colors"
           >
-            <FiArrowLeft className="text-xl text-[#065A57]" />
+            <FiArrowLeft className="text-xl text-[#475569]" />
           </Link>
-          <div className="p-3 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl">
+          <div className="p-3 bg-[#123D38] rounded-md">
             <FiHelpCircle className="text-white text-2xl" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-[#013E43]">Create Support Ticket</h1>
-            <p className="text-sm text-[#065A57]">Get help from our support team</p>
+            <h1 className="text-2xl font-bold text-[#0F172A]">Create Support Ticket</h1>
+            <p className="text-sm text-[#475569]">Get help from our support team</p>
           </div>
         </div>
       </div>
@@ -161,13 +161,13 @@ function CreateTicket() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Form - Left Column */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl shadow-xl border border-[#A8D8C1] overflow-hidden">
-            <div className="bg-gradient-to-r from-[#013E43] to-[#005C57] p-6">
+          <div className="bg-white rounded-md shadow-md border border-[#E2E8F0] overflow-hidden">
+            <div className="bg-[#123D38] p-6">
               <h2 className="text-xl font-bold text-white flex items-center">
                 <FiMessageSquare className="mr-2" />
                 Ticket Details
               </h2>
-              <p className="text-sm text-[#A8D8C1] mt-1">
+              <p className="text-sm text-[#E2E8F0] mt-1">
                 Please provide as much detail as possible to help us assist you better
               </p>
             </div>
@@ -175,7 +175,7 @@ function CreateTicket() {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Subject Field */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#013E43]">
+                <label className="block text-sm font-medium text-[#0F172A]">
                   Subject <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -186,13 +186,13 @@ function CreateTicket() {
                   className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-colors ${
                     errors.subject
                       ? 'border-red-400 focus:border-red-500 bg-red-50'
-                      : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                      : 'border-[#E2E8F0] focus:border-[#126542]'
                   }`}
                 />
                 {errors.subject && (
                   <p className="text-xs text-red-500 mt-1">{errors.subject}</p>
                 )}
-                <p className="text-xs text-[#065A57]">
+                <p className="text-xs text-[#475569]">
                   Example: "Cannot access my account" or "Payment not processed"
                 </p>
               </div>
@@ -201,8 +201,8 @@ function CreateTicket() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Category Select */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-[#013E43] flex items-center">
-                    <FiTag className="mr-2 text-[#02BB31]" />
+                  <label className="block text-sm font-medium text-[#0F172A] flex items-center">
+                    <FiTag className="mr-2 text-[#126542]" />
                     Category <span className="text-red-500 ml-1">*</span>
                   </label>
                   <select
@@ -212,7 +212,7 @@ function CreateTicket() {
                     className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-colors appearance-none ${
                       errors.category
                         ? 'border-red-400 focus:border-red-500 bg-red-50'
-                        : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                        : 'border-[#E2E8F0] focus:border-[#126542]'
                     }`}
                   >
                     {categories.map(cat => (
@@ -228,15 +228,15 @@ function CreateTicket() {
 
                 {/* Priority Select */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-[#013E43] flex items-center">
-                    <FiFlag className="mr-2 text-[#02BB31]" />
+                  <label className="block text-sm font-medium text-[#0F172A] flex items-center">
+                    <FiFlag className="mr-2 text-[#126542]" />
                     Priority
                   </label>
                   <select
                     name="priority"
                     value={form.priority}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors appearance-none"
+                    className="w-full px-4 py-3 border-2 border-[#E2E8F0] rounded-lg focus:border-[#126542] outline-none transition-colors appearance-none"
                   >
                     {priorities.map(pri => (
                       <option key={pri.value} value={pri.value}>
@@ -244,7 +244,7 @@ function CreateTicket() {
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-[#065A57]">
+                  <p className="text-xs text-[#475569]">
                     Current priority: <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(form.priority)}`}>
                       {priorities.find(p => p.value === form.priority)?.label}
                     </span>
@@ -254,7 +254,7 @@ function CreateTicket() {
 
               {/* Message Field */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#013E43]">
+                <label className="block text-sm font-medium text-[#0F172A]">
                   Message <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -266,18 +266,18 @@ function CreateTicket() {
                   className={`w-full px-4 py-3 border-2 rounded-lg outline-none transition-colors resize-none ${
                     errors.message
                       ? 'border-red-400 focus:border-red-500 bg-red-50'
-                      : 'border-[#A8D8C1] focus:border-[#02BB31]'
+                      : 'border-[#E2E8F0] focus:border-[#126542]'
                   }`}
                 />
                 {errors.message && (
                   <p className="text-xs text-red-500 mt-1">{errors.message}</p>
                 )}
                 <div className="flex justify-between items-center">
-                  <p className="text-xs text-[#065A57]">
+                  <p className="text-xs text-[#475569]">
                     Minimum 20 characters. {form.message.length}/20
                   </p>
                   {form.message.length >= 20 && (
-                    <span className="text-xs text-[#02BB31] flex items-center">
+                    <span className="text-xs text-[#126542] flex items-center">
                       <FiCheckCircle className="mr-1" />
                       Good length
                     </span>
@@ -288,17 +288,17 @@ function CreateTicket() {
               
 
               {/* Submit Button */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-[#A8D8C1]">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-[#E2E8F0]">
                 <Link
                   to="/dashboard/support"
-                  className="px-6 py-3 text-[#065A57] border border-[#A8D8C1] rounded-lg hover:bg-[#F0F7F4] transition-colors"
+                  className="px-6 py-3 text-[#475569] border border-[#E2E8F0] rounded-lg hover:bg-[#F8FAFC] transition-colors"
                 >
                   Cancel
                 </Link>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  className="px-8 py-3 bg-[#126542] text-white rounded-lg font-semibold hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >
                   {loading ? (
                     <>
@@ -320,9 +320,9 @@ function CreateTicket() {
         {/* Right Column - Help & Tips */}
         <div className="space-y-6">
           {/* Common Issues */}
-          <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] p-6">
-            <h3 className="text-lg font-bold text-[#013E43] mb-4 flex items-center">
-              <FiInfo className="mr-2 text-[#02BB31]" />
+          <div className="bg-white rounded-md shadow-sm border border-[#E2E8F0] p-6">
+            <h3 className="text-lg font-bold text-[#0F172A] mb-4 flex items-center">
+              <FiInfo className="mr-2 text-[#126542]" />
               Common Issues
             </h3>
             <div className="space-y-2">
@@ -330,7 +330,7 @@ function CreateTicket() {
                 <button
                   key={index}
                   onClick={() => setForm({ ...form, subject: issue })}
-                  className="w-full text-left px-3 py-2 text-sm text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+                  className="w-full text-left px-3 py-2 text-sm text-[#475569] hover:bg-[#F8FAFC] rounded-lg transition-colors"
                 >
                   {issue}
                 </button>
@@ -340,33 +340,33 @@ function CreateTicket() {
 
         
           {/* Priority Guide */}
-          <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] p-6">
-            <h3 className="text-lg font-bold text-[#013E43] mb-4 flex items-center">
-              <FiFlag className="mr-2 text-[#02BB31]" />
+          <div className="bg-white rounded-md shadow-sm border border-[#E2E8F0] p-6">
+            <h3 className="text-lg font-bold text-[#0F172A] mb-4 flex items-center">
+              <FiFlag className="mr-2 text-[#126542]" />
               Priority Guide
             </h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
-                <span className="text-sm font-medium text-[#013E43]">Low Priority</span>
+                <span className="text-sm font-medium text-[#0F172A]">Low Priority</span>
               </div>
-              <p className="text-xs text-[#065A57] pl-5">
+              <p className="text-xs text-[#475569] pl-5">
                 General questions, feature requests, non-urgent issues
               </p>
               
               <div className="flex items-center space-x-2">
                 <span className="w-3 h-3 bg-yellow-500 rounded-full"></span>
-                <span className="text-sm font-medium text-[#013E43]">Medium Priority</span>
+                <span className="text-sm font-medium text-[#0F172A]">Medium Priority</span>
               </div>
-              <p className="text-xs text-[#065A57] pl-5">
+              <p className="text-xs text-[#475569] pl-5">
                 Account issues, listing problems, payment inquiries
               </p>
               
               <div className="flex items-center space-x-2">
                 <span className="w-3 h-3 bg-red-500 rounded-full"></span>
-                <span className="text-sm font-medium text-[#013E43]">High Priority</span>
+                <span className="text-sm font-medium text-[#0F172A]">High Priority</span>
               </div>
-              <p className="text-xs text-[#065A57] pl-5">
+              <p className="text-xs text-[#475569] pl-5">
                 System outages, security issues, urgent payment failures
               </p>
             </div>
@@ -374,12 +374,12 @@ function CreateTicket() {
 
           
           {/* WhatsApp Support */}
-          <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] p-6">
+          <div className="bg-white rounded-md shadow-sm border border-[#E2E8F0] p-6">
             <div className="flex items-center space-x-3 mb-3">
               <FaWhatsapp className="text-2xl text-[#25D366]" />
-              <h3 className="text-lg font-bold text-[#013E43]">WhatsApp Support</h3>
+              <h3 className="text-lg font-bold text-[#0F172A]">WhatsApp Support</h3>
             </div>
-            <p className="text-sm text-[#065A57] mb-4">
+            <p className="text-sm text-[#475569] mb-4">
               For urgent issues, you can also reach us on WhatsApp
             </p>
             <a

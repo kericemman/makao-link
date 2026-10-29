@@ -42,8 +42,8 @@ export default function DashboardLayout() {
 
   const currentPage = navigationItems.find((item) => isActivePath(item.path));
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -142,6 +142,15 @@ export default function DashboardLayout() {
                 </Link>
               );
             })}
+            <a
+              href={portalLinks.main.href}
+              aria-label="Browse homes on RendaHomes"
+              title="Browse homes"
+              className="mt-3 flex items-center rounded-xl p-3 text-[#A8D8C1] transition hover:bg-white/10 hover:text-white lg:hidden"
+            >
+              <FiSearch className={isSidebarOpen ? "mr-3 shrink-0 text-xl" : "shrink-0 text-xl"} />
+              {isSidebarOpen ? <span className="font-medium">Browse homes</span> : null}
+            </a>
           </nav>
 
           <div className="sticky bottom-0 border-t border-[#065A57] bg-gradient-to-t from-[#013E43] to-transparent p-4 backdrop-blur-sm">

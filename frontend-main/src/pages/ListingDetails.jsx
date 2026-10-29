@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { FiAlertTriangle, FiArrowLeft, FiMail, FiMapPin, FiPhone, FiShare2, FiX } from "react-icons/fi";
+import { FiAlertTriangle, FiArrowLeft, FiCalendar, FiMail, FiMapPin, FiPhone, FiShare2, FiUsers, FiX } from "react-icons/fi";
+import { FaWhatsapp } from "react-icons/fa";
 import { FaBath, FaBed, FaRulerCombined } from "react-icons/fa";
 import LoadingScreen from "../components/common/LoadingScreen";
 import ListingInquiryCard from "../components/listings/ListingInquiryCard";
@@ -10,6 +11,7 @@ import { getPublicListings, getSingleListing, reportListing } from "../services/
 import { mainRoutes, portalLinks } from "../config/portals";
 import { getApiErrorMessage } from "../utils/apiError";
 import { buildListingJsonLd, seoText, useSeo } from "../utils/seo";
+import { createStayRequest } from "../services/stays.service";
 
 const formatPrice = (price, purpose) => {
   const amount = new Intl.NumberFormat("en-KE", {
@@ -18,6 +20,7 @@ const formatPrice = (price, purpose) => {
     maximumFractionDigits: 0
   }).format(Number(price || 0));
 
+  if (purpose === "short_stay") return `${amount}/night`;
   return purpose === "rent" ? `${amount}/mo` : amount;
 };
 
@@ -68,6 +71,10 @@ export default function ListingDetails() {
   const [reportSending, setReportSending] = useState(false);
   const [reportSuccess, setReportSuccess] = useState("");
   const [reportError, setReportError] = useState("");
+  const [stayForm, setStayForm] = useState({ checkIn: "", checkOut: "", guests: "1", guestName: "", guestEmail: "", guestPhone: "", message: "" });
+  const [staySending, setStaySending] = useState(false);
+  const [stayRequest, setStayRequest] = useState(null);
+  const [stayError, setStayError] = useState("");
 
   const seoLocation = listing ? [listing.area, listing.town, listing.county].filter(Boolean).join(", ") : "";
   const seoTitle = listing
@@ -138,6 +145,23 @@ export default function ListingDetails() {
   const location = [listing.area, listing.town, listing.county].filter(Boolean).join(", ") || listing.location || "Location on request";
   const amenities = normalizeAmenities(listing.amenities);
   const landlordPhone = listing.contactPhone || listing.landlord?.phone || "";
+  const isShortStay = listing.purpose === "short_stay";
+  const today = new Date().toLocaleDateString("en-CA");
+  const stayWhatsappHref = stayRequest && landlordPhone
+    ? `https://wa.me/${landlordPhone.replace(/\D/g, "").replace(/^0/, "254")}?text=${encodeURIComponent(`Hi, I'd like to book ${listing.title}. Stay request ${stayRequest.requestCode}; ${stayRequest.guests} guest(s), ${new Date(stayRequest.checkIn).toLocaleDateString("en-KE")} to ${new Date(stayRequest.checkOut).toLocaleDateString("en-KE")}. My name is ${stayRequest.guestName}, phone ${stayRequest.guestPhone}. Please confirm availability and next steps.`)}`
+    : "";
+
+  const submitStayRequest = async (event) => {
+    event.preventDefault();
+    setStaySending(true);
+    setStayError("");
+    try {
+      const data = await createStayRequest(listing._id, stayForm);
+      setStayRequest(data.request);
+    } catch (error) {
+      setStayError(error.response?.data?.message || "Could not send your stay request. Please try again.");
+    } finally { setStaySending(false); }
+  };
 
   const submitReport = async (event) => {
     event.preventDefault();
@@ -205,7 +229,7 @@ export default function ListingDetails() {
             <aside className="h-fit rounded-[1.5rem] border border-[#A8D8C1] bg-[#FFFFFF] p-6 shadow-[0_18px_45px_rgba(22,33,31,0.07)] lg:sticky lg:top-28">
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full bg-[#F0F7F4] px-3 py-1 text-xs font-extrabold uppercase tracking-[0.12em] text-[#013E43]">
-                  {listing.purpose || "rent"}
+                  {isShortStay ? "Short-term stay" : listing.purpose || "rent"}
                 </span>
                 <span className="rounded-full bg-[#F0F7F4] px-3 py-1 text-xs font-bold capitalize text-[#02BB31]">
                   {listing.availability || "available"}
@@ -221,15 +245,46 @@ export default function ListingDetails() {
                 <FiMapPin className="mt-1 shrink-0 text-[#02BB31]" />
                 {location}
               </p>
+              {Number(listing.totalUnits) > 1 && <p className="mt-3 border-l-2 border-[#02BB31] bg-[#F0F7F4] px-3 py-2 text-sm font-semibold text-[#065A57]">{listing.portfolioName ? `${listing.portfolioName} · ` : ""}{listing.portfolioCategory || "Units"}: {listing.availableUnits ?? listing.totalUnits} of {listing.totalUnits} available</p>}
 
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <Fact icon={<FaBed />} label="Bedrooms" value={listing.bedrooms ?? "N/A"} />
                 <Fact icon={<FaBath />} label="Bathrooms" value={listing.bathrooms ?? "N/A"} />
                 <Fact icon={<FaRulerCombined />} label="Size" value={listing.size ? `${listing.size} ${listing.sizeUnit || ""}` : "N/A"} />
                 <Fact label="Type" value={listing.type || "N/A"} />
+                {isShortStay && <Fact icon={<FiUsers />} label="Guests" value={listing.maxGuests || "Ask host"} />}
               </div>
+              {isShortStay && <p className="mt-3 text-xs leading-5 text-[#52716A]">Minimum stay: {listing.minNights || 1} night(s) · Check-in from {listing.checkInTime || "15:00"} · Check-out by {listing.checkOutTime || "10:00"}</p>}
 
-              {landlordPhone ? (
+              {isShortStay && (
+                <div className="mt-6 border-t border-[#DCEBE3] pt-5">
+                  <h2 className="text-lg font-bold text-[#013E43]">Request these dates</h2>
+                  <p className="mt-1 text-xs leading-5 text-[#52716A]">Your request is not a confirmed reservation. The host will confirm availability.</p>
+                  {stayRequest ? (
+                    <div className="mt-4 rounded-xl bg-[#F0F7F4] p-4">
+                      <p className="text-sm font-bold text-[#013E43]">Request received · {stayRequest.requestCode}</p>
+                      <p className="mt-1 text-xs text-[#52716A]">Contact the host on WhatsApp to confirm the stay.</p>
+                      {stayWhatsappHref && <a href={stayWhatsappHref} target="_blank" rel="noreferrer" className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-[#128C4A] px-4 py-3 text-sm font-bold text-white"><FaWhatsapp />Book on WhatsApp</a>}
+                    </div>
+                  ) : (
+                    <form onSubmit={submitStayRequest} className="mt-4 space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="text-xs font-semibold text-[#36564D]">Check-in<input required type="date" min={today} value={stayForm.checkIn} onChange={(e) => setStayForm({ ...stayForm, checkIn: e.target.value })} className="mt-1 w-full rounded-lg border border-[#C6D9CE] px-2.5 py-2 text-sm text-[#173F37]" /></label>
+                        <label className="text-xs font-semibold text-[#36564D]">Check-out<input required type="date" min={stayForm.checkIn || today} value={stayForm.checkOut} onChange={(e) => setStayForm({ ...stayForm, checkOut: e.target.value })} className="mt-1 w-full rounded-lg border border-[#C6D9CE] px-2.5 py-2 text-sm text-[#173F37]" /></label>
+                      </div>
+                      <label className="block text-xs font-semibold text-[#36564D]">Guests<input required type="number" min="1" max={listing.maxGuests || undefined} value={stayForm.guests} onChange={(e) => setStayForm({ ...stayForm, guests: e.target.value })} className="mt-1 w-full rounded-lg border border-[#C6D9CE] px-3 py-2 text-sm text-[#173F37]" /></label>
+                      <input required placeholder="Your name" value={stayForm.guestName} onChange={(e) => setStayForm({ ...stayForm, guestName: e.target.value })} className="w-full rounded-lg border border-[#C6D9CE] px-3 py-2.5 text-sm text-[#173F37]" />
+                      <input required type="email" placeholder="Email address" value={stayForm.guestEmail} onChange={(e) => setStayForm({ ...stayForm, guestEmail: e.target.value })} className="w-full rounded-lg border border-[#C6D9CE] px-3 py-2.5 text-sm text-[#173F37]" />
+                      <input required type="tel" placeholder="Phone number" value={stayForm.guestPhone} onChange={(e) => setStayForm({ ...stayForm, guestPhone: e.target.value })} className="w-full rounded-lg border border-[#C6D9CE] px-3 py-2.5 text-sm text-[#173F37]" />
+                      <textarea rows="2" placeholder="Message to the host (optional)" value={stayForm.message} onChange={(e) => setStayForm({ ...stayForm, message: e.target.value })} className="w-full resize-y rounded-lg border border-[#C6D9CE] px-3 py-2.5 text-sm text-[#173F37]" />
+                      {stayError && <p role="alert" className="text-sm text-rose-700">{stayError}</p>}
+                      <button disabled={staySending} className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#013E43] px-4 py-3 text-sm font-bold text-white hover:bg-[#005C57] disabled:opacity-60"><FiCalendar />{staySending ? "Sending request…" : "Request stay"}</button>
+                    </form>
+                  )}
+                </div>
+              )}
+
+              {isShortStay ? null : landlordPhone ? (
                 <a
                   href={`tel:${landlordPhone}`}
                   className="mt-6 flex items-center justify-center gap-2 rounded-2xl bg-[#02BB31] px-5 py-4 text-sm font-extrabold text-[#FFFFFF] transition hover:bg-[#0D915C]"
@@ -247,14 +302,14 @@ export default function ListingDetails() {
                 </a>
               )}
 
-              <button
+              {!isShortStay && <button
                 type="button"
                 onClick={() => setInquiryOpen(true)}
                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#013E43] px-5 py-4 text-sm font-extrabold text-white transition hover:bg-[#005C57]"
               >
                 <FiMail />
                 Send inquiry
-              </button>
+              </button>}
 
               <button
                 type="button"
@@ -310,7 +365,7 @@ export default function ListingDetails() {
         </div>
       </section>
 
-      {inquiryOpen ? (
+      {inquiryOpen && !isShortStay ? (
         <div className="fixed inset-0 z-[70] overflow-y-auto bg-[#013E43]/70 px-4 py-6 backdrop-blur-sm sm:py-10">
           <div className="mx-auto max-w-xl">
             <div className="mb-3 flex justify-end">

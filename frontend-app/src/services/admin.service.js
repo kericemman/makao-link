@@ -5,6 +5,26 @@ export const getAdminSummary = async () => {
   return response.data;
 };
 
+export const getAdminOverviewTrends = async (range = "30d") => {
+  const response = await api.get("/admin/overview-trends", { params: { range } });
+  return response.data;
+};
+
+export const getAdminCommercialOverview = async () => {
+  const response = await api.get("/admin/overview-commercial");
+  return response.data;
+};
+
+export const getAdminPlatformHealth = async () => {
+  const response = await api.get("/admin/platform-health");
+  return response.data;
+};
+
+export const getAdminStayRequests = async () => {
+  const response = await api.get("/admin/stay-requests");
+  return response.data;
+};
+
 export const getPendingListings = async () => {
   const response = await api.get("/admin/listings/pending");
   return response.data;
@@ -113,6 +133,21 @@ export const updateListingReportStatus = async (id, payload) => {
 
 export const getRecentActivity = async () => {
   const response = await api.get("/admin/activity");
+  return response.data;
+};
+
+export const getAdminNotifications = async () => {
+  const response = await api.get("/admin/notifications");
+  return response.data;
+};
+
+export const markAdminNotificationRead = async (id) => {
+  const response = await api.patch(`/admin/notifications/${id}/read`);
+  return response.data;
+};
+
+export const markAllAdminNotificationsRead = async () => {
+  const response = await api.patch("/admin/notifications/read-all");
   return response.data;
 };
 

@@ -16,7 +16,8 @@ const RoleRoute = ({ allowedRole }) => {
       />
     );
   }
-  if (user.role !== allowedRole) return <Navigate to="/" replace />;
+  const allowedRoles = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
+  if (!allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
 
   return <Outlet />;
 };

@@ -23,6 +23,7 @@ const {
   deleteUpdate,
 
   getSubscribers,
+  updateSubscriberStatus,
   updateSubscriber,
 
   getPolicies,
@@ -67,6 +68,7 @@ router
   .delete(deleteUpdate);
 
 router.get("/subscribers", getSubscribers);
+router.patch("/subscribers/status", updateSubscriberStatus);
 router.patch("/subscribers/:id", updateSubscriber);
 
 router

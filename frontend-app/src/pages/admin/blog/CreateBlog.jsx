@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   createBlog,
@@ -46,7 +46,7 @@ const AdminBlogEditorPage = () => {
   const [error, setError] = useState("");
   const [previewMode, setPreviewMode] = useState(false);
 
-  const fetchBlog = async () => {
+  const fetchBlog = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -75,13 +75,13 @@ const AdminBlogEditorPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     if (isEdit) {
       fetchBlog();
     }
-  }, [id]);
+  }, [fetchBlog, isEdit]);
 
   useEffect(() => {
     if (!coverImage) {
@@ -179,12 +179,12 @@ const AdminBlogEditorPage = () => {
       if (isEdit) {
         await updateBlog(id, payload);
         toast.success("Blog updated successfully", {
-          style: { background: "#02BB31", color: "#fff" }
+          style: { background: "#0D915C", color: "#fff" }
         });
       } else {
         await createBlog(payload);
         toast.success("Blog created successfully", {
-          style: { background: "#02BB31", color: "#fff" }
+          style: { background: "#0D915C", color: "#fff" }
         });
       }
 
@@ -204,8 +204,8 @@ const AdminBlogEditorPage = () => {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#E4EEE8] border-t-[#02BB31]" />
-          <p className="text-[#065A57]">Loading blog editor...</p>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#DDEAE3] border-t-[#0D915C]" />
+          <p className="text-[#41635A]">Loading blog editor...</p>
         </div>
       </div>
     );
@@ -213,22 +213,22 @@ const AdminBlogEditorPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-[#E4EEE8] bg-white p-6 shadow-sm">
+      <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center space-x-4">
             <button
               type="button"
               onClick={() => navigate("/admin/blog")}
-              className="rounded-lg p-2 transition-colors hover:bg-[#F0F7F4]"
+              className="rounded-lg p-2 transition-colors hover:bg-[#F1F7F3]"
             >
-              <FiArrowLeft className="text-xl text-[#065A57]" />
+              <FiArrowLeft className="text-xl text-[#41635A]" />
             </button>
 
             <div>
               <h1 className="text-xl font-bold text-[#013E43]">
                 {isEdit ? "Edit Blog Post" : "Create Blog Post"}
               </h1>
-              <p className="text-sm text-[#065A57]">
+              <p className="text-sm text-[#41635A]">
                 {isEdit
                   ? "Edit your existing blog post"
                   : "Write and publish a new blog article"}
@@ -239,7 +239,7 @@ const AdminBlogEditorPage = () => {
           <button
             type="button"
             onClick={() => setPreviewMode(true)}
-            className="flex items-center rounded-lg border border-[#E4EEE8] px-4 py-2 text-[#065A57] transition-colors hover:bg-[#F0F7F4]"
+            className="flex items-center rounded-lg border border-[#DDEAE3] px-4 py-2 text-[#41635A] transition-colors hover:bg-[#F1F7F3]"
           >
             <FiEye className="mr-2" />
             Preview
@@ -256,9 +256,9 @@ const AdminBlogEditorPage = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
-            <div className="rounded-lg border border-[#E4EEE8] bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
               <h2 className="mb-4 flex items-center text-lg font-semibold text-[#013E43]">
-                <FiType className="mr-2 text-[#02BB31]" />
+                <FiType className="mr-2 text-[#0D915C]" />
                 Article Title
               </h2>
 
@@ -267,14 +267,14 @@ const AdminBlogEditorPage = () => {
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="Enter blog title"
-                className="w-full rounded-lg border-2 border-[#E4EEE8] px-4 py-3 text-xl outline-none transition-colors focus:border-[#02BB31]"
+                className="w-full rounded-lg border-2 border-[#DDEAE3] px-4 py-3 text-xl outline-none transition-colors focus:border-[#0D915C]"
                 required
               />
             </div>
 
-            <div className="rounded-lg border border-[#E4EEE8] bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
               <h2 className="mb-4 flex items-center text-lg font-semibold text-[#013E43]">
-                <FiAlignLeft className="mr-2 text-[#02BB31]" />
+                <FiAlignLeft className="mr-2 text-[#0D915C]" />
                 Excerpt
               </h2>
 
@@ -284,17 +284,17 @@ const AdminBlogEditorPage = () => {
                 onChange={handleChange}
                 rows="3"
                 placeholder="Short description of the blog post"
-                className="w-full resize-none rounded-lg border-2 border-[#E4EEE8] px-4 py-3 outline-none transition-colors focus:border-[#02BB31]"
+                className="w-full resize-none rounded-lg border-2 border-[#DDEAE3] px-4 py-3 outline-none transition-colors focus:border-[#0D915C]"
               />
 
-              <p className="mt-1 text-xs text-[#065A57]">
+              <p className="mt-1 text-xs text-[#41635A]">
                 A brief summary that will appear in blog listings.
               </p>
             </div>
 
             <div>
               <h2 className="mb-4 flex items-center text-lg font-semibold text-[#013E43]">
-                <FiFileText className="mr-2 text-[#02BB31]" />
+                <FiFileText className="mr-2 text-[#0D915C]" />
                 Content
               </h2>
 
@@ -308,15 +308,15 @@ const AdminBlogEditorPage = () => {
                 }
               />
 
-              <div className="flex justify-between rounded-b-2xl border border-t-0 border-[#E4EEE8] bg-[#F0F7F4] px-4 py-2 text-sm">
-                <span className="text-[#065A57]">
+              <div className="flex justify-between rounded-b-2xl border border-t-0 border-[#DDEAE3] bg-[#F1F7F3] px-4 py-2 text-sm">
+                <span className="text-[#41635A]">
                   Words:{" "}
                   <span className="font-medium text-[#013E43]">
                     {wordCount}
                   </span>
                 </span>
 
-                <span className="text-[#065A57]">
+                <span className="text-[#41635A]">
                   Characters:{" "}
                   <span className="font-medium text-[#013E43]">
                     {characterCount}
@@ -327,9 +327,9 @@ const AdminBlogEditorPage = () => {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-lg border border-[#E4EEE8] bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
               <h2 className="mb-4 flex items-center text-lg font-semibold text-[#013E43]">
-                <FiSave className="mr-2 text-[#02BB31]" />
+                <FiSave className="mr-2 text-[#0D915C]" />
                 Publish Settings
               </h2>
 
@@ -341,8 +341,8 @@ const AdminBlogEditorPage = () => {
                   }
                   className={`flex items-center justify-center space-x-2 rounded-lg border-2 p-3 transition-all ${
                     formData.status === "draft"
-                      ? "border-[#02BB31] bg-[#02BB31]/10 text-[#02BB31]"
-                      : "border-[#E4EEE8] text-[#065A57] hover:border-[#02BB31]"
+                      ? "border-[#0D915C] bg-[#0D915C]/10 text-[#0D915C]"
+                      : "border-[#DDEAE3] text-[#41635A] hover:border-[#0D915C]"
                   }`}
                 >
                   <FiClock />
@@ -356,8 +356,8 @@ const AdminBlogEditorPage = () => {
                   }
                   className={`flex items-center justify-center space-x-2 rounded-lg border-2 p-3 transition-all ${
                     formData.status === "published"
-                      ? "border-[#02BB31] bg-[#02BB31]/10 text-[#02BB31]"
-                      : "border-[#E4EEE8] text-[#065A57] hover:border-[#02BB31]"
+                      ? "border-[#0D915C] bg-[#0D915C]/10 text-[#0D915C]"
+                      : "border-[#DDEAE3] text-[#41635A] hover:border-[#0D915C]"
                   }`}
                 >
                   <FiGlobe />
@@ -366,9 +366,9 @@ const AdminBlogEditorPage = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#E4EEE8] bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
               <h2 className="mb-4 flex items-center text-lg font-semibold text-[#013E43]">
-                <FiImage className="mr-2 text-[#02BB31]" />
+                <FiImage className="mr-2 text-[#0D915C]" />
                 Cover Image
               </h2>
 
@@ -376,10 +376,10 @@ const AdminBlogEditorPage = () => {
                 type="file"
                 accept="image/*"
                 onChange={handleCover}
-                className="w-full rounded-lg border-2 border-[#E4EEE8] px-4 py-2 outline-none transition-colors focus:border-[#02BB31]"
+                className="w-full rounded-lg border-2 border-[#DDEAE3] px-4 py-2 outline-none transition-colors focus:border-[#0D915C]"
               />
 
-              <p className="mt-1 text-xs text-[#065A57]">
+              <p className="mt-1 text-xs text-[#41635A]">
                 PNG, JPG, JFIF, WEBP, or AVIF up to 20MB.
               </p>
 
@@ -388,15 +388,15 @@ const AdminBlogEditorPage = () => {
                   <img
                     src={coverPreview}
                     alt="Cover preview"
-                    className="h-32 w-full rounded-lg border-2 border-[#E4EEE8] object-cover"
+                    className="h-32 w-full rounded-lg border-2 border-[#DDEAE3] object-cover"
                   />
                 </div>
               ) : null}
             </div>
 
-            <div className="rounded-lg border border-[#E4EEE8] bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
               <h2 className="mb-4 flex items-center text-lg font-semibold text-[#013E43]">
-                <FiTag className="mr-2 text-[#02BB31]" />
+                <FiTag className="mr-2 text-[#0D915C]" />
                 Categorization
               </h2>
 
@@ -409,7 +409,7 @@ const AdminBlogEditorPage = () => {
                     name="category"
                     value={formData.category}
                     onChange={handleChange}
-                    className="w-full rounded-lg border-2 border-[#E4EEE8] px-4 py-2 outline-none transition-colors focus:border-[#02BB31]"
+                    className="w-full rounded-lg border-2 border-[#DDEAE3] px-4 py-2 outline-none transition-colors focus:border-[#0D915C]"
                   >
                     <option value="">Select a category</option>
                     <option value="Property Tips">Property Tips</option>
@@ -429,19 +429,19 @@ const AdminBlogEditorPage = () => {
                     value={formData.tags}
                     onChange={handleChange}
                     placeholder="property, rental, tips"
-                    className="w-full rounded-lg border-2 border-[#E4EEE8] px-4 py-2 outline-none transition-colors focus:border-[#02BB31]"
+                    className="w-full rounded-lg border-2 border-[#DDEAE3] px-4 py-2 outline-none transition-colors focus:border-[#0D915C]"
                   />
 
-                  <p className="mt-1 text-xs text-[#065A57]">
+                  <p className="mt-1 text-xs text-[#41635A]">
                     Separate tags with commas.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#E4EEE8] bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
               <h2 className="mb-4 flex items-center text-lg font-semibold text-[#013E43]">
-                <FiEye className="mr-2 text-[#02BB31]" />
+                <FiEye className="mr-2 text-[#0D915C]" />
                 SEO Settings
               </h2>
 
@@ -455,7 +455,7 @@ const AdminBlogEditorPage = () => {
                     value={formData.metaTitle}
                     onChange={handleChange}
                     placeholder="SEO title"
-                    className="w-full rounded-lg border-2 border-[#E4EEE8] px-4 py-2 outline-none transition-colors focus:border-[#02BB31]"
+                    className="w-full rounded-lg border-2 border-[#DDEAE3] px-4 py-2 outline-none transition-colors focus:border-[#0D915C]"
                   />
                 </div>
 
@@ -469,7 +469,7 @@ const AdminBlogEditorPage = () => {
                     onChange={handleChange}
                     rows="3"
                     placeholder="SEO description"
-                    className="w-full resize-none rounded-lg border-2 border-[#E4EEE8] px-4 py-2 outline-none transition-colors focus:border-[#02BB31]"
+                    className="w-full resize-none rounded-lg border-2 border-[#DDEAE3] px-4 py-2 outline-none transition-colors focus:border-[#0D915C]"
                   />
                 </div>
               </div>
@@ -477,12 +477,12 @@ const AdminBlogEditorPage = () => {
           </div>
         </div>
 
-        <div className="rounded-lg border border-[#E4EEE8] bg-white p-6 shadow-sm">
+        <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
           <div className="flex justify-end space-x-3">
             <button
               type="button"
               onClick={() => navigate("/admin/blog")}
-              className="rounded-lg border border-[#E4EEE8] px-6 py-3 text-[#065A57] transition-colors hover:bg-[#F0F7F4]"
+              className="rounded-lg border border-[#DDEAE3] px-6 py-3 text-[#41635A] transition-colors hover:bg-[#F1F7F3]"
             >
               Cancel
             </button>
@@ -490,7 +490,7 @@ const AdminBlogEditorPage = () => {
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center rounded-lg bg-[#02BB31] px-8 py-3 font-semibold text-white transition-all hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center rounded-lg bg-[#0D915C] px-8 py-3 font-semibold text-white transition-all  disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? (
                 <>
@@ -510,8 +510,8 @@ const AdminBlogEditorPage = () => {
 
       {previewMode ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-sm">
-            <div className="sticky top-0 flex items-center justify-between border-b border-[#E4EEE8] bg-white p-6">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-none">
+            <div className="sticky top-0 flex items-center justify-between border-b border-[#DDEAE3] bg-white p-6">
               <h2 className="text-xl font-bold text-[#013E43]">
                 Blog Preview
               </h2>
@@ -519,9 +519,9 @@ const AdminBlogEditorPage = () => {
               <button
                 type="button"
                 onClick={() => setPreviewMode(false)}
-                className="rounded-lg p-2 transition-colors hover:bg-[#F0F7F4]"
+                className="rounded-lg p-2 transition-colors hover:bg-[#F1F7F3]"
               >
-                <FiXCircle className="text-xl text-[#065A57]" />
+                <FiXCircle className="text-xl text-[#41635A]" />
               </button>
             </div>
 
@@ -539,13 +539,13 @@ const AdminBlogEditorPage = () => {
               </h1>
 
               {formData.excerpt ? (
-                <p className="mb-6 text-lg italic text-[#065A57]">
+                <p className="mb-6 text-lg italic text-[#41635A]">
                   {formData.excerpt}
                 </p>
               ) : null}
 
               <div
-                className="prose prose-lg max-w-none"
+                className="rich-content"
                 dangerouslySetInnerHTML={{
                   __html: sanitizeHtml(formData.content || "<p>No content yet...</p>")
                 }}
@@ -563,7 +563,7 @@ const AdminBlogEditorPage = () => {
 
         .ProseMirror p {
           margin: 0.5em 0;
-          color: #065A57;
+          color: #41635A;
         }
 
         .ProseMirror h1 {
@@ -591,25 +591,25 @@ const AdminBlogEditorPage = () => {
         .ProseMirror ol {
           padding-left: 1.5em;
           margin: 0.5em 0;
-          color: #065A57;
+          color: #41635A;
         }
 
         .ProseMirror blockquote {
-          border-left: 4px solid #02BB31;
+          border-left: 4px solid #0D915C;
           padding-left: 1em;
           margin: 1em 0;
-          color: #065A57;
+          color: #41635A;
           font-style: italic;
         }
 
         .ProseMirror a {
-          color: #02BB31;
+          color: #0D915C;
           text-decoration: underline;
         }
 
         .ProseMirror code {
-          background: #F0F7F4;
-          color: #02BB31;
+          background: #F1F7F3;
+          color: #0D915C;
           padding: 0.2em 0.4em;
           border-radius: 0.25em;
           font-family: monospace;
@@ -617,7 +617,7 @@ const AdminBlogEditorPage = () => {
 
         .ProseMirror pre {
           background: #013E43;
-          color: #F0F7F4;
+          color: #F1F7F3;
           padding: 1em;
           border-radius: 0.5em;
           font-family: monospace;

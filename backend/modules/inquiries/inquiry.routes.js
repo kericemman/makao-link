@@ -6,13 +6,13 @@ const {
   updateInquiryStatus
 } = require("./inquiry.controller");
 const { protect } = require("../../middleware/auth.middleware");
-const requireRole = require("../../middleware/role.middleware");
+const landlordWorkspace = require("../../middleware/landlordWorkspace.middleware");
 
 // public
 router.post("/", createInquiry);
 
 // landlord
-router.get("/landlord/my", protect, requireRole("landlord"), getLandlordInquiries);
-router.put("/landlord/:id/status", protect, requireRole("landlord"), updateInquiryStatus);
+router.get("/landlord/my", protect, landlordWorkspace("inquiries"), getLandlordInquiries);
+router.put("/landlord/:id/status", protect, landlordWorkspace("inquiries"), updateInquiryStatus);
 
 module.exports = router;

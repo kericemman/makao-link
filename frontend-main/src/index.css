@@ -25,6 +25,43 @@ body {
   color: var(--ink);
 }
 
+.rich-content {
+  color: #065a57;
+  font-size: 1rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.rich-content > :first-child { margin-top: 0; }
+.rich-content > :last-child { margin-bottom: 0; }
+.rich-content p { margin: 1em 0; }
+.rich-content h1,
+.rich-content h2,
+.rich-content h3 { color: #013e43; font-weight: 700; line-height: 1.3; scroll-margin-top: 6rem; }
+.rich-content h1 { margin: 1.5em 0 0.75em; font-size: 2rem; }
+.rich-content h2 { margin: 1.25em 0 0.75em; padding-bottom: 0.5em; border-bottom: 2px solid #a8d8c1; font-size: 1.5rem; }
+.rich-content h3 { margin: 1em 0 0.5em; font-size: 1.25rem; }
+.rich-content ul,
+.rich-content ol { margin: 1em 0; padding-left: 2em; }
+.rich-content ul { list-style: disc; }
+.rich-content ol { list-style: decimal; }
+.rich-content li { display: list-item; margin: 0.5em 0; }
+.rich-content li::marker { color: #0d915c; }
+.rich-content blockquote { margin: 1.5em 0; padding: 0.5em 0 0.5em 1.5em; border-left: 4px solid #02bb31; border-radius: 0 0.5rem 0.5rem 0; background: #f0f7f4; color: #065a57; font-style: italic; }
+.rich-content a { color: #0d915c; text-decoration: underline; text-underline-offset: 0.15em; }
+.rich-content strong { color: #013e43; font-weight: 700; }
+.rich-content code { border-radius: 0.25rem; background: #f0f7f4; padding: 0.2em 0.4em; color: #0d915c; font-size: 0.9em; }
+.rich-content pre { max-width: 100%; margin: 1.5em 0; overflow-x: auto; border-radius: 0.5rem; background: #013e43; padding: 1rem; color: #f0f7f4; }
+.rich-content pre code { background: transparent; padding: 0; color: inherit; }
+.rich-content hr { margin: 2em 0; border: 0; border-top: 2px solid #a8d8c1; }
+.rich-content img { display: block; max-width: 100%; height: auto; margin: 1.5em auto; border-radius: 0.5rem; }
+
+@media (max-width: 640px) {
+  .rich-content h1 { font-size: 1.75rem; }
+  .rich-content h2 { font-size: 1.375rem; }
+  .rich-content h3 { font-size: 1.125rem; }
+}
+
 img {
   max-width: 100%;
 }
@@ -69,6 +106,12 @@ select:not([multiple]) {
   display: none;
 }
 
+@media (max-width: 639px) {
+  .listing-rail--mobile-grid > :last-child:nth-child(odd) {
+    display: none;
+  }
+}
+
 .loading-bar {
   background: linear-gradient(90deg, #02bb31, #0d915c);
   animation: loading-slide 1.1s ease-in-out infinite;
@@ -87,6 +130,17 @@ select:not([multiple]) {
   inset: 0;
   position: absolute;
   transform: translateX(-100%);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes loading-slide {

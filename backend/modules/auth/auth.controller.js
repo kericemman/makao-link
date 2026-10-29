@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 const User = require("../users/user.model");
 const Listing = require("../listings/listings.model");
 const sendEmail = require("../../utils/sendEmail");
@@ -11,6 +12,11 @@ const {
 const plans = require("../payments/plan.config");
 const { createInitialSubscription } = require("../subscriptions/subscription.service");
 const { syncWebsiteInquiriesToAppAlertsForUser } = require("../inquiries/inquiryBridge.service");
+const {
+  clearSharedSessionCookie,
+  getSharedSessionToken,
+  setSharedSessionCookie
+} = require("../../utils/sharedSession");
 
 const buildAuthUser = (user) => ({
   _id: user._id,
@@ -22,7 +28,11 @@ const buildAuthUser = (user) => ({
   businessName: user.businessName,
   bio: user.bio,
   location: user.location,
-  isEmailVerified: user.isEmailVerified
+  isEmailVerified: user.isEmailVerified,
+  landlordOwner: user.landlordOwner || null,
+  teamRole: user.teamRole || null,
+  teamPermissions: user.teamPermissions || [],
+  teamStatus: user.teamStatus || null
 });
 
 const hashOtp = (otp) =>
@@ -104,6 +114,7 @@ exports.registerLandlord = async (req, res, next) => {
     await user.save();
 
     const token = generateToken(user);
+    setSharedSessionCookie(res, user, token);
 
     await sendEmail({
         to: user.email,
@@ -145,7 +156,7 @@ exports.loginLandlord = async (req, res, next) => {
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() }).populate("subscription");
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -161,6 +172,10 @@ exports.loginLandlord = async (req, res, next) => {
       return res.status(403).json({ message: "Your agent account is suspended" });
     }
 
+    if (user.role === "landlord_staff" && user.teamStatus !== "active") {
+      return res.status(403).json({ message: "Your company workspace access is suspended." });
+    }
+
     if (user.isEmailVerified === false) {
       const otp = setEmailOtp(user);
       await user.save();
@@ -174,12 +189,18 @@ exports.loginLandlord = async (req, res, next) => {
       });
     }
 
-    const token = generateToken(user);
+    const workspaceOwner = user.role === "landlord_staff"
+      ? await User.findOne({ _id: user.landlordOwner, role: "landlord" }).populate("subscription")
+      : await User.findById(user._id).populate("subscription");
+    if (!workspaceOwner) return res.status(403).json({ message: "The company workspace is unavailable." });
 
-    const planConfig = user.subscription ? plans[user.subscription.plan] : null;
+    const token = generateToken(user);
+    setSharedSessionCookie(res, user, token);
+    const subscription = workspaceOwner.subscription;
+    const planConfig = subscription ? plans[subscription.plan] : null;
 
     const usedListings = await Listing.countDocuments({
-      landlord: user._id,
+      landlord: workspaceOwner._id,
       isActive: true,
       availability: "available"
     });
@@ -188,7 +209,7 @@ exports.loginLandlord = async (req, res, next) => {
       success: true,
       token,
       user: buildAuthUser(user),
-      subscription: user.subscription,
+      subscription,
       usage: {
         used: usedListings,
         limit: planConfig?.listingLimit || 0,
@@ -202,11 +223,15 @@ exports.loginLandlord = async (req, res, next) => {
 
 exports.getMe = async (req, res, next) => {
   try {
-    const subscription = req.user.subscription;
+    const workspaceOwner = req.user.role === "landlord_staff"
+      ? await User.findOne({ _id: req.user.landlordOwner, role: "landlord" }).populate("subscription")
+      : await User.findById(req.user._id).populate("subscription");
+    if (!workspaceOwner) return res.status(403).json({ message: "The company workspace is unavailable." });
+    const subscription = workspaceOwner.subscription;
     const planConfig = subscription ? plans[subscription.plan] : null;
 
     const usedListings = await Listing.countDocuments({
-      landlord: req.user._id,
+      landlord: workspaceOwner._id,
       isActive: true,
       availability: "available"
     });
@@ -224,6 +249,39 @@ exports.getMe = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+exports.sharedSession = async (req, res) => {
+  const token = getSharedSessionToken(req);
+  if (!token) return res.json({ authenticated: false, user: null });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("name email role");
+    if (!user || !["user", "agent"].includes(user.role)) {
+      clearSharedSessionCookie(res);
+      return res.json({ authenticated: false, user: null });
+    }
+
+    return res.json({
+      authenticated: true,
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role }
+    });
+  } catch {
+    clearSharedSessionCookie(res);
+    return res.json({ authenticated: false, user: null });
+  }
+};
+
+exports.logout = async (req, res) => {
+  clearSharedSessionCookie(res);
+  return res.json({ success: true });
+};
+
+exports.syncSharedSession = async (req, res) => {
+  const token = generateToken(req.user);
+  setSharedSessionCookie(res, req.user, token);
+  return res.json({ success: true });
 };
 
 
@@ -374,12 +432,13 @@ exports.forgotPassword = async (req, res, next) => {
     await user.save();
 
     const mainClientUrl = process.env.CLIENT_URL || "https://rendahomes.com";
-    const portalUrl =
-      user.role === "landlord"
+    const configuredPortalUrl =
+      user.role === "landlord" || user.role === "landlord_staff"
         ? process.env.LANDLORD_CLIENT_URL || mainClientUrl
         : user.role === "admin" || user.role === "app_manager"
           ? process.env.ADMIN_CLIENT_URL || mainClientUrl
           : process.env.USER_CLIENT_URL || mainClientUrl;
+    const portalUrl = configuredPortalUrl.replace(/\/+$/, "");
     const resetUrl = `${portalUrl}/reset-password/${rawToken}`;
 
     await sendEmail({
@@ -477,6 +536,7 @@ exports.verifyEmail = async (req, res) => {
     await user.save();
 
     const token = generateToken(user);
+    setSharedSessionCookie(res, user, token);
 
     return res.json({
       success: true,

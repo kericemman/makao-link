@@ -37,6 +37,7 @@ export default function Listings() {
     () => ({
       search: searchParams.get("search") || "",
       purpose: searchParams.get("purpose") || "",
+      guests: searchParams.get("guests") || "",
       type: searchParams.get("type") || "",
       county: searchParams.get("county") || "",
       town: searchParams.get("town") || "",
@@ -91,6 +92,7 @@ export default function Listings() {
     const next = new URLSearchParams(searchParams);
     if (value) next.set(key, value);
     else next.delete(key);
+    if (key === "purpose" && value !== "short_stay") next.delete("guests");
     if (key !== "page") next.delete("page");
     setSearchParams(next);
   };

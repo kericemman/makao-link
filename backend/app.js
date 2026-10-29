@@ -30,6 +30,8 @@ const agentRoutes = require("./modules/agents/agent.routes");
 const kycRoutes = require("./modules/kyc/kyc.routes");
 const settingRoutes = require("./modules/settings/setting.route");
 const listingReportRoutes = require("./modules/listingReports/listingReport.routes");
+const landlordTeamRoutes = require("./modules/team/team.routes");
+const stayBookingRoutes = require("./modules/stays/stayBooking.routes");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -43,7 +45,9 @@ const devOrigins = isProduction
       "http://localhost:5175",
       "http://127.0.0.1:5175",
       "http://localhost:5176",
-      "http://127.0.0.1:5176"
+      "http://127.0.0.1:5176",
+      "http://localhost:5177",
+      "http://127.0.0.1:5177"
     ];
 
 const allowedOrigins = [
@@ -102,6 +106,7 @@ app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/listings", listingRoutes);
 app.use("/api/inquiries", inquiryRoutes);
+app.use("/api/stays", stayBookingRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/support", supportRoutes);
@@ -116,6 +121,7 @@ app.use("/api", agentRoutes);
 app.use("/api/kyc", kycRoutes);
 app.use("/api/settings", settingRoutes);
 app.use("/api/listing-reports", listingReportRoutes);
+app.use("/api/landlord/team", landlordTeamRoutes);
 app.use("/", seoRoutes);
 
 app.use(errorHandler);

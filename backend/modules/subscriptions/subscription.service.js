@@ -124,3 +124,40 @@ exports.markExpiredAndUnlist = async (subscription) => {
     }
   );
 };
+
+exports.processScheduledFreeDowngrades = async () => {
+  const dueSubscriptions = await Subscription.find({
+    downgradeToFreeAt: { $lte: new Date() },
+    status: { $in: ["active", "grace", "expired", "cancelled", "pending_payment"] }
+  });
+
+  for (const subscription of dueSubscriptions) {
+    const listings = await Listing.find({
+      landlord: subscription.user,
+      isActive: true,
+      availability: "available"
+    }).sort({ createdAt: -1 });
+    const excessIds = listings.slice(plans.normal.listingLimit).map(({ _id }) => _id);
+
+    if (excessIds.length) {
+      await Listing.updateMany(
+        { _id: { $in: excessIds } },
+        { $set: { isActive: false, unlistReason: "expired_subscription" } }
+      );
+    }
+
+    subscription.plan = "normal";
+    subscription.status = "free";
+    subscription.currentPeriodStart = null;
+    subscription.currentPeriodEnd = null;
+    subscription.gracePeriodEnd = null;
+    subscription.pendingPlan = null;
+    subscription.pendingPaymentReference = null;
+    subscription.downgradeToFreeAt = null;
+    subscription.paystackSubscriptionCode = null;
+    subscription.paystackEmailToken = null;
+    await subscription.save();
+  }
+
+  return dueSubscriptions.length;
+};

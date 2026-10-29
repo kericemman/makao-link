@@ -2,8 +2,8 @@ import { FiCheckCircle, FiPhone, FiShield } from "react-icons/fi";
 
 const badgeConfig = {
   listingVerified: {
-    label: "RendaHomes verified",
-    icon: FiShield,
+    label: "Verified",
+    icon: FiCheckCircle,
     className: "bg-[#013E43] text-white"
   },
   listingReviewed: {

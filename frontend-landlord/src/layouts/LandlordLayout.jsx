@@ -11,12 +11,15 @@ import {
   FiLogOut,
   FiMenu,
   FiX,
-  FiBell,
+  FiChevronLeft,
+  FiChevronRight,
   FiChevronDown,
   FiCreditCard,
   FiUser,
   FiHelpCircle,
-  FiShield
+  FiShield,
+  FiUsers,
+  FiCalendar
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 
@@ -79,22 +82,28 @@ const LandlordLayout = () => {
   const isSubscriptionActive =
     subscription?.status === "active" || subscription?.status === "free";
 
-  const planName = subscription?.plan?.toUpperCase() || "FREE";
+  const planName = subscription?.plan === "normal"
+    ? "Free"
+    : subscription?.plan
+      ? `${subscription.plan.charAt(0).toUpperCase()}${subscription.plan.slice(1)}`
+      : "Free";
 
   const usagePercentage =
     usage?.limit > 0 ? Math.min((usage.used / usage.limit) * 100, 100) : 0;
 
   const isUsageHigh = usagePercentage >= 80 && usage?.limit > 0;
 
+  const isAtListingLimit = Number(usage?.limit) > 0 && Number(usage.used) >= Number(usage.limit);
+
   const isBlocked =
     !subscription ||
     ["pending_payment", "grace", "expired", "cancelled"].includes(
       subscription.status
     ) ||
-    usage.used >= usage.limit;
+    isAtListingLimit;
 
   const getBlockReason = () => {
-    if (usage.used >= usage.limit) return "limit_reached";
+    if (isAtListingLimit) return "limit_reached";
     if (subscription?.status === "pending_payment") return "pending_payment";
     if (subscription?.status === "grace") return "grace_block";
     if (subscription?.status === "expired") return "expired";
@@ -124,54 +133,41 @@ const LandlordLayout = () => {
     navigate("/login");
   };
 
-  const navigationItems = useMemo(
-    () => [
-      {
-        path: "/dashboard",
-        name: "Overview",
-        icon: FiHome,
-        description: "Dashboard stats"
-      },
-      {
-        path: "/listings",
-        name: "My Listings",
-        icon: FiList,
-        description: "Manage properties"
-      },
-      {
-        path: "/listings/new",
-        name: "Add Listing",
-        icon: FiPlusCircle,
-        description: "Create new listing",
-        protected: true
-      },
-      {
-        path: "/inquiries",
-        name: "Inquiries",
-        icon: FiMessageSquare,
-        description: "Tenant messages"
-      },
-      {
-        path: "/subscription",
-        name: "Subscription",
-        icon: FiCreditCard,
-        description: "Manage plan"
-      },
-      {
-        path: "/kyc",
-        name: "KYC Verification",
-        icon: FiShield,
-        description: "Verify account"
-      },
-      {
-        path: "/support",
-        name: "Support",
-        icon: FiHelpCircle,
-        description: "Get help"
-      }
-    ],
-    []
-  );
+  const navigationGroups = useMemo(() => {
+    const groups = [
+    {
+      label: "Workspace",
+      items: [
+        { path: "/dashboard", name: "Overview", icon: FiHome, description: "Your account at a glance" },
+        { path: "/listings", name: "Properties", icon: FiList, description: "Manage your listings" },
+        { path: "/inquiries", name: "Inquiries", icon: FiMessageSquare, description: "Respond to property leads" },
+        { path: "/stay-requests", name: "Stay requests", icon: FiCalendar, description: "Review short-stay date requests" }
+      ]
+    },
+    {
+      label: "Account",
+      items: [
+        { path: "/subscription", name: "Plan & billing", icon: FiCreditCard, description: "Plan, limits, and payments" },
+        { path: "/kyc", name: "Verification", icon: FiShield, description: "Identity and ownership checks" },
+        { path: "/profile", name: "Profile", icon: FiUser, description: "Personal and business details" }
+      ]
+    },
+    {
+      label: "Help",
+      items: [
+        { path: "/support", name: "Support tickets", icon: FiHelpCircle, description: "Contact and track support" }
+      ]
+    }
+    ];
+    const advanced = ["premium", "pro"].includes(subscription?.plan) && subscription?.status === "active";
+    if (advanced && (user?.role === "landlord" || user?.teamPermissions?.includes("reports"))) {
+      groups[0].items.push({ path: "/team", name: "Company workspace", icon: FiUsers, description: "Agents, assignments, and reports" });
+    }
+    if (user?.role === "landlord_staff") return groups.filter((group) => group.label === "Workspace");
+    return groups;
+  }, [subscription?.plan, subscription?.status, user?.role, user?.teamPermissions]);
+
+  const navigationItems = navigationGroups.flatMap((group) => group.items);
 
   const isActivePath = (path) => {
     if (path === "/dashboard") {
@@ -184,253 +180,118 @@ const LandlordLayout = () => {
   const currentPage = navigationItems.find((item) => isActivePath(item.path));
 
   return (
-    <div className="min-h-screen bg-[#F0F7F4]">
+    <div className="min-h-screen bg-[#F5F8F6]">
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+          className="fixed inset-0 z-20 bg-slate-950/45 backdrop-blur-[2px] lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       <aside
-        className={`fixed top-0 left-0 z-30 h-full bg-gradient-to-b from-[#013E43] to-[#001A1C] text-white transition-all duration-300 ease-in-out
-          ${isSidebarOpen ? "w-72" : "w-20"} 
+        className={`fixed inset-y-0 left-0 z-30 text-white transition-[width,transform] duration-200 ease-out
+          ${isSidebarOpen ? "w-[17rem]" : "w-[17rem] lg:w-20"}
           ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-          border-r border-[#065A57] shadow-2xl overflow-hidden`}
+          border-r border-[#24534D] bg-[#123D38] shadow-xl lg:shadow-none`}
       >
-        <div className="h-full flex flex-col overflow-y-auto">
-          <div
-            className={`sticky top-0 z-10 p-4 border-b border-[#065A57] bg-gradient-to-r from-[#02BB31]/10 to-transparent backdrop-blur-sm ${
-              !isSidebarOpen && "lg:p-3"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              {/* {isSidebarOpen && (
-                // <div>
-                //   <h2 className="text-lg font-bold">RendaHomes</h2>
-                //   <p className="text-xs text-[#A8D8C1]">Landlord Panel</p>
-                // </div>
-              )} */}
-
-              <button
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors text-white ml-auto"
-                aria-label="Close menu"
-              >
-                <FiX size={20} />
-              </button>
-
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="hidden lg:block p-2 hover:bg-white/10 rounded-lg transition-colors text-white flex-shrink-0"
-                aria-label="Toggle sidebar"
-              >
-                {isSidebarOpen ? <FiX size={20} /> : <FiMenu size={20} />}
-              </button>
-            </div>
+        <div className="flex h-full flex-col">
+          <div className="flex h-[4.5rem] shrink-0 items-center justify-between border-b border-white/10 px-4">
+            <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)} aria-label={!isSidebarOpen ? "RendaHomes landlord overview" : undefined} className="flex min-w-0 items-center gap-3 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-300">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white text-[#123D38]"><FiHome className="text-lg" /></span>
+              {isSidebarOpen && <span className="min-w-0"><span className="block truncate text-sm font-bold text-white">RendaHomes</span><span className="block text-[11px] text-emerald-100/75">LANDLORD PORTAL</span></span>}
+            </Link>
+            <button type="button" onClick={() => setIsMobileMenuOpen(false)} className="grid h-10 w-10 place-items-center rounded text-emerald-50 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300 lg:hidden" aria-label="Close navigation"><FiX size={20} /></button>
+            <button type="button" onClick={() => setIsSidebarOpen((open) => !open)} className="hidden h-9 w-9 place-items-center rounded text-emerald-50 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300 lg:grid" aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"} aria-expanded={isSidebarOpen}>
+              {isSidebarOpen ? <FiChevronLeft size={18} /> : <FiChevronRight size={18} />}
+            </button>
           </div>
 
-          <div className="p-4 border-b border-[#065A57] bg-white/5 backdrop-blur-sm">
-            <div className="flex items-center space-x-3">
-              {/* <div className="w-11 h-11 bg-gradient-to-r from-[#02BB31] to-[#0D915C] rounded-xl flex items-center justify-center text-white font-bold">
-                {user?.name?.charAt(0)?.toUpperCase() || "L"}
-              </div> */}
+          <div className={`border-b border-white/10 px-4 py-4 ${!isSidebarOpen ? "lg:px-3" : ""}`}>
+            <div className={`flex items-center gap-3 ${!isSidebarOpen ? "lg:justify-center" : ""}`}>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#D7F0E1] text-sm font-bold text-[#164D3C]">{user?.name?.trim()?.charAt(0)?.toUpperCase() || "L"}</span>
+              {isSidebarOpen && <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-white">{user?.name || "Landlord"}</p><p className="truncate text-xs text-emerald-100/70">{user?.email || ""}</p></div>}
+            </div>
+            {isSidebarOpen && <div className="mt-4"><div className="flex items-center justify-between gap-2 text-xs"><span className="font-semibold text-white">{planName} plan</span><span className={`capitalize ${isSubscriptionActive ? "text-emerald-200" : "text-amber-200"}`}>{subscription?.status?.replaceAll("_", " ") || "Inactive"}</span></div>{usage?.limit > 0 && <><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15"><div className={`h-full rounded-full transition-all ${isUsageHigh ? "bg-amber-300" : "bg-emerald-300"}`} style={{ width: `${usagePercentage}%` }} /></div><div className="mt-1.5 flex justify-between text-[11px] text-emerald-50/70"><span>{usage.used} of {usage.limit} listing slots</span><span>{usage.remaining} left</span></div></>}</div>}
+          </div>
 
-              {isSidebarOpen && (
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white truncate">
-                    {user?.name || "Landlord"}
-                  </p>
+          <button type="button" aria-label="Add property" onClick={(event) => { if (isBlocked) handleAddListingClick(event); else navigate("/listings/new"); setIsMobileMenuOpen(false); }} className={`mx-3 mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#D7F0E1] px-3 text-sm font-semibold text-[#164D3C] transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 ${!isSidebarOpen ? "lg:mx-2 lg:px-0" : ""}`} title={!isSidebarOpen ? "Add property" : undefined}>
+            <FiPlusCircle className="shrink-0 text-lg" />{isSidebarOpen && <span>Add property</span>}
+          </button>
 
-                  <p className="text-xs text-[#A8D8C1] truncate">
-                    {user?.email || "user@example.com"}
-                  </p>
-
-                  <div className="flex items-center space-x-2 mt-2">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        isSubscriptionActive
-                          ? "bg-[#02BB31]/20 text-[#02BB31]"
-                          : "bg-yellow-100/20 text-yellow-400"
-                      }`}
-                    >
-                      {planName}
-                    </span>
-
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        isSubscriptionActive
-                          ? "bg-[#02BB31]/20 text-[#02BB31]"
-                          : "bg-red-100/20 text-red-400"
-                      }`}
-                    >
-                      {subscription?.status?.replace("_", " ") || "Inactive"}
-                    </span>
-                  </div>
-
-                  {usage?.limit > 0 && (
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between text-xs text-[#A8D8C1] mb-1">
-                        <span>Listings Used</span>
-                        <span>
-                          {usage.used}/{usage.limit}
-                        </span>
-                      </div>
-
-                      <div className="h-1.5 w-full bg-[#065A57] rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${
-                            isUsageHigh ? "bg-orange-500" : "bg-[#02BB31]"
-                          }`}
-                          style={{ width: `${usagePercentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
+          <nav aria-label="Landlord navigation" className="mt-4 flex-1 space-y-5 overflow-y-auto px-3 pb-4">
+            {navigationGroups.map((group) => (
+              <div key={group.label}>
+                {isSidebarOpen && <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-100/55">{group.label}</p>}
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActivePath(item.path);
+                    return (
+                      <Link key={item.path} to={item.path} onClick={() => setIsMobileMenuOpen(false)} aria-label={!isSidebarOpen ? item.name : undefined} aria-current={active ? "page" : undefined} title={!isSidebarOpen ? item.name : undefined} className={`group flex min-h-11 items-center gap-3 rounded-md px-3 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 ${!isSidebarOpen ? "lg:justify-center lg:px-0" : ""} ${active ? "bg-[#D7F0E1] font-semibold text-[#164D3C]" : "text-emerald-50/80 hover:bg-white/10 hover:text-white"}`}>
+                        <Icon className={`shrink-0 text-[18px] ${active ? "text-[#126542]" : "text-emerald-100/75"}`} />
+                        {isSidebarOpen && <span className="min-w-0"><span className="block truncate">{item.name}</span><span className={`mt-0.5 block truncate text-[11px] font-normal ${active ? "text-[#3E6756]" : "text-emerald-50/55"}`}>{item.description}</span></span>}
+                      </Link>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-          </div>
-
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = isActivePath(item.path);
-              const isProtectedAddListing = item.protected;
-
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={(e) => {
-                    setIsMobileMenuOpen(false);
-
-                    if (isProtectedAddListing) {
-                      handleAddListingClick(e);
-                    }
-                  }}
-                  className={`flex items-center ${
-                    !isSidebarOpen && "justify-center"
-                  } p-3 rounded-xl transition-all group relative
-                    ${
-                      isActive
-                        ? "bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white shadow-lg shadow-[#02BB31]/20"
-                        : "text-[#A8D8C1] hover:bg-white/10 hover:text-white"
-                    }`}
-                >
-                  <Icon
-                    className={`text-xl ${
-                      !isSidebarOpen ? "mr-0" : "mr-3"
-                    } flex-shrink-0`}
-                  />
-
-                  {isSidebarOpen && (
-                    <div className="flex-1 min-w-0">
-                      <span className="font-medium block truncate">
-                        {item.name}
-                      </span>
-
-                      <p className="text-xs opacity-75 truncate">
-                        {item.description}
-                      </p>
-                    </div>
-                  )}
-
-                  {!isSidebarOpen && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-[#013E43] text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-xl">
-                      {item.name}
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
+              </div>
+            ))}
           </nav>
 
-          <div className="sticky bottom-0 p-4 border-t border-[#065A57] bg-gradient-to-t from-[#013E43] to-transparent backdrop-blur-sm">
-            <button
-              onClick={handleLogout}
-              className={`flex items-center ${
-                !isSidebarOpen && "justify-center"
-              } w-full p-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-500 transition-colors group relative`}
-            >
-              <FiLogOut
-                className={`text-xl ${
-                  !isSidebarOpen ? "mr-0" : "mr-3"
-                } flex-shrink-0`}
-              />
-
-              {isSidebarOpen && <span className="truncate">Logout</span>}
-
-              {!isSidebarOpen && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-red-600 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap">
-                  Logout
-                </div>
-              )}
+          <div className="border-t border-white/10 p-3">
+            <button type="button" onClick={handleLogout} aria-label="Log out" title={!isSidebarOpen ? "Log out" : undefined} className={`flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-sm font-medium text-rose-100/85 transition-colors hover:bg-rose-300/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300 ${!isSidebarOpen ? "lg:justify-center lg:px-0" : ""}`}>
+              <FiLogOut className="shrink-0 text-lg" />{isSidebarOpen && <span>Log out</span>}
             </button>
           </div>
         </div>
       </aside>
 
       <main
-        className={`transition-all duration-300 ${
-          isSidebarOpen ? "lg:ml-72" : "lg:ml-20"
+        className={`transition-all duration-200 ${
+          isSidebarOpen ? "lg:ml-[17rem]" : "lg:ml-20"
         } ml-0 min-h-screen`}
       >
-        <header className="sticky top-0 z-20 bg-white shadow-sm border-b border-[#A8D8C1]">
-          <div className="px-4 sm:px-6 lg:px-8 py-4">
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+          <div className="px-4 py-3.5 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="lg:hidden p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
+                className="grid h-10 w-10 place-items-center rounded-md text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700 lg:hidden"
                 aria-label="Open menu"
               >
-                <FiMenu className="text-[#013E43] text-xl" />
+                <FiMenu className="text-xl" />
               </button>
 
               <div className="flex-1 ml-4 lg:ml-0">
-                <h1 className="text-xl font-bold text-[#013E43]">
+                <h1 className="text-lg font-bold text-slate-950">
                   {currentPage?.name || "Dashboard"}
                 </h1>
 
-                <p className="text-sm text-[#065A57]">
-                  {currentPage?.description || "Landlord dashboard"}
-                </p>
+                <p className="text-xs text-slate-500">{currentPage?.description || "Landlord workspace"}</p>
               </div>
 
-              <div className="flex items-center space-x-4">
-                <div className="hidden md:flex items-center space-x-2 px-3 py-2 bg-[#F0F7F4] rounded-lg">
-                  <FiCreditCard className="text-[#02BB31]" />
-                  <span className="text-sm font-medium text-[#013E43]">
-                    {planName}
-                  </span>
-                </div>
-
-                <button className="relative p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors">
-                  <FiBell className="text-[#065A57] text-xl" />
-                </button>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Link to="/subscription" className="hidden min-h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex"><FiCreditCard className="text-emerald-800" />{planName} plan</Link>
 
                 <div className="relative">
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center space-x-3 p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
+                    className="flex min-h-10 items-center gap-2 rounded-md px-2 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700"
                     aria-label="User menu"
+                    aria-expanded={showUserMenu}
                   >
-                    <div className="w-10 h-10 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl flex items-center justify-center text-white font-bold shadow-lg flex-shrink-0">
+                    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#D7F0E1] text-sm font-bold text-[#164D3C]">
                       {user?.name?.charAt(0).toUpperCase() || "L"}
                     </div>
 
                     <div className="hidden md:block text-left">
-                      <p className="text-sm font-semibold text-[#013E43]">
+                      <p className="text-sm font-semibold text-slate-800">
                         {user?.name || "Landlord"}
                       </p>
-                      <p className="text-xs text-[#065A57]">Landlord</p>
+                      <p className="text-xs text-slate-500">Landlord account</p>
                     </div>
 
-                    <FiChevronDown
-                      className={`hidden md:block text-[#065A57] transition-transform ${
-                        showUserMenu && "rotate-180"
-                      }`}
-                    />
+                    <FiChevronDown className={`hidden text-slate-500 transition-transform md:block ${showUserMenu ? "rotate-180" : ""}`} />
                   </button>
 
                   {showUserMenu && (
@@ -440,37 +301,35 @@ const LandlordLayout = () => {
                         onClick={() => setShowUserMenu(false)}
                       />
 
-                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-[#A8D8C1] z-40">
-                        <div className="p-3 border-b border-[#A8D8C1] bg-gradient-to-r from-[#F0F7F4] to-white">
-                          <p className="font-semibold text-[#013E43] truncate">
+                      <div className="absolute right-0 z-40 mt-2 w-56 border border-slate-200 bg-white shadow-lg">
+                        <div className="border-b border-slate-200 p-3">
+                          <p className="truncate font-semibold text-slate-900">
                             {user?.name || "Landlord"}
                           </p>
 
-                          <p className="text-xs text-[#065A57] truncate">
+                          <p className="truncate text-xs text-slate-500">
                             {user?.email || "user@example.com"}
                           </p>
                         </div>
 
-                        <div className="p-2">
+                        <div className="p-1.5">
                           <button
                             onClick={() => {
                               navigate("/profile");
                               setShowUserMenu(false);
                             }}
-                            className="w-full flex items-center gap-2 text-left p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+                            className="flex min-h-10 w-full items-center gap-2 px-2 text-left text-sm text-slate-700 hover:bg-slate-100"
                           >
                             <FiUser />
                             Profile
                           </button>
-
-                          <hr className="my-2 border-[#A8D8C1]" />
 
                           <button
                             onClick={() => {
                               handleLogout();
                               setShowUserMenu(false);
                             }}
-                            className="w-full text-left p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="flex min-h-10 w-full items-center gap-2 px-2 text-left text-sm text-rose-700 hover:bg-rose-50"
                           >
                             Logout
                           </button>
@@ -490,13 +349,6 @@ const LandlordLayout = () => {
         </div>
       </main>
 
-      <button
-        onClick={() => setIsMobileMenuOpen(true)}
-        className="lg:hidden fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-[#02BB31] to-[#0D915C] rounded-full shadow-2xl flex items-center justify-center text-white z-10 hover:scale-110 transition-transform"
-        aria-label="Open menu"
-      >
-        <FiMenu className="text-2xl" />
-      </button>
     </div>
   );
 };

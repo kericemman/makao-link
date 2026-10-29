@@ -6,12 +6,12 @@ export const registerUser = async (payload) => {
 };
 
 export const loginUser = async (payload) => {
-  const response = await api.post("/auth/login", payload);
+  const response = await api.post("/auth/login", payload, { withCredentials: true });
   return response.data;
 };
 
 export const verifyEmail = async (payload) => {
-  const response = await api.post("/auth/verify-email", payload);
+  const response = await api.post("/auth/verify-email", payload, { withCredentials: true });
   return response.data;
 };
 
@@ -25,6 +25,11 @@ export const getMe = async () => {
   return response.data;
 };
 
+export const syncSharedSession = async () => {
+  const response = await api.post("/auth/session", {}, { withCredentials: true });
+  return response.data;
+};
+
 export const forgotPassword = async (email) => {
   const response = await api.post("/auth/forgot-password", { email });
   return response.data;
@@ -32,5 +37,10 @@ export const forgotPassword = async (email) => {
 
 export const resetPassword = async (token, password) => {
   const response = await api.post(`/auth/reset-password/${token}`, { password });
+  return response.data;
+};
+
+export const logoutUser = async () => {
+  const response = await api.post("/auth/logout", {}, { withCredentials: true });
   return response.data;
 };

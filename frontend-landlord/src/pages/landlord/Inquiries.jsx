@@ -43,7 +43,7 @@ const LandlordInquiries = () => {
       setInquiries(data.inquiries || []);
     } catch (error) {
       toast.error("Failed to load inquiries", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     } finally {
       setLoading(false);
@@ -107,7 +107,7 @@ const LandlordInquiries = () => {
     try {
       await updateInquiryStatus(id, status);
       toast.success(`Inquiry marked as ${status}`, {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#126542", color: "#fff" }
       });
       fetchInquiries();
       if (selectedInquiry && selectedInquiry._id === id) {
@@ -115,7 +115,7 @@ const LandlordInquiries = () => {
       }
     } catch (error) {
       toast.error("Failed to update status", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     }
   };
@@ -135,7 +135,7 @@ const LandlordInquiries = () => {
       await updateInquiryStatus(selectedInquiry._id, "contacted");
       
       toast.success("Email reply opened", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#126542", color: "#fff" }
       });
       
       setReplyText("");
@@ -143,7 +143,7 @@ const LandlordInquiries = () => {
       fetchInquiries();
     } catch (error) {
       toast.error("Failed to send reply", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     } finally {
       setSendingReply(false);
@@ -154,7 +154,7 @@ const LandlordInquiries = () => {
     switch(status) {
       case "new":
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#02BB31]/10 text-[#02BB31]">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#126542]/10 text-[#126542]">
             <FiStar className="mr-1" />
             New
           </span>
@@ -214,8 +214,8 @@ const LandlordInquiries = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A8D8C1] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading inquiries...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E2E8F0] border-t-[#126542] mx-auto mb-4"></div>
+          <p className="text-[#475569]">Loading inquiries...</p>
         </div>
       </div>
     );
@@ -231,7 +231,7 @@ const LandlordInquiries = () => {
           <div className="flex items-center space-x-3">
             <button
               onClick={fetchInquiries}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 text-[#475569] hover:bg-[#F8FAFC] rounded-lg transition-colors"
               title="Refresh"
             >
               <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
@@ -242,36 +242,36 @@ const LandlordInquiries = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
-          <p className="text-sm text-[#065A57]">Total Inquiries</p>
-          <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
+        <div className="bg-white rounded-md shadow-sm p-4 ">
+          <p className="text-sm text-[#475569]">Total Inquiries</p>
+          <p className="text-2xl font-bold text-[#0F172A]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
-          <p className="text-sm text-[#065A57]">New</p>
-          <p className="text-2xl font-bold text-[#02BB31]">{stats.new}</p>
+        <div className="bg-white rounded-md shadow-sm p-4 ">
+          <p className="text-sm text-[#475569]">New</p>
+          <p className="text-2xl font-bold text-[#126542]">{stats.new}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
-          <p className="text-sm text-[#065A57]">Contacted</p>
+        <div className="bg-white rounded-md shadow-sm p-4 ">
+          <p className="text-sm text-[#475569]">Contacted</p>
           <p className="text-2xl font-bold text-blue-600">{stats.contacted}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
-          <p className="text-sm text-[#065A57]">Closed</p>
+        <div className="bg-white rounded-md shadow-sm p-4 ">
+          <p className="text-sm text-[#475569]">Closed</p>
           <p className="text-2xl font-bold text-gray-600">{stats.closed}</p>
         </div>
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="bg-white rounded-2xl shadow-lg p-4 border border-[#A8D8C1]">
+      <div className="bg-white rounded-md shadow-sm p-4 border border-[#E2E8F0]">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#065A57]" />
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#475569]" />
             <input
               type="text"
               placeholder="Search by name, email, or message..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#126542] focus:border-transparent"
             />
           </div>
 
@@ -280,7 +280,7 @@ const LandlordInquiries = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              className="px-3 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#126542] text-[#475569]"
             >
               <option value="all">All Status</option>
               <option value="new">New</option>
@@ -291,7 +291,7 @@ const LandlordInquiries = () => {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-3 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              className="px-3 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#126542] text-[#475569]"
             >
               <option value="all">All Time</option>
               <option value="today">Today</option>
@@ -302,19 +302,19 @@ const LandlordInquiries = () => {
         </div>
 
         {/* Results count */}
-        <div className="mt-4 text-sm text-[#065A57]">
+        <div className="mt-4 text-sm text-[#475569]">
           Showing {filteredInquiries.length} of {inquiries.length} inquiries
         </div>
       </div>
 
       {/* Inquiries List */}
       {filteredInquiries.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-[#A8D8C1]">
-          <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-            <FiMessageSquare className="text-3xl text-[#A8D8C1]" />
+        <div className="bg-white rounded-md shadow-sm p-12 text-center border border-[#E2E8F0]">
+          <div className="w-20 h-20 bg-[#F8FAFC] rounded-full flex items-center justify-center mx-auto mb-4">
+            <FiMessageSquare className="text-3xl text-[#E2E8F0]" />
           </div>
-          <h3 className="text-lg font-semibold text-[#013E43] mb-2">No inquiries found</h3>
-          <p className="text-sm text-[#065A57]">
+          <h3 className="text-lg font-semibold text-[#0F172A] mb-2">No inquiries found</h3>
+          <p className="text-sm text-[#475569]">
             {searchTerm || statusFilter !== "all" || dateRange !== "all"
               ? "Try adjusting your filters"
               : "You haven't received any inquiries yet"}
@@ -325,22 +325,22 @@ const LandlordInquiries = () => {
           {filteredInquiries.map((inquiry) => (
             <div
               key={inquiry._id}
-              className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden hover:shadow-xl transition-all"
+              className="bg-white rounded-md shadow-sm border border-[#E2E8F0] overflow-hidden hover:shadow-md transition-all"
             >
               {/* Card Header */}
-              <div className="p-4 border-b border-[#A8D8C1] bg-gradient-to-r from-[#F0F7F4] to-white">
+              <div className="p-4 border-b border-[#E2E8F0] bg-slate-50">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    <div className="w-12 h-12 bg-[#123D38] rounded-full flex items-center justify-center text-white font-bold text-lg">
                       {inquiry.name?.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-[#013E43]">{inquiry.name}</h3>
-                      <p className="text-xs text-[#065A57] flex items-center">
+                      <h3 className="font-semibold text-[#0F172A]">{inquiry.name}</h3>
+                      <p className="text-xs text-[#475569] flex items-center">
                         <FiMail className="mr-1" /> {inquiry.email}
                       </p>
                       {inquiry.phone && (
-                        <p className="text-xs text-[#065A57] flex items-center mt-0.5">
+                        <p className="text-xs text-[#475569] flex items-center mt-0.5">
                           <FiPhone className="mr-1" /> {inquiry.phone}
                         </p>
                       )}
@@ -348,7 +348,7 @@ const LandlordInquiries = () => {
                   </div>
                   <div className="flex items-center space-x-3">
                     {getStatusBadge(inquiry.status)}
-                    <span className="text-xs text-[#065A57] flex items-center">
+                    <span className="text-xs text-[#475569] flex items-center">
                       <FiClock className="mr-1" />
                       {formatTimeAgo(inquiry.createdAt)}
                     </span>
@@ -359,32 +359,32 @@ const LandlordInquiries = () => {
               {/* Card Content */}
               <div className="p-4">
                 {/* Property Info */}
-                <div className="mb-3 p-2 bg-[#F0F7F4] rounded-lg">
-                  <p className="text-xs text-[#065A57] flex items-center mb-1">
+                <div className="mb-3 p-2 bg-[#F8FAFC] rounded-lg">
+                  <p className="text-xs text-[#475569] flex items-center mb-1">
                     <FiHome className="mr-1" />
                     Property
                   </p>
-                  <p className="text-sm font-medium text-[#013E43]">
+                  <p className="text-sm font-medium text-[#0F172A]">
                     {inquiry.listing?.title || "Listing removed"}
                   </p>
                 </div>
 
                 {/* Message */}
                 <div className="mb-4">
-                  <p className="text-xs text-[#065A57] mb-1">Message:</p>
-                  <p className="text-sm text-[#013E43] whitespace-pre-wrap">
+                  <p className="text-xs text-[#475569] mb-1">Message:</p>
+                  <p className="text-sm text-[#0F172A] whitespace-pre-wrap">
                     {inquiry.message}
                   </p>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-between pt-3 border-t border-[#A8D8C1]">
+                <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0]">
                   <div className="flex items-center space-x-2">
                     {inquiry.phone && (
                       <>
                         <a
                           href={`tel:${inquiry.phone}`}
-                          className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+                          className="p-2 text-[#475569] hover:bg-[#F8FAFC] rounded-lg transition-colors"
                           title="Call"
                         >
                           <FiPhone />
@@ -393,7 +393,7 @@ const LandlordInquiries = () => {
                           href={`https://wa.me/${inquiry.phone.replace(/^0/, "254")}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-2 text-[#25D366] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+                          className="p-2 text-[#25D366] hover:bg-[#F8FAFC] rounded-lg transition-colors"
                           title="WhatsApp"
                         >
                           <FaWhatsapp />
@@ -406,7 +406,7 @@ const LandlordInquiries = () => {
                     <select
                       value={inquiry.status}
                       onChange={(e) => handleStatusChange(inquiry._id, e.target.value)}
-                      className="px-3 py-2 text-sm border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57] bg-white"
+                      className="px-3 py-2 text-sm border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#126542] text-[#475569] bg-white"
                     >
                       <option value="new">New</option>
                       <option value="contacted">Contacted</option>
@@ -418,7 +418,7 @@ const LandlordInquiries = () => {
                         setSelectedInquiry(inquiry);
                         setShowDetailsModal(true);
                       }}
-                      className="px-4 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all"
+                      className="px-4 py-2 bg-[#126542] text-white rounded-lg text-sm font-medium hover:shadow-md transition-all"
                     >
                       View Details
                     </button>
@@ -433,16 +433,16 @@ const LandlordInquiries = () => {
       {/* Details Modal */}
       {showDetailsModal && selectedInquiry && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-md shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-[#A8D8C1] p-6 flex items-center justify-between">
+            <div className="sticky top-0 bg-white border-b border-[#E2E8F0] p-6 flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-14 h-14 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-full flex items-center justify-center text-white font-bold text-xl">
+                <div className="w-14 h-14 bg-[#123D38] rounded-full flex items-center justify-center text-white font-bold text-xl">
                   {selectedInquiry.name?.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-[#013E43]">Inquiry Details</h2>
-                  <p className="text-sm text-[#065A57]">ID: {selectedInquiry._id.slice(-8)}</p>
+                  <h2 className="text-xl font-bold text-[#0F172A]">Inquiry Details</h2>
+                  <p className="text-sm text-[#475569]">ID: {selectedInquiry._id.slice(-8)}</p>
                 </div>
               </div>
               <button
@@ -451,9 +451,9 @@ const LandlordInquiries = () => {
                   setShowDetailsModal(false);
                   setReplyText("");
                 }}
-                className="p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
+                className="p-2 hover:bg-[#F8FAFC] rounded-lg transition-colors"
               >
-                <FiXCircle className="text-xl text-[#065A57]" />
+                <FiXCircle className="text-xl text-[#475569]" />
               </button>
             </div>
 
@@ -461,13 +461,13 @@ const LandlordInquiries = () => {
             <div className="p-6 space-y-6">
               {/* Status and Property */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-[#F0F7F4] rounded-xl">
-                  <p className="text-xs text-[#065A57] mb-1">Status</p>
+                <div className="p-4 bg-[#F8FAFC] rounded-md">
+                  <p className="text-xs text-[#475569] mb-1">Status</p>
                   <div className="flex items-center">
                     <select
                       value={selectedInquiry.status}
                       onChange={(e) => handleStatusChange(selectedInquiry._id, e.target.value)}
-                      className="px-3 py-2 text-sm border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57] bg-white w-full"
+                      className="px-3 py-2 text-sm border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#126542] text-[#475569] bg-white w-full"
                     >
                       <option value="new">New</option>
                       <option value="contacted">Contacted</option>
@@ -475,27 +475,27 @@ const LandlordInquiries = () => {
                     </select>
                   </div>
                 </div>
-                <div className="p-4 bg-[#F0F7F4] rounded-xl">
-                  <p className="text-xs text-[#065A57] mb-1">Property</p>
-                  <p className="font-medium text-[#013E43]">{selectedInquiry.listing?.title || "Listing removed"}</p>
+                <div className="p-4 bg-[#F8FAFC] rounded-md">
+                  <p className="text-xs text-[#475569] mb-1">Property</p>
+                  <p className="font-medium text-[#0F172A]">{selectedInquiry.listing?.title || "Listing removed"}</p>
                 </div>
               </div>
 
               {/* Tenant Info */}
-              <div className="p-4 bg-[#F0F7F4] rounded-xl">
-                <p className="text-xs text-[#065A57] mb-3">Tenant Information</p>
+              <div className="p-4 bg-[#F8FAFC] rounded-md">
+                <p className="text-xs text-[#475569] mb-3">Tenant Information</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-[#065A57]">Name</p>
+                    <p className="text-xs text-[#475569]">Name</p>
                     <p className="font-medium">{selectedInquiry.name}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-[#065A57]">Email</p>
+                    <p className="text-xs text-[#475569]">Email</p>
                     <p className="font-medium">{selectedInquiry.email}</p>
                   </div>
                   {selectedInquiry.phone && (
                     <div>
-                      <p className="text-xs text-[#065A57]">Phone</p>
+                      <p className="text-xs text-[#475569]">Phone</p>
                       <p className="font-medium">{selectedInquiry.phone}</p>
                     </div>
                   )}
@@ -503,39 +503,39 @@ const LandlordInquiries = () => {
               </div>
 
               {/* Message */}
-              <div className="p-4 bg-[#F0F7F4] rounded-xl">
-                <p className="text-xs text-[#065A57] mb-2">Message</p>
-                <p className="text-sm text-[#013E43] whitespace-pre-wrap">
+              <div className="p-4 bg-[#F8FAFC] rounded-md">
+                <p className="text-xs text-[#475569] mb-2">Message</p>
+                <p className="text-sm text-[#0F172A] whitespace-pre-wrap">
                   {selectedInquiry.message}
                 </p>
-                <p className="text-xs text-[#065A57] mt-2 flex items-center">
+                <p className="text-xs text-[#475569] mt-2 flex items-center">
                   <FiCalendar className="mr-1" />
                   Received: {formatDate(selectedInquiry.createdAt)}
                 </p>
               </div>
 
               {/* Reply Form */}
-              <div className="p-4 bg-[#F0F7F4] rounded-xl">
-                <p className="text-xs text-[#065A57] mb-3">Reply to Tenant</p>
+              <div className="p-4 bg-[#F8FAFC] rounded-md">
+                <p className="text-xs text-[#475569] mb-3">Reply to Tenant</p>
                 <textarea
                   rows="4"
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder="Type your reply here..."
-                  className="w-full px-4 py-3 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] mb-3"
+                  className="w-full px-4 py-3 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#126542] mb-3"
                 />
                 <div className="flex items-center justify-end space-x-3">
                   <button
                     type="button"
                     onClick={() => setReplyText("")}
-                    className="px-4 py-2 text-[#065A57] border border-[#A8D8C1] rounded-lg hover:bg-white transition-colors"
+                    className="px-4 py-2 text-[#475569] border border-[#E2E8F0] rounded-lg hover:bg-white transition-colors"
                   >
                     Clear
                   </button>
                   <button
                     onClick={handleReply}
                     disabled={sendingReply}
-                    className="px-6 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 flex items-center"
+                    className="px-6 py-2 bg-[#126542] text-white rounded-lg font-medium hover:shadow-md transition-all disabled:opacity-50 flex items-center"
                   >
                     {sendingReply ? (
                       <>
@@ -553,12 +553,12 @@ const LandlordInquiries = () => {
               </div>
 
               {/* Contact Actions */}
-              <div className="flex items-center space-x-3 pt-4 border-t border-[#A8D8C1]">
+              <div className="flex items-center space-x-3 pt-4 border-t border-[#E2E8F0]">
                 {selectedInquiry.phone && (
                   <>
                     <a
                       href={`tel:${selectedInquiry.phone}`}
-                      className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-[#013E43] text-white rounded-lg hover:bg-[#005C57] transition-colors"
+                      className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-[#0F172A] text-white rounded-lg hover:bg-[#164E3B] transition-colors"
                     >
                       <FiPhone />
                       <span>Call Now</span>
@@ -584,7 +584,7 @@ const LandlordInquiries = () => {
                     setShowDetailsModal(false);
                     setReplyText("");
                   }}
-                  className="px-6 py-2 bg-gray-100 text-[#065A57] rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-6 py-2 bg-gray-100 text-[#475569] rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Close
                 </button>

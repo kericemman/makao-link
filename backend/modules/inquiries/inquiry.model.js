@@ -42,6 +42,13 @@ const inquirySchema = new mongoose.Schema(
       type: String,
       enum: ["new", "contacted", "closed"],
       default: "new"
+    },
+
+    assignedAgent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true
     }
   },
   { timestamps: true }

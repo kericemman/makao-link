@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import api from "../api/api";
 
 const AuthContext = createContext(null);
@@ -67,6 +67,11 @@ export const AuthProvider = ({ children }) => {
     return fetchMe();
   };
 
+  const syncSubscription = useCallback((nextSubscription, nextUsage) => {
+    setSubscription(nextSubscription || null);
+    if (nextUsage) setUsage(nextUsage);
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -76,9 +81,10 @@ export const AuthProvider = ({ children }) => {
       login,
       logout,
       refreshAuth,
-      refreshSubscription
+      refreshSubscription,
+      syncSubscription
     }),
-    [user, subscription, usage, loading]
+    [user, subscription, usage, loading, syncSubscription]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

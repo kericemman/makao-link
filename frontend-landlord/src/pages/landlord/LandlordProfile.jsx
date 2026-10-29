@@ -77,7 +77,7 @@ const LandlordProfilePage = () => {
     } catch (err) {
       setProfileError(err.response?.data?.message || "Failed to load profile");
       toast.error("Failed to load profile", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     } finally {
       setProfileLoading(false);
@@ -100,13 +100,13 @@ const LandlordProfilePage = () => {
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
         toast.error("Image must be less than 2MB", {
-          style: { background: "#013E43", color: "#fff" }
+          style: { background: "#0F172A", color: "#fff" }
         });
         return;
       }
       if (!file.type.startsWith("image/")) {
         toast.error("Please upload an image file", {
-          style: { background: "#013E43", color: "#fff" }
+          style: { background: "#0F172A", color: "#fff" }
         });
         return;
       }
@@ -149,12 +149,12 @@ const LandlordProfilePage = () => {
       await refreshAuth();
       setProfileSuccess("Profile updated successfully.");
       toast.success("Profile updated successfully", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#126542", color: "#fff" }
       });
     } catch (err) {
       setProfileError(err.response?.data?.message || "Failed to update profile");
       toast.error("Failed to update profile", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     } finally {
       setSavingProfile(false);
@@ -173,14 +173,14 @@ const LandlordProfilePage = () => {
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       toast.error("New passwords do not match", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
       return;
     }
 
     if (passwordForm.newPassword.length < 6) {
       toast.error("Password must be at least 6 characters", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
       return;
     }
@@ -194,7 +194,7 @@ const LandlordProfilePage = () => {
 
       setPasswordSuccess(data.message || "Password updated successfully.");
       toast.success("Password updated successfully", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#126542", color: "#fff" }
       });
       setPasswordForm({
         currentPassword: "",
@@ -204,7 +204,7 @@ const LandlordProfilePage = () => {
     } catch (err) {
       setPasswordError(err.response?.data?.message || "Failed to update password");
       toast.error("Failed to update password", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     } finally {
       setSavingPassword(false);
@@ -215,8 +215,8 @@ const LandlordProfilePage = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A8D8C1] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading profile...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E2E8F0] border-t-[#126542] mx-auto mb-4"></div>
+          <p className="text-[#475569]">Loading profile...</p>
         </div>
       </div>
     );
@@ -225,12 +225,12 @@ const LandlordProfilePage = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
+      <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
         <div className="flex items-center space-x-4">
           
           <div>
-            <h1 className="text-xl font-bold text-[#013E43]">Profile & Settings</h1>
-            <p className="text-sm text-[#065A57]">
+            <h1 className="text-xl font-bold text-[#0F172A]">Profile & Settings</h1>
+            <p className="text-sm text-[#475569]">
               Manage your profile details and account security
             </p>
           </div>
@@ -239,10 +239,10 @@ const LandlordProfilePage = () => {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         {/* Profile Information Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden">
-          <div className="bg-gradient-to-r from-[#F0F7F4] to-white p-6 border-b border-[#A8D8C1]">
-            <h2 className="text-lg font-semibold text-[#013E43] flex items-center">
-              <FiUser className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm border border-[#E2E8F0] overflow-hidden">
+          <div className="bg-slate-50 p-6 border-b border-[#E2E8F0]">
+            <h2 className="text-lg font-semibold text-[#0F172A] flex items-center">
+              <FiUser className="mr-2 text-[#126542]" />
               Profile Information
             </h2>
           </div>
@@ -251,7 +251,7 @@ const LandlordProfilePage = () => {
             {/* Avatar Section */}
             <div className="flex flex-col sm:flex-row items-center gap-6">
               <div className="relative">
-                <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-r from-[#013E43] to-[#005C57] flex items-center justify-center border-4 border-[#A8D8C1]">
+                <div className="w-24 h-24 rounded-full overflow-hidden bg-[#123D38] flex items-center justify-center border-4 border-[#E2E8F0]">
                   {avatarPreview ? (
                     <img
                       src={avatarPreview}
@@ -274,7 +274,7 @@ const LandlordProfilePage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#013E43] mb-2">
+                <label className="block text-sm font-medium text-[#0F172A] mb-2">
                   Profile Image
                 </label>
                 <div className="relative">
@@ -287,13 +287,13 @@ const LandlordProfilePage = () => {
                   />
                   <label
                     htmlFor="avatar-upload"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#F0F7F4] border border-[#A8D8C1] rounded-lg cursor-pointer hover:bg-[#A8D8C1] transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg cursor-pointer hover:bg-[#E2E8F0] transition-colors"
                   >
-                    <FiCamera className="text-[#02BB31]" />
-                    <span className="text-sm text-[#065A57]">Upload Photo</span>
+                    <FiCamera className="text-[#126542]" />
+                    <span className="text-sm text-[#475569]">Upload Photo</span>
                   </label>
                 </div>
-                <p className="text-xs text-[#065A57] mt-1">
+                <p className="text-xs text-[#475569] mt-1">
                   JPG, PNG or GIF. Max 2MB.
                 </p>
               </div>
@@ -302,7 +302,7 @@ const LandlordProfilePage = () => {
             {/* Profile Fields */}
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-[#013E43] mb-1">
+                <label className="block text-sm font-medium text-[#0F172A] mb-1">
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -311,28 +311,28 @@ const LandlordProfilePage = () => {
                     name="name"
                     value={profileForm.name}
                     onChange={handleProfileChange}
-                    className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                    className="w-full pl-10 pr-4 py-3 border-2 border-[#E2E8F0] rounded-lg focus:border-[#126542] outline-none transition-colors"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#013E43] mb-1">
+                <label className="block text-sm font-medium text-[#0F172A] mb-1">
                   Email Address
                 </label>
                 <div className="relative">
                   <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#0D915C]" />
                   <input
                     value={profileForm.email}
-                    className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                    className="w-full pl-10 pr-4 py-3 border-2 border-[#E2E8F0] rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
                     disabled
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#013E43] mb-1">
+                <label className="block text-sm font-medium text-[#0F172A] mb-1">
                   Phone Number
                 </label>
                 <div className="relative">
@@ -342,13 +342,13 @@ const LandlordProfilePage = () => {
                     value={profileForm.phone}
                     onChange={handleProfileChange}
                     placeholder="e.g., 0712345678"
-                    className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                    className="w-full pl-10 pr-4 py-3 border-2 border-[#E2E8F0] rounded-lg focus:border-[#126542] outline-none transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#013E43] mb-1">
+                <label className="block text-sm font-medium text-[#0F172A] mb-1">
                   Business Name
                 </label>
                 <div className="relative">
@@ -358,13 +358,13 @@ const LandlordProfilePage = () => {
                     value={profileForm.businessName}
                     onChange={handleProfileChange}
                     placeholder="Optional"
-                    className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                    className="w-full pl-10 pr-4 py-3 border-2 border-[#E2E8F0] rounded-lg focus:border-[#126542] outline-none transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#013E43] mb-1">
+                <label className="block text-sm font-medium text-[#0F172A] mb-1">
                   Location
                 </label>
                 <div className="relative">
@@ -374,13 +374,13 @@ const LandlordProfilePage = () => {
                     value={profileForm.location}
                     onChange={handleProfileChange}
                     placeholder="City / Area"
-                    className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                    className="w-full pl-10 pr-4 py-3 border-2 border-[#E2E8F0] rounded-lg focus:border-[#126542] outline-none transition-colors"
                   />
                 </div>
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-[#013E43] mb-1">
+                <label className="block text-sm font-medium text-[#0F172A] mb-1">
                   Bio / About
                 </label>
                 <div className="relative">
@@ -391,14 +391,14 @@ const LandlordProfilePage = () => {
                     value={profileForm.bio}
                     onChange={handleProfileChange}
                     placeholder="Tell tenants a little about you or your company..."
-                    className="w-full pl-10 pr-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors resize-none"
+                    className="w-full pl-10 pr-4 py-3 border-2 border-[#E2E8F0] rounded-lg focus:border-[#126542] outline-none transition-colors resize-none"
                   />
                 </div>
               </div>
             </div>
 
             {profileSuccess && (
-              <div className="bg-[#02BB31]/10 p-3 rounded-lg text-sm text-[#02BB31] flex items-center gap-2">
+              <div className="bg-[#126542]/10 p-3 rounded-lg text-sm text-[#126542] flex items-center gap-2">
                 <FiCheckCircle />
                 {profileSuccess}
               </div>
@@ -413,7 +413,7 @@ const LandlordProfilePage = () => {
             <button
               type="submit"
               disabled={savingProfile}
-              className="w-full py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full py-3 bg-[#126542] text-white rounded-lg font-semibold hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {savingProfile ? (
                 <>
@@ -431,17 +431,17 @@ const LandlordProfilePage = () => {
         </div>
 
         {/* Change Password Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden">
-          <div className="bg-gradient-to-r from-[#F0F7F4] to-white p-6 border-b border-[#A8D8C1]">
-            <h2 className="text-lg font-semibold text-[#013E43] flex items-center">
-              <FiLock className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm border border-[#E2E8F0] overflow-hidden">
+          <div className="bg-slate-50 p-6 border-b border-[#E2E8F0]">
+            <h2 className="text-lg font-semibold text-[#0F172A] flex items-center">
+              <FiLock className="mr-2 text-[#126542]" />
               Change Password
             </h2>
           </div>
 
           <form onSubmit={handlePasswordSubmit} className="p-6 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Current Password
               </label>
               <div className="relative">
@@ -451,7 +451,7 @@ const LandlordProfilePage = () => {
                   name="currentPassword"
                   value={passwordForm.currentPassword}
                   onChange={handlePasswordChange}
-                  className="w-full pl-10 pr-10 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                  className="w-full pl-10 pr-10 py-3 border-2 border-[#E2E8F0] rounded-lg focus:border-[#126542] outline-none transition-colors"
                   required
                 />
                 <button
@@ -460,16 +460,16 @@ const LandlordProfilePage = () => {
                   className="absolute right-3 top-1/2 transform -translate-y-1/2"
                 >
                   {showCurrentPassword ? (
-                    <FiEyeOff className="text-[#065A57]" />
+                    <FiEyeOff className="text-[#475569]" />
                   ) : (
-                    <FiEye className="text-[#065A57]" />
+                    <FiEye className="text-[#475569]" />
                   )}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 New Password
               </label>
               <div className="relative">
@@ -479,7 +479,7 @@ const LandlordProfilePage = () => {
                   name="newPassword"
                   value={passwordForm.newPassword}
                   onChange={handlePasswordChange}
-                  className="w-full pl-10 pr-10 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                  className="w-full pl-10 pr-10 py-3 border-2 border-[#E2E8F0] rounded-lg focus:border-[#126542] outline-none transition-colors"
                   required
                 />
                 <button
@@ -488,19 +488,19 @@ const LandlordProfilePage = () => {
                   className="absolute right-3 top-1/2 transform -translate-y-1/2"
                 >
                   {showNewPassword ? (
-                    <FiEyeOff className="text-[#065A57]" />
+                    <FiEyeOff className="text-[#475569]" />
                   ) : (
-                    <FiEye className="text-[#065A57]" />
+                    <FiEye className="text-[#475569]" />
                   )}
                 </button>
               </div>
-              <p className="text-xs text-[#065A57] mt-1">
+              <p className="text-xs text-[#475569] mt-1">
                 Minimum 6 characters
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Confirm New Password
               </label>
               <div className="relative">
@@ -510,7 +510,7 @@ const LandlordProfilePage = () => {
                   name="confirmPassword"
                   value={passwordForm.confirmPassword}
                   onChange={handlePasswordChange}
-                  className="w-full pl-10 pr-10 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                  className="w-full pl-10 pr-10 py-3 border-2 border-[#E2E8F0] rounded-lg focus:border-[#126542] outline-none transition-colors"
                   required
                 />
                 <button
@@ -519,16 +519,16 @@ const LandlordProfilePage = () => {
                   className="absolute right-3 top-1/2 transform -translate-y-1/2"
                 >
                   {showConfirmPassword ? (
-                    <FiEyeOff className="text-[#065A57]" />
+                    <FiEyeOff className="text-[#475569]" />
                   ) : (
-                    <FiEye className="text-[#065A57]" />
+                    <FiEye className="text-[#475569]" />
                   )}
                 </button>
               </div>
             </div>
 
             {passwordSuccess && (
-              <div className="bg-[#02BB31]/10 p-3 rounded-lg text-sm text-[#02BB31] flex items-center gap-2">
+              <div className="bg-[#126542]/10 p-3 rounded-lg text-sm text-[#126542] flex items-center gap-2">
                 <FiCheckCircle />
                 {passwordSuccess}
               </div>
@@ -543,7 +543,7 @@ const LandlordProfilePage = () => {
             <button
               type="submit"
               disabled={savingPassword}
-              className="w-full py-3 bg-gradient-to-r from-[#013E43] to-[#005C57] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full py-3 bg-[#123D38] text-white rounded-lg font-semibold hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {savingPassword ? (
                 <>

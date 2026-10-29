@@ -5,6 +5,12 @@ const {
   approveListing,
   rejectListing,
   getAdminSummary,
+  getAdminOverviewTrends,
+  getAdminCommercialOverview,
+  getPlatformHealth,
+  getAdminNotifications,
+  markAdminNotificationRead,
+  markAllAdminNotificationsRead,
   getLandlords,
   getAdminPayments,
   getListingHistory,
@@ -16,6 +22,7 @@ const {
   getAllListings,
   getAdminSubscriptions,
   getRecentActivity,
+  getAdminStayRequests,
   moveListingToTrash,
   restoreListingFromTrash,
   permanentlyDeleteListing,
@@ -25,6 +32,12 @@ const { protect } = require("../../middleware/auth.middleware");
 const requireRole = require("../../middleware/role.middleware");
 
 router.get("/summary", protect, requireRole("admin"), getAdminSummary);
+router.get("/overview-trends", protect, requireRole("admin"), getAdminOverviewTrends);
+router.get("/overview-commercial", protect, requireRole("admin"), getAdminCommercialOverview);
+router.get("/platform-health", protect, requireRole("admin"), getPlatformHealth);
+router.get("/notifications", protect, requireRole("admin"), getAdminNotifications);
+router.patch("/notifications/read-all", protect, requireRole("admin"), markAllAdminNotificationsRead);
+router.patch("/notifications/:id/read", protect, requireRole("admin"), markAdminNotificationRead);
 router.get("/landlords", protect, requireRole("admin"), getLandlords);
 router.get("/payments", protect, requireRole("admin"), getAdminPayments);
 router.get("/listings/pending", protect, requireRole("admin"), getPendingListings);
@@ -39,6 +52,7 @@ router.get("/service-applications/:id", protect, requireRole("admin"), getServic
 router.patch("/service-applications/:id/approve", protect, requireRole("admin"), approveServiceApplication);
 router.patch("/service-applications/:id/reject", protect, requireRole("admin"), rejectServiceApplication);
 router.get("/activity", protect, requireRole("admin"), getRecentActivity);
+router.get("/stay-requests", protect, requireRole("admin"), getAdminStayRequests);
 router.get("/listings", protect, requireRole("admin"), getAllListings);
 router.patch("/listings/:id/trash", protect, requireRole("admin"), moveListingToTrash);
 router.patch("/listings/:id/restore", protect, requireRole("admin"), restoreListingFromTrash);

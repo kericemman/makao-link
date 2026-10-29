@@ -5,6 +5,7 @@ const AppUpdate = require("../models/appUpdate.model");
 const Subscriber = require("../models/subscriber.model");
 const PolicyPage = require("../models/policyPage.model");
 const HelpRequest = require("../models/helpRequest.model");
+const { recordAdminActivity } = require("../../admin/adminActivity.service");
 const sendEmail = require("../../../utils/sendEmail");
 const { appSubscriptionConfirmedEmail } = require("../../../utils/emailTemplates");
 
@@ -26,6 +27,17 @@ exports.createAppTicket = async (req, res) => {
     message,
     source: source || "mobile_app",
     user: req.user?._id || null
+  });
+
+  await recordAdminActivity({
+    eventType: "app_support_ticket",
+    description: "Mobile support ticket received",
+    details: `${subject} • ${req.user?.name || "Guest user"}`,
+    path: "/admin/app/support-help?tab=tickets",
+    actor: req.user?._id || null,
+    actorName: req.user?.name || "Guest user",
+    entityType: "app_ticket",
+    entityId: String(ticket._id)
   });
 
   res.status(201).json({
@@ -79,6 +91,16 @@ exports.createHelpRequest = async (req, res) => {
     businessType,
     message,
     source: source || "mobile_app"
+  });
+
+  await recordAdminActivity({
+    eventType: "help_request",
+    description: "Property help request received",
+    details: `${name} • ${purpose} • ${location || "Location not specified"}`,
+    path: "/admin/app/support-help?tab=requests",
+    actorName: name,
+    entityType: "help_request",
+    entityId: String(request._id)
   });
 
   res.status(201).json({

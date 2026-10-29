@@ -5,6 +5,7 @@ import {
   FiBarChart2,
   FiAlertTriangle,
   FiBell,
+  FiCalendar,
   FiBookOpen,
   FiCheckCircle,
   FiChevronDown,
@@ -28,7 +29,12 @@ import {
 } from "react-icons/fi";
 import { FaBlog, FaBuilding, FaHandshake } from "react-icons/fa";
 import toast from "react-hot-toast";
-import { getRecentActivity } from "../services/admin.service";
+import {
+  getAdminNotifications,
+  getRecentActivity,
+  markAdminNotificationRead,
+  markAllAdminNotificationsRead
+} from "../services/admin.service";
 
 const AdminLayout = () => {
   const { user, logout } = useAuth();
@@ -42,7 +48,7 @@ const AdminLayout = () => {
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState("");
-  const [notificationsSeen, setNotificationsSeen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const navigationSections = useMemo(
     () => [
@@ -77,6 +83,12 @@ const AdminLayout = () => {
             path: "/admin/listings/reports",
             icon: FiAlertTriangle,
             description: "User flags"
+          },
+          {
+            label: "Short-stay Requests",
+            path: "/admin/stay-requests",
+            icon: FiCalendar,
+            description: "Guest requests across listings"
           }
         ]
       },
@@ -117,7 +129,7 @@ const AdminLayout = () => {
             label: "Subscribers",
             path: "/admin/subscribers",
             icon: FiMail,
-            description: "Newsletter list"
+            description: "Website and app audiences"
           }
         ]
       },
@@ -164,12 +176,6 @@ const AdminLayout = () => {
             path: "/admin/app/updates",
             icon: FiFeather,
             description: "Release notes"
-          },
-          {
-            label: "App Subscribers",
-            path: "/admin/app/subscribers",
-            icon: FiMail,
-            description: "Mobile audience"
           },
           {
             label: "Contact Info",
@@ -230,29 +236,31 @@ const AdminLayout = () => {
       .find((item) => location.pathname === item.path || location.pathname.startsWith(`${item.path}/`)) ||
     flatItems[0];
 
-  const unreadCount = notificationsSeen ? 0 : notifications.length;
-
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setShowUserMenu(false);
     setShowNotifications(false);
   }, [location.pathname]);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        setNotificationsLoading(true);
-        setNotificationsError("");
-        const data = await getRecentActivity();
-        setNotifications(data.activities || []);
-      } catch (error) {
-        setNotificationsError("Could not load notifications");
-      } finally {
-        setNotificationsLoading(false);
-      }
-    };
+  const refreshNotifications = async (seedLegacyActivity = false) => {
+    try {
+      setNotificationsLoading(true);
+      setNotificationsError("");
+      if (seedLegacyActivity) await getRecentActivity().catch(() => null);
+      const data = await getAdminNotifications();
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unreadCount || 0);
+    } catch {
+      setNotificationsError("Could not load notifications");
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
 
-    fetchNotifications();
+  useEffect(() => {
+    refreshNotifications(true);
+    const interval = setInterval(() => refreshNotifications(), 45000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = () => {
@@ -291,14 +299,61 @@ const AdminLayout = () => {
         return FiHelpCircle;
       case "listing_report":
         return FiAlertTriangle;
+      case "stay_request":
+        return FiCalendar;
+      case "help_request":
+      case "app_support_ticket":
+        return FiHelpCircle;
+      case "kyc_submission":
+        return FiShield;
+      case "service_application":
+        return FiFileText;
+      case "agent_created":
+        return FiUsers;
+      case "app_update":
+        return FiSmartphone;
+      case "listing_approved":
+      case "listing_restored":
+        return FiCheckCircle;
+      case "listing_rejected":
+      case "listing_removed_from_public":
+      case "service_application_rejected":
+        return FiAlertTriangle;
+      case "kyc_approved":
+      case "kyc_rejected":
+      case "service_application_approved":
+        return FiCheckCircle;
       default:
         return FiBell;
     }
   };
 
   const openNotifications = () => {
-    setShowNotifications((value) => !value);
-    setNotificationsSeen(true);
+    const next = !showNotifications;
+    setShowNotifications(next);
+    if (next) refreshNotifications();
+  };
+
+  const markNotificationRead = async (notification) => {
+    if (notification.read || !notification._id) return;
+    setNotifications((items) => items.map((item) => item._id === notification._id ? { ...item, read: true } : item));
+    setUnreadCount((count) => Math.max(0, count - 1));
+    try {
+      const data = await markAdminNotificationRead(notification._id);
+      setUnreadCount(data.unreadCount || 0);
+    } catch {
+      refreshNotifications();
+    }
+  };
+
+  const markAllNotificationsRead = async () => {
+    setNotifications((items) => items.map((item) => ({ ...item, read: true })));
+    setUnreadCount(0);
+    try {
+      await markAllAdminNotificationsRead();
+    } catch {
+      refreshNotifications();
+    }
   };
 
   const getNotificationPath = (type) => {
@@ -313,6 +368,20 @@ const AdminLayout = () => {
         return "/admin/support";
       case "listing_report":
         return "/admin/listings/reports";
+      case "stay_request":
+        return "/admin/stay-requests";
+      case "help_request":
+        return "/admin/app/support-help?tab=requests";
+      case "app_support_ticket":
+        return "/admin/app/support-help?tab=tickets";
+      case "kyc_submission":
+        return "/admin/kyc";
+      case "service_application":
+        return "/admin/services/applications";
+      case "agent_created":
+        return "/admin/agents";
+      case "app_update":
+        return "/admin/app/updates";
       default:
         return "/admin/dashboard";
     }
@@ -375,17 +444,6 @@ const AdminLayout = () => {
         <div className="flex h-full flex-col overflow-hidden">
           <div className="border-b border-[#065A57] bg-gradient-to-r from-[#02BB31]/10 to-transparent px-4 py-4 backdrop-blur-sm">
             <div className="flex items-center justify-between gap-3">
-              <Link to="/admin/dashboard" className="flex min-w-0 items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/10">
-                  <FaBuilding className="text-lg text-[#02BB31]" />
-                </span>
-                {isSidebarOpen && (
-                  <span className="min-w-0">
-                    <span className="block truncate text-base font-bold text-white">RendaHomes</span>
-                    <span className="block truncate text-xs text-[#A8D8C1]">Admin Console</span>
-                  </span>
-                )}
-              </Link>
               <button
                 onClick={() => setIsSidebarOpen((value) => !value)}
                 className="hidden rounded-lg p-2 text-white transition hover:bg-white/10 lg:block"
@@ -523,8 +581,8 @@ const AdminLayout = () => {
               <button className="fixed inset-0 z-30 cursor-default" onClick={() => setShowNotifications(false)} aria-label="Close notifications" />
               <div className="absolute right-4 top-16 z-40 w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-xl border border-[#E8F0EB] bg-white shadow-xl sm:right-6 lg:right-8">
                 <div className="border-b border-[#E8F0EB] px-4 py-3">
-                  <p className="font-semibold text-[#013E43]">Notifications</p>
-                  <p className="text-xs text-[#647C75]">Recent platform activity</p>
+                  <div className="flex items-center justify-between gap-3"><p className="font-semibold text-[#013E43]">Notifications</p>{unreadCount > 0 ? <button type="button" onClick={markAllNotificationsRead} className="text-xs font-semibold text-[#0D915C] hover:text-[#013E43]">Mark all read</button> : null}</div>
+                  <p className="text-xs text-[#647C75]">Persistent admin activity · {unreadCount} unread</p>
                 </div>
                 <div className="max-h-72 overflow-y-auto">
                   {notificationsLoading ? (
@@ -539,15 +597,15 @@ const AdminLayout = () => {
                       <p className="mt-1 text-xs text-[#647C75]">Check your backend connection and admin session.</p>
                     </div>
                   ) : notifications.length ? (
-                    notifications.map((notification, index) => {
+                    notifications.map((notification) => {
                       const NotificationIcon = getNotificationIcon(notification.type);
 
                       return (
                         <Link
-                          key={`${notification.type}-${notification.createdAt}-${index}`}
-                          to={getNotificationPath(notification.type)}
-                          onClick={() => setShowNotifications(false)}
-                          className="border-b border-[#ECF3EF] bg-white px-4 py-3 transition hover:bg-[#F8FAF8]"
+                          key={notification._id}
+                          to={notification.path || getNotificationPath(notification.type)}
+                          onClick={() => { markNotificationRead(notification); setShowNotifications(false); }}
+                          className={`block border-b border-[#ECF3EF] px-4 py-3 transition hover:bg-[#F8FAF8] ${notification.read ? "bg-white" : "bg-[#F4FAF6]"}`}
                         >
                           <div className="flex gap-3">
                             <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#0D915C]">

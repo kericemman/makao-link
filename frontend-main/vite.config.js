@@ -5,6 +5,10 @@ import path from "node:path";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    port: 5173,
+    strictPort: true
+  },
   resolve: {
     alias: {
       "react-hot-toast": path.resolve(__dirname, "src/utils/toast.jsx")

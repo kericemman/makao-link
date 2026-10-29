@@ -5,6 +5,9 @@ const {
   loginLandlord,
   register,
   getMe,
+  sharedSession,
+  logout,
+  syncSharedSession,
   socialLogin,
   verifyEmail,
   resendEmailOtp,
@@ -16,6 +19,9 @@ const { protect } = require("../../middleware/auth.middleware");
 router.post("/register", registerLandlord);
 router.post("/login", loginLandlord);
 router.get("/me", protect, getMe);
+router.get("/session", sharedSession);
+router.post("/session", protect, syncSharedSession);
+router.post("/logout", logout);
 
 
 router.post("/user/register", register);

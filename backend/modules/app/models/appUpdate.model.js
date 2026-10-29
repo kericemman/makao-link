@@ -9,6 +9,11 @@ const appUpdateSchema = new mongoose.Schema(
       enum: ["Product Update", "News", "Announcement", "Maintenance"],
       default: "Product Update"
     },
+    emailAudience: {
+      type: String,
+      enum: ["mobile_app", "website", "all"],
+      default: "mobile_app"
+    },
     isPublished: { type: Boolean, default: true },
     publishedAt: { type: Date, default: null },
     emailNotifiedAt: { type: Date, default: null }

@@ -1,7 +1,3 @@
-const defaultLogo =
-  process.env.EMAIL_LOGO_URL ||
-  "https://res.cloudinary.com/dhlz0p70t/image/upload/v1776431303/Renda_Homes_Logo_rmf8hj.jpg";
-
 const defaultSocials = {
   facebook: "https://www.facebook.com/share/1KYNTYg9YZ/",
   instagram: "https://www.instagram.com/renda.homes?igsh=MW5hM2s3dHMyeHZlaQ==",
@@ -27,7 +23,6 @@ const buildEmailLayout = ({
   footerNote = "",
   preheader = "",
   brandName = "RendaHomes",
-  logo = defaultLogo,
   accentColor = "#013E43",
   highlightColor = "#0D915C",
   mutedColor = "#647C75",
@@ -72,11 +67,7 @@ const buildEmailLayout = ({
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                   <tr>
                     <td align="left" style="vertical-align:middle;">
-                      ${
-                        logo
-                          ? `<img src="${logo}" width="136" alt="${brandName}" style="display:block; width:136px; max-width:136px; height:auto; border:0; border-radius:8px; background:#ffffff;" />`
-                          : `<span style="font-size:22px; font-weight:700; color:#ffffff;">${brandName}</span>`
-                      }
+                      <span style="font-size:22px; font-weight:700; color:#ffffff;">${brandName}</span>
                     </td>
                     <td align="right" style="vertical-align:middle;">
                       <span style="display:inline-block; padding:7px 11px; border:1px solid rgba(255,255,255,0.2); border-radius:999px; color:#DFF4E8; font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;">

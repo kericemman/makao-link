@@ -23,14 +23,14 @@ import toast from "react-hot-toast";
 const statusClasses = {
   open: "bg-yellow-100 text-yellow-600",
   in_progress: "bg-blue-100 text-blue-600",
-  resolved: "bg-[#02BB31]/10 text-[#02BB31]",
+  resolved: "bg-[#126542]/10 text-[#126542]",
   closed: "bg-gray-100 text-gray-600"
 };
 
 const statusIcons = {
   open: <FiClock className="text-yellow-500" />,
   in_progress: <FiRefreshCw className="text-blue-500" />,
-  resolved: <FiCheckCircle className="text-[#02BB31]" />,
+  resolved: <FiCheckCircle className="text-[#126542]" />,
   closed: <FiCheckCircle className="text-gray-500" />
 };
 
@@ -59,7 +59,7 @@ const LandlordSupportDetailPage = () => {
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load ticket");
       toast.error("Failed to load ticket", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     } finally {
       setLoading(false);
@@ -75,7 +75,7 @@ const LandlordSupportDetailPage = () => {
 
     if (!reply.trim()) {
       toast.error("Please enter a reply message", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
       return;
     }
@@ -86,11 +86,11 @@ const LandlordSupportDetailPage = () => {
       setTicket(data.ticket);
       setReply("");
       toast.success("Reply sent successfully", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#126542", color: "#fff" }
       });
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to send reply", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     } finally {
       setReplying(false);
@@ -122,8 +122,8 @@ const LandlordSupportDetailPage = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A8D8C1] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading ticket...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E2E8F0] border-t-[#126542] mx-auto mb-4"></div>
+          <p className="text-[#475569]">Loading ticket...</p>
         </div>
       </div>
     );
@@ -131,14 +131,14 @@ const LandlordSupportDetailPage = () => {
 
   if (error) {
     return (
-      <div className="bg-white rounded-2xl shadow-lg p-8 text-center border border-[#A8D8C1]">
+      <div className="bg-white rounded-md shadow-sm p-8 text-center border border-[#E2E8F0]">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <FiAlertCircle className="text-3xl text-red-500" />
         </div>
         <p className="text-red-600 mb-4">{error}</p>
         <button
           onClick={fetchTicket}
-          className="px-4 py-2 bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
+          className="px-4 py-2 bg-[#126542] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
         >
           Try Again
         </button>
@@ -148,17 +148,17 @@ const LandlordSupportDetailPage = () => {
 
   if (!ticket) {
     return (
-      <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-[#A8D8C1]">
-        <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-          <FiAlertCircle className="text-3xl text-[#A8D8C1]" />
+      <div className="bg-white rounded-md shadow-sm p-12 text-center border border-[#E2E8F0]">
+        <div className="w-20 h-20 bg-[#F8FAFC] rounded-full flex items-center justify-center mx-auto mb-4">
+          <FiAlertCircle className="text-3xl text-[#E2E8F0]" />
         </div>
-        <h2 className="text-lg font-semibold text-[#013E43] mb-2">Ticket not found</h2>
-        <p className="text-sm text-[#065A57] mb-4">
+        <h2 className="text-lg font-semibold text-[#0F172A] mb-2">Ticket not found</h2>
+        <p className="text-sm text-[#475569] mb-4">
           The support ticket you're looking for doesn't exist or has been removed.
         </p>
         <Link
           to="/support"
-          className="inline-flex items-center px-6 py-3 bg-[#02BB31] text-white rounded-lg font-semibold hover:bg-[#0D915C] transition-colors"
+          className="inline-flex items-center px-6 py-3 bg-[#126542] text-white rounded-lg font-semibold hover:bg-[#0D915C] transition-colors"
         >
           <FiArrowLeft className="mr-2" />
           Back to Support
@@ -172,28 +172,28 @@ const LandlordSupportDetailPage = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
+      <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <Link
               to="/support"
-              className="p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 hover:bg-[#F8FAFC] rounded-lg transition-colors"
             >
-              <FiArrowLeft className="text-xl text-[#065A57]" />
+              <FiArrowLeft className="text-xl text-[#475569]" />
             </Link>
-            <div className="p-3 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-xl">
+            <div className="p-3 bg-[#123D38] rounded-md">
               <FiMessageSquare className="text-white text-2xl" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-[#013E43]">Ticket Details</h1>
-              <p className="text-sm text-[#065A57]">ID: {ticket._id.slice(-8)}</p>
+              <h1 className="text-2xl font-bold text-[#0F172A]">Ticket Details</h1>
+              <p className="text-sm text-[#475569]">ID: {ticket._id.slice(-8)}</p>
             </div>
           </div>
           
           <div className="flex items-center space-x-3">
             <button
               onClick={fetchTicket}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 text-[#475569] hover:bg-[#F8FAFC] rounded-lg transition-colors"
               title="Refresh"
             >
               <FiRefreshCw className="text-lg" />
@@ -203,13 +203,13 @@ const LandlordSupportDetailPage = () => {
       </div>
 
       {/* Ticket Info Card */}
-      <div className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden">
-        <div className="p-6 border-b border-[#A8D8C1] bg-gradient-to-r from-[#F0F7F4] to-white">
+      <div className="bg-white rounded-md shadow-sm border border-[#E2E8F0] overflow-hidden">
+        <div className="p-6 border-b border-[#E2E8F0] bg-slate-50">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-[#013E43]">{ticket.subject}</h2>
+              <h2 className="text-xl font-bold text-[#0F172A]">{ticket.subject}</h2>
               <div className="flex flex-wrap items-center gap-3 mt-2">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#F0F7F4] text-[#065A57]">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#F8FAFC] text-[#475569]">
                   {categoryInfo.icon} {categoryInfo.label}
                 </span>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium capitalize ${statusClasses[ticket.status]}`}>
@@ -219,16 +219,16 @@ const LandlordSupportDetailPage = () => {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm text-[#065A57]">Created</p>
-              <p className="text-sm font-medium text-[#013E43]">{formatDate(ticket.createdAt)}</p>
+              <p className="text-sm text-[#475569]">Created</p>
+              <p className="text-sm font-medium text-[#0F172A]">{formatDate(ticket.createdAt)}</p>
             </div>
           </div>
         </div>
 
         {/* Messages */}
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiMessageSquare className="mr-2 text-[#02BB31]" />
+          <h3 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiMessageSquare className="mr-2 text-[#126542]" />
             Conversation
           </h3>
 
@@ -236,33 +236,33 @@ const LandlordSupportDetailPage = () => {
             {ticket.messages.map((msg, index) => (
               <div
                 key={msg._id || index}
-                className={`rounded-xl p-4 ${
+                className={`rounded-md p-4 ${
                   msg.senderRole === "admin"
-                    ? "bg-[#F0F7F4] border-l-4 border-[#02BB31]"
-                    : "bg-white border border-[#A8D8C1]"
+                    ? "bg-[#F8FAFC] border-l-4 border-[#126542]"
+                    : "bg-white border border-[#E2E8F0]"
                 }`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center space-x-2">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       msg.senderRole === "admin"
-                        ? "bg-gradient-to-r from-[#02BB31] to-[#0D915C]"
-                        : "bg-gradient-to-r from-[#013E43] to-[#005C57]"
+                        ? "bg-[#126542]"
+                        : "bg-[#123D38]"
                     }`}>
                       <span className="text-white text-xs font-bold">
                         {msg.senderRole === "admin" ? "A" : "Y"}
                       </span>
                     </div>
-                    <span className="font-medium text-[#013E43]">
+                    <span className="font-medium text-[#0F172A]">
                       {msg.senderRole === "admin" ? "Support Team" : "You"}
                     </span>
                   </div>
-                  <span className="text-xs text-[#065A57] flex items-center">
+                  <span className="text-xs text-[#475569] flex items-center">
                     <FiClock className="mr-1" />
                     {formatTimeAgo(msg.createdAt)}
                   </span>
                 </div>
-                <p className="text-sm text-[#065A57] whitespace-pre-wrap ml-10">
+                <p className="text-sm text-[#475569] whitespace-pre-wrap ml-10">
                   {msg.message}
                 </p>
               </div>
@@ -272,9 +272,9 @@ const LandlordSupportDetailPage = () => {
 
         {/* Reply Section */}
         {ticket.status !== "closed" ? (
-          <div className="p-6 border-t border-[#A8D8C1] bg-[#F0F7F4]">
-            <h3 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-              <FiSend className="mr-2 text-[#02BB31]" />
+          <div className="p-6 border-t border-[#E2E8F0] bg-[#F8FAFC]">
+            <h3 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+              <FiSend className="mr-2 text-[#126542]" />
               Send a Reply
             </h3>
             <form onSubmit={handleReply} className="space-y-4">
@@ -283,14 +283,14 @@ const LandlordSupportDetailPage = () => {
                 placeholder="Write your follow-up message..."
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors resize-none"
+                className="w-full px-4 py-3 border-2 border-[#E2E8F0] rounded-lg focus:border-[#126542] outline-none transition-colors resize-none"
                 required
               />
               <div className="flex justify-end">
                 <button
                   type="submit"
                   disabled={replying}
-                  className="px-6 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  className="px-6 py-3 bg-[#126542] text-white rounded-lg font-semibold hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >
                   {replying ? (
                     <>
@@ -308,15 +308,15 @@ const LandlordSupportDetailPage = () => {
             </form>
           </div>
         ) : (
-          <div className="p-6 border-t border-[#A8D8C1] bg-[#F0F7F4]">
-            <div className="bg-gray-100 rounded-xl p-4 text-sm text-gray-600 flex items-center">
+          <div className="p-6 border-t border-[#E2E8F0] bg-[#F8FAFC]">
+            <div className="bg-gray-100 rounded-md p-4 text-sm text-gray-600 flex items-center">
               <FiInfo className="mr-2 text-gray-500" />
               This ticket is closed. If you need further assistance, please create a new ticket.
             </div>
             <div className="mt-4 flex justify-end">
               <Link
                 to="/support"
-                className="px-6 py-3 bg-[#02BB31] text-white rounded-lg font-semibold hover:bg-[#0D915C] transition-colors"
+                className="px-6 py-3 bg-[#126542] text-white rounded-lg font-semibold hover:bg-[#0D915C] transition-colors"
               >
                 Back to Support
               </Link>
@@ -326,20 +326,20 @@ const LandlordSupportDetailPage = () => {
 
         {/* Quick Contact Info */}
         {ticket.status !== "closed" && (
-          <div className="p-6 border-t border-[#A8D8C1] bg-white">
+          <div className="p-6 border-t border-[#E2E8F0] bg-white">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-[#02BB31]/10 rounded-lg">
-                  <FiInfo className="text-[#02BB31]" />
+                <div className="p-2 bg-[#126542]/10 rounded-lg">
+                  <FiInfo className="text-[#126542]" />
                 </div>
-                <p className="text-sm text-[#065A57]">
+                <p className="text-sm text-[#475569]">
                   Need immediate assistance? Contact us directly:
                 </p>
               </div>
               <div className="flex space-x-3">
                 <a
                   href="mailto:support@makaolink.com"
-                  className="px-4 py-2 text-[#013E43] border border-[#A8D8C1] rounded-lg hover:bg-[#F0F7F4] transition-colors"
+                  className="px-4 py-2 text-[#0F172A] border border-[#E2E8F0] rounded-lg hover:bg-[#F8FAFC] transition-colors"
                 >
                   Email Support
                 </a>

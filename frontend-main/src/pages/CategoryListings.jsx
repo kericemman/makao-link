@@ -35,7 +35,8 @@ export default function CategoryListings() {
   const filters = useMemo(
     () => ({
       search: searchParams.get("search") || "",
-      purpose: searchParams.get("purpose") || "",
+      purpose: searchParams.get("purpose") || category?.params?.purpose || "",
+      guests: searchParams.get("guests") || "",
       type: searchParams.get("type") || "",
       county: searchParams.get("county") || "",
       town: searchParams.get("town") || "",
@@ -46,7 +47,7 @@ export default function CategoryListings() {
       page: searchParams.get("page") || "1",
       limit: "12"
     }),
-    [searchParams]
+    [searchParams, category]
   );
 
   useEffect(() => {
@@ -84,6 +85,7 @@ export default function CategoryListings() {
     const next = new URLSearchParams(searchParams);
     if (value) next.set(key, value);
     else next.delete(key);
+    if (key === "purpose" && value !== "short_stay") next.delete("guests");
     if (key !== "page") next.delete("page");
     setSearchParams(next);
   };

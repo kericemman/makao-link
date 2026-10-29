@@ -5,12 +5,8 @@ import {
   rejectListing
 } from "../../services/admin.service";
 import { 
-  FiHome, 
   FiMapPin, 
-  FiDollarSign, 
   FiUser, 
-  FiMail,
-  FiPhone,
   FiCheckCircle,
   FiXCircle,
   FiClock,
@@ -61,12 +57,14 @@ const PendingListingsPage = () => {
       await approveListing(id);
       setListings((prev) => prev.filter((item) => item._id !== id));
       toast.success("Listing approved successfully", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
+      return true;
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to approve listing", {
         style: { background: "#013E43", color: "#fff" }
       });
+      return false;
     } finally {
       setActionLoadingId("");
     }
@@ -85,7 +83,7 @@ const PendingListingsPage = () => {
       await rejectListing(rejectId, { reason: rejectReason });
       setListings((prev) => prev.filter((item) => item._id !== rejectId));
       toast.success("Listing rejected", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
       setShowRejectModal(false);
       setRejectReason("");
@@ -140,65 +138,53 @@ const PendingListingsPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex min-h-72 items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E4EEE8] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading pending listings...</p>
+          <div className="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-[#DDEAE3] border-t-[#0D915C]" />
+          <p className="text-sm font-semibold text-[#013E43]">Loading pending listings...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-[#E4EEE8]">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-[#013E43] rounded-md">
-              <FiClock className="text-white text-2xl" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-[#013E43]">Pending Listings</h1>
-              <p className="text-sm text-[#065A57]">
-                Review, approve, or reject newly submitted properties
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={fetchPendingListings}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-              title="Refresh"
-            >
-              <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
+    <div className="space-y-5">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[#DDEAE3] pb-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0D915C]">Listing Control</p>
+          <h1 className="mt-1 text-2xl font-semibold text-[#013E43]">Pending review</h1>
+          <p className="mt-1 text-sm text-[#647C75]">Inspect the complete property before approving or rejecting it.</p>
         </div>
+        <button
+          type="button"
+          onClick={fetchPendingListings}
+          className="inline-flex items-center gap-2 rounded-lg border border-[#DDEAE3] bg-white px-3 py-2 text-sm font-semibold text-[#013E43] transition hover:bg-[#F6FAF7]"
+        >
+          <FiRefreshCw className={loading ? "animate-spin" : ""} />
+          Refresh
+        </button>
+      </header>
+
+      <div className="flex items-center justify-between border-b border-[#DDEAE3] py-3">
+        <span className="text-sm font-semibold text-[#013E43]">Review queue</span>
+        <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">{listings.length} pending</span>
       </div>
 
       {error && (
-        <div className="bg-red-50 rounded-md p-4 text-sm text-red-600 border border-red-200">
-          <div className="flex items-start space-x-3">
-            <FiAlertCircle className="text-red-500 mt-0.5" />
+        <div role="alert" className="flex items-start gap-3 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <FiAlertCircle className="mt-0.5 shrink-0 text-red-500" />
             <span>{error}</span>
-          </div>
         </div>
       )}
 
       {listings.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center border border-[#E4EEE8]">
-          <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-            <FiCheckCircle className="text-3xl text-[#02BB31]" />
-          </div>
-          <h2 className="text-lg font-semibold text-[#013E43] mb-2">No pending listings</h2>
-          <p className="text-sm text-[#065A57]">
-            Everything is up to date right now.
-          </p>
+        <div className="border-y border-[#DDEAE3] bg-white px-5 py-12 text-center">
+          <FiCheckCircle className="mx-auto mb-3 text-3xl text-[#0D915C]" />
+          <h2 className="text-base font-semibold text-[#013E43]">No pending listings</h2>
+          <p className="mt-1 text-sm text-[#647C75]">The review queue is clear.</p>
         </div>
       ) : (
-        <div className="grid gap-6">
+        <div className="divide-y divide-[#E7F0EA] border-y border-[#DDEAE3] bg-white">
           {listings.map((listing) => {
             const busy = actionLoadingId === listing._id;
             const firstImage = getImageUrl(listing.images?.[0]);
@@ -206,169 +192,60 @@ const PendingListingsPage = () => {
             return (
               <div
                 key={listing._id}
-                className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden transition-all"
+                className="grid gap-4 px-4 py-4 transition hover:bg-[#FAFCFA] sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:items-center sm:px-5"
               >
-                <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-                  {/* Image Section */}
-                  <div className="relative h-64 lg:h-auto overflow-hidden bg-[#F0F7F4]">
+                  <div className="relative h-24 overflow-hidden rounded-md bg-[#F1F7F3] sm:h-20">
                     {firstImage ? (
                       <img
                         src={firstImage}
                         alt={listing.title}
-                        className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                        className="h-full w-full cursor-pointer object-cover transition-transform duration-300 hover:scale-105"
                         onClick={() => {
                           setSelectedImage(firstImage);
                           setShowImageModal(true);
                         }}
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center">
-                        <div className="text-center">
-                          <FiImage className="text-3xl text-[#A8D8C1] mx-auto mb-2" />
-                          <p className="text-sm text-[#065A57]">No image</p>
-                        </div>
+                      <div className="flex h-full items-center justify-center text-[#8A9C96]">
+                        <FiImage className="text-xl" />
                       </div>
                     )}
-                    
-                    {/* Image count badge */}
                     {listing.images?.length > 1 && (
-                      <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/50 text-white text-xs rounded-full">
-                        +{listing.images.length - 1} more
-                      </div>
+                      <span className="absolute bottom-1 right-1 rounded bg-black/65 px-1.5 py-0.5 text-[10px] font-semibold text-white">{listing.images.length} photos</span>
                     )}
-                    
-                    {/* Status Badge */}
-                    <div className="absolute top-3 left-3">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600">
-                        <FiClock className="mr-1" />
-                        Pending Review
-                      </span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-base font-semibold text-[#013E43]">{listing.title}</h2>
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800"><FiClock /> Pending</span>
+                    </div>
+                    <p className="mt-1 flex items-center gap-1 truncate text-sm text-[#647C75]"><FiMapPin className="shrink-0 text-[#0D915C]" />{formatLocation(listing)}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#647C75]">
+                      <span className="font-semibold text-[#013E43]">{formatPrice(listing.price)} <span className="font-normal text-[#647C75]">{listing.purpose === "rent" ? "/ month" : "/ total"}</span></span>
+                      <span className="capitalize">{listing.type || "Property"} · {listing.purpose || "purpose not set"}</span>
+                      <span className="inline-flex items-center gap-1"><FiUser />{listing.landlord?.name || "Landlord not set"}</span>
                     </div>
                   </div>
 
-                  {/* Content Section */}
-                  <div className="p-6">
-                    <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-                      <div>
-                        <h2 className="text-xl font-bold text-[#013E43] group-hover:text-[#02BB31] transition-colors">
-                          {listing.title}
-                        </h2>
-                        <p className="mt-1 text-sm text-[#065A57] flex items-center">
-                          <FiMapPin className="mr-1 text-[#02BB31]" />
-                          {formatLocation(listing)}
-                        </p>
-                      </div>
-                      <p className="text-2xl font-bold text-[#02BB31]">
-                        {formatPrice(listing.price)}
-                        <span className="text-xs text-[#065A57] font-normal ml-1">/month</span>
-                      </p>
-                    </div>
-
-                    {/* Property Details Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 bg-[#F0F7F4] rounded-lg">
-                      <div className="text-center">
-                        <FaBuilding className="text-[#02BB31] mx-auto mb-1" />
-                        <p className="text-xs text-[#065A57]">Type</p>
-                        <p className="text-sm font-medium text-[#013E43] capitalize">{listing.type}</p>
-                      </div>
-                      <div className="text-center">
-                        <FaBed className="text-[#02BB31] mx-auto mb-1" />
-                        <p className="text-xs text-[#065A57]">Bedrooms</p>
-                        <p className="text-sm font-medium text-[#013E43]">{listing.bedrooms || 0}</p>
-                      </div>
-                      <div className="text-center">
-                        <FaBath className="text-[#02BB31] mx-auto mb-1" />
-                        <p className="text-xs text-[#065A57]">Bathrooms</p>
-                        <p className="text-sm font-medium text-[#013E43]">{listing.bathrooms || 0}</p>
-                      </div>
-                      <div className="text-center">
-                        <FiImage className="text-[#02BB31] mx-auto mb-1" />
-                        <p className="text-xs text-[#065A57]">Photos</p>
-                        <p className="text-sm font-medium text-[#013E43]">{listing.images?.length || 0}</p>
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    <div className="mb-4 p-3 bg-[#F0F7F4] rounded-lg">
-                      <p className="text-sm text-[#065A57] whitespace-pre-wrap line-clamp-3">
-                        {listing.description}
-                      </p>
-                      {listing.description?.length > 150 && (
-                        <button className="text-xs text-[#02BB31] mt-1 hover:underline">
-                          Read more
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Landlord Info */}
-                    <div className="mb-4 p-3 bg-[#F0F7F4] rounded-lg">
-                      <p className="text-sm font-medium text-[#013E43] mb-2 flex items-center">
-                        <FiUser className="mr-2 text-[#02BB31]" />
-                        Landlord Information
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                        <p className="text-[#065A57]">
-                          <span className="font-medium">Name:</span> {listing.landlord?.name || 'N/A'}
-                        </p>
-                        <p className="text-[#065A57]">
-                          <span className="font-medium">Email:</span> {listing.landlord?.email || 'N/A'}
-                        </p>
-                        {listing.landlord?.phone && (
-                          <p className="text-[#065A57]">
-                            <span className="font-medium">Phone:</span> {listing.landlord.phone}
-                          </p>
-                        )}
-                        {listing.contactPhone && listing.contactPhone !== listing.landlord?.phone && (
-                          <p className="text-[#065A57]">
-                            <span className="font-medium">Contact:</span> {listing.contactPhone}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Amenities Preview */}
-                    {getAmenityEntries(listing.amenities).length > 0 && (
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-1">
-                          {getAmenityEntries(listing.amenities).slice(0, 4).map(([amenity]) => (
-                            <span
-                              key={amenity}
-                              className="text-xs bg-[#F0F7F4] text-[#065A57] px-2 py-1 rounded-full"
-                            >
-                              {formatAmenity(amenity)}
-                            </span>
-                          ))}
-                          {getAmenityEntries(listing.amenities).length > 4 && (
-                            <span className="text-xs bg-[#F0F7F4] text-[#065A57] px-2 py-1 rounded-full">
-                              +{getAmenityEntries(listing.amenities).length - 4} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex flex-wrap gap-3 pt-2">
-                      <button
-                        onClick={() => setSelectedListing(listing)}
-                        disabled={busy}
-                        className="flex-1 px-4 py-3 bg-[#013E43] text-white rounded-lg font-medium hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                      >
-                        <FiEye className="mr-2" />
-                        Review full listing
-                      </button>
-
-                      <button
-                        onClick={() => openRejectModal(listing._id)}
-                        disabled={busy}
-                        className="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                      >
-                        <FiXCircle className="mr-2" />
-                        Reject
-                      </button>
-                    </div>
+                  <div className="flex flex-wrap gap-2 sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedListing(listing)}
+                      disabled={busy}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-[#BFD6CA] bg-white px-3 py-2 text-sm font-semibold text-[#013E43] transition hover:bg-[#F1F7F3] disabled:opacity-50 sm:flex-none"
+                    >
+                      <FiEye /> Review
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openRejectModal(listing._id)}
+                      disabled={busy}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50 sm:flex-none"
+                    >
+                      <FiXCircle /> Reject
+                    </button>
                   </div>
-                </div>
               </div>
             );
           })}
@@ -384,7 +261,7 @@ const PendingListingsPage = () => {
                 setShowImageModal(false);
                 setSelectedImage(null);
               }}
-              className="absolute -top-10 right-0 text-white hover:text-[#02BB31] transition-colors"
+              className="absolute -top-10 right-0 text-white hover:text-[#0D915C] transition-colors"
             >
               <FiXCircle className="text-3xl" />
             </button>
@@ -395,7 +272,7 @@ const PendingListingsPage = () => {
             />
             <button
               onClick={() => window.open(selectedImage, '_blank')}
-              className="absolute -bottom-10 right-0 text-white hover:text-[#02BB31] transition-colors flex items-center"
+              className="absolute -bottom-10 right-0 text-white hover:text-[#0D915C] transition-colors flex items-center"
             >
               <FiEye className="mr-2" />
               View Full Size
@@ -407,7 +284,7 @@ const PendingListingsPage = () => {
       {selectedListing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4">
           <div className="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-lg bg-white shadow-sm">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#E4EEE8] bg-white px-5 py-4">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#DDEAE3] bg-white px-5 py-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0D915C]">Full listing review</p>
                 <h3 className="text-xl font-bold text-[#013E43]">{selectedListing.title}</h3>
@@ -415,7 +292,7 @@ const PendingListingsPage = () => {
               <button
                 type="button"
                 onClick={() => setSelectedListing(null)}
-                className="rounded-lg p-2 text-[#065A57] transition hover:bg-[#F0F7F4]"
+                className="rounded-lg p-2 text-[#41635A] transition hover:bg-[#F1F7F3]"
                 aria-label="Close review"
               >
                 <FiXCircle className="text-2xl" />
@@ -437,26 +314,26 @@ const PendingListingsPage = () => {
                           setSelectedImage(imageUrl);
                           setShowImageModal(true);
                         }}
-                        className="overflow-hidden rounded-lg border border-[#E4EEE8] bg-[#F0F7F4]"
+                        className="overflow-hidden rounded-lg border border-[#DDEAE3] bg-[#F1F7F3]"
                       >
                         <img src={imageUrl} alt={`${selectedListing.title} ${index + 1}`} className="h-56 w-full object-cover" />
                       </button>
                     );
                   })}
                   {!selectedListing.images?.length && (
-                    <div className="flex h-56 items-center justify-center rounded-lg border border-dashed border-[#E4EEE8] bg-[#F8FAF8] text-sm text-[#065A57]">
+                    <div className="flex h-56 items-center justify-center rounded-lg border border-dashed border-[#DDEAE3] bg-[#F8FAF8] text-sm text-[#41635A]">
                       No listing images uploaded
                     </div>
                   )}
                 </div>
 
-                <section className="border-y border-[#E4EEE8] py-4">
+                <section className="border-y border-[#DDEAE3] py-4">
                   <h4 className="mb-2 text-sm font-semibold uppercase tracking-[0.16em] text-[#647C75]">Description</h4>
                   <p className="whitespace-pre-wrap text-sm leading-6 text-[#013E43]">{selectedListing.description}</p>
                 </section>
 
                 {getAmenityEntries(selectedListing.amenities).length > 0 && (
-                  <section className="border-b border-[#E4EEE8] pb-4">
+                  <section className="border-b border-[#DDEAE3] pb-4">
                     <h4 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-[#647C75]">Amenities</h4>
                     <div className="flex flex-wrap gap-2">
                       {getAmenityEntries(selectedListing.amenities).map(([amenity]) => (
@@ -470,7 +347,7 @@ const PendingListingsPage = () => {
               </div>
 
               <div className="space-y-5">
-                <section className="grid grid-cols-2 gap-3 border-b border-[#E4EEE8] pb-4">
+                <section className="grid grid-cols-2 gap-3 border-b border-[#DDEAE3] pb-4">
                   <div>
                     <p className="text-xs text-[#647C75]">Price</p>
                     <p className="font-semibold text-[#013E43]">
@@ -494,7 +371,7 @@ const PendingListingsPage = () => {
                   </div>
                 </section>
 
-                <section className="grid grid-cols-2 gap-3 border-b border-[#E4EEE8] pb-4">
+                <section className="grid grid-cols-2 gap-3 border-b border-[#DDEAE3] pb-4">
                   <div>
                     <p className="text-xs text-[#647C75]">County</p>
                     <p className="font-semibold text-[#013E43]">{selectedListing.county || "N/A"}</p>
@@ -524,7 +401,7 @@ const PendingListingsPage = () => {
                   </div>
                 </section>
 
-                <section className="grid grid-cols-2 gap-3 border-b border-[#E4EEE8] pb-4">
+                <section className="grid grid-cols-2 gap-3 border-b border-[#DDEAE3] pb-4">
                   <div>
                     <p className="text-xs text-[#647C75]">Bedrooms</p>
                     <p className="font-semibold text-[#013E43]">{selectedListing.bedrooms ?? "N/A"}</p>
@@ -551,7 +428,7 @@ const PendingListingsPage = () => {
                   </div>
                 </section>
 
-                <section className="border-b border-[#E4EEE8] pb-4">
+                <section className="border-b border-[#DDEAE3] pb-4">
                   <h4 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-[#647C75]">Landlord</h4>
                   <div className="space-y-2 text-sm text-[#013E43]">
                     <p><span className="text-[#647C75]">Name:</span> {selectedListing.landlord?.name || "N/A"}</p>
@@ -565,11 +442,10 @@ const PendingListingsPage = () => {
                   <button
                     type="button"
                     onClick={async () => {
-                      await handleApprove(selectedListing._id);
-                      setSelectedListing(null);
+                      if (await handleApprove(selectedListing._id)) setSelectedListing(null);
                     }}
                     disabled={actionLoadingId === selectedListing._id}
-                    className="flex-1 rounded-lg bg-[#02BB31] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0D915C] disabled:opacity-50"
+                    className="flex-1 rounded-lg bg-[#0D915C] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#08764C] disabled:opacity-50"
                   >
                     Approve listing
                   </button>
@@ -590,48 +466,43 @@ const PendingListingsPage = () => {
 
       {/* Reject Modal */}
       {showRejectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-sm max-w-md w-full p-6">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-                <FiXCircle className="text-3xl text-red-500" />
-              </div>
-              <h3 className="text-xl font-bold text-[#013E43] mb-2">Reject Listing</h3>
-              <p className="text-sm text-[#065A57]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#062E2B]/55 p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-xl border border-[#DDEAE3] bg-white shadow-2xl">
+            <div className="border-b border-[#E8F0EB] px-5 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-red-700">Listing decision</p>
+              <h3 className="mt-1 text-lg font-semibold text-[#013E43]">Reject listing</h3>
+              <p className="mt-1 text-sm text-[#647C75]">
                 Please provide a reason for rejecting this listing. This will be shared with the landlord.
               </p>
             </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-[#065A57] mb-2">
+            <div className="p-5">
+              <label className="mb-2 block text-sm font-semibold text-[#013E43]">
                 Reason for rejection <span className="text-red-500">*</span>
               </label>
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 rows="4"
-                className="w-full px-4 py-3 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] resize-none"
+                className="w-full resize-none rounded-lg border border-[#DDEAE3] px-3 py-2.5 text-sm text-[#013E43] outline-none transition focus:border-[#0D915C]"
                 placeholder="Enter the reason for rejection..."
               />
-            </div>
 
-            <div className="flex space-x-3">
-              <button
-                onClick={() => {
-                  setShowRejectModal(false);
-                  setRejectReason("");
-                  setRejectId("");
-                }}
-                className="flex-1 px-4 py-2 border border-[#E4EEE8] text-[#065A57] rounded-lg hover:bg-[#F0F7F4] transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleReject}
-                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-              >
-                Reject Listing
-              </button>
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setShowRejectModal(false);
+                    setRejectReason("");
+                    setRejectId("");
+                  }}
+                  className="rounded-lg border border-[#DDEAE3] px-3 py-2 text-sm font-semibold text-[#013E43] transition hover:bg-[#F6FAF7]"
+                >Cancel</button>
+                <button
+                  onClick={handleReject}
+                  disabled={!rejectReason.trim() || Boolean(actionLoadingId)}
+                  className="rounded-lg bg-red-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >Reject listing</button>
+              </div>
             </div>
           </div>
         </div>

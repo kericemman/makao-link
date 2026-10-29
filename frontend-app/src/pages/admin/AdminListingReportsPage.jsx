@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { createElement, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FiAlertTriangle,
@@ -103,7 +103,7 @@ export default function AdminListingReportsPage() {
       setUpdatingId(report._id);
       await updateListingReportStatus(report._id, { status: nextStatus, adminNote: adminNote || "" });
       toast.success("Report updated", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
       loadReports();
     } catch (error) {
@@ -117,7 +117,7 @@ export default function AdminListingReportsPage() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-lg border border-[#E4EEE8] bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-[#DDEAE3] bg-white p-5 shadow-none">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0D915C]">Trust operations</p>
@@ -142,19 +142,19 @@ export default function AdminListingReportsPage() {
         <Stat label="Resolved" value={stats.resolved} icon={FiCheckCircle} tone="text-emerald-600" />
       </section>
 
-      <section className="rounded-lg border border-[#E4EEE8] bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-[#E4EEE8] p-4 lg:flex-row lg:items-center">
+      <section className="rounded-lg border border-[#DDEAE3] bg-white shadow-none">
+        <div className="flex flex-col gap-3 border-b border-[#DDEAE3] p-4 lg:flex-row lg:items-center">
           <div className="relative flex-1">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#647C75]" />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search listing, landlord, reporter, message..."
-              className="w-full rounded-lg border border-[#DDEAE3] py-2.5 pl-10 pr-3 text-sm outline-none focus:border-[#02BB31]"
+              className="w-full rounded-lg border border-[#DDEAE3] py-2.5 pl-10 pr-3 text-sm outline-none focus:border-[#0D915C]"
             />
           </div>
 
-          <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-lg border border-[#DDEAE3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#02BB31]">
+          <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-lg border border-[#DDEAE3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0D915C]">
             <option value="">All statuses</option>
             <option value="new">New</option>
             <option value="reviewing">Reviewing</option>
@@ -162,7 +162,7 @@ export default function AdminListingReportsPage() {
             <option value="dismissed">Dismissed</option>
           </select>
 
-          <select value={reason} onChange={(event) => setReason(event.target.value)} className="rounded-lg border border-[#DDEAE3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#02BB31]">
+          <select value={reason} onChange={(event) => setReason(event.target.value)} className="rounded-lg border border-[#DDEAE3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0D915C]">
             <option value="">All reasons</option>
             {Object.entries(reasonLabels).map(([value, label]) => (
               <option key={value} value={value}>{label}</option>
@@ -171,7 +171,7 @@ export default function AdminListingReportsPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-[#E4EEE8] text-sm">
+          <table className="min-w-full divide-y divide-[#DDEAE3] text-sm">
             <thead className="bg-[#F8FAF8] text-left text-xs font-bold uppercase tracking-[0.12em] text-[#647C75]">
               <tr>
                 <th className="px-4 py-3">Listing</th>
@@ -226,7 +226,7 @@ export default function AdminListingReportsPage() {
                         <button
                           onClick={() => updateStatus(report, "resolved")}
                           disabled={updatingId === report._id || report.status === "resolved"}
-                          className="inline-flex items-center gap-1 rounded-lg bg-[#02BB31] px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg bg-[#0D915C] px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
                         >
                           <FiCheckCircle />
                           Resolve
@@ -256,12 +256,12 @@ export default function AdminListingReportsPage() {
   );
 }
 
-function Stat({ label, value, icon: Icon, tone = "text-[#013E43]" }) {
+function Stat({ label, value, icon, tone = "text-[#013E43]" }) {
   return (
-    <div className="rounded-lg border border-[#E4EEE8] bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-[#DDEAE3] bg-white p-4 shadow-none">
       <div className="flex items-center justify-between">
         <p className="text-sm text-[#647C75]">{label}</p>
-        <Icon className={tone} />
+        {createElement(icon, { className: tone })}
       </div>
       <p className={`mt-2 text-2xl font-bold ${tone}`}>{value}</p>
     </div>

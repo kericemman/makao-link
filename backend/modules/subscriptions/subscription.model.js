@@ -16,6 +16,22 @@ const subscriptionSchema = new mongoose.Schema(
       required: true
     },
 
+    pendingPlan: {
+      type: String,
+      enum: ["normal", "basic", "premium", "pro"],
+      default: null
+    },
+
+    pendingPaymentReference: {
+      type: String,
+      default: null
+    },
+
+    downgradeToFreeAt: {
+      type: Date,
+      default: null
+    },
+
     status: {
       type: String,
       enum: ["free", "pending_payment", "active", "grace", "expired", "cancelled"],

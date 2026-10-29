@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
   getAdminSupportTicketById,
   replyToSupportTicketAsAdmin,
@@ -28,14 +28,14 @@ import toast from "react-hot-toast";
 const statusClasses = {
   open: "bg-yellow-100 text-yellow-600",
   in_progress: "bg-blue-100 text-blue-600",
-  resolved: "bg-[#02BB31]/10 text-[#02BB31]",
+  resolved: "bg-[#0D915C]/10 text-[#0D915C]",
   closed: "bg-gray-100 text-gray-600"
 };
 
 const statusIcons = {
   open: <FiClock className="text-yellow-500" />,
   in_progress: <FiRefreshCw className="text-blue-500" />,
-  resolved: <FiCheckCircle className="text-[#02BB31]" />,
+  resolved: <FiCheckCircle className="text-[#0D915C]" />,
   closed: <FiCheckCircle className="text-gray-500" />
 };
 
@@ -49,7 +49,6 @@ const categories = {
 
 const AdminSupportDetailPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [ticket, setTicket] = useState(null);
   const [reply, setReply] = useState("");
   const [status, setStatus] = useState("open");
@@ -97,7 +96,7 @@ const AdminSupportDetailPage = () => {
       setTicket(data.ticket);
       setReply("");
       toast.success("Reply sent successfully", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to send reply", {
@@ -121,7 +120,7 @@ const AdminSupportDetailPage = () => {
       const data = await updateSupportTicketStatus(id, { status });
       setTicket(data.ticket);
       toast.success(`Ticket status updated to ${status.replace("_", " ")}`, {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to update status", {
@@ -157,8 +156,8 @@ const AdminSupportDetailPage = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E4EEE8] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading ticket...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#DDEAE3] border-t-[#0D915C] mx-auto mb-4"></div>
+          <p className="text-[#41635A]">Loading ticket...</p>
         </div>
       </div>
     );
@@ -166,14 +165,14 @@ const AdminSupportDetailPage = () => {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-[#E4EEE8]">
+      <div className="bg-white rounded-lg shadow-none p-8 text-center border border-[#DDEAE3]">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <FiAlertCircle className="text-3xl text-red-500" />
         </div>
         <p className="text-red-600 mb-4">{error}</p>
         <button
           onClick={fetchTicket}
-          className="px-4 py-2 bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
+          className="px-4 py-2 bg-[#0D915C] text-white rounded-lg hover:bg-[#08764C] transition-colors"
         >
           Try Again
         </button>
@@ -183,17 +182,17 @@ const AdminSupportDetailPage = () => {
 
   if (!ticket) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-12 text-center border border-[#E4EEE8]">
-        <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-          <FiAlertCircle className="text-3xl text-[#A8D8C1]" />
+      <div className="border-y border-[#DDEAE3] px-6 py-12 text-center">
+        <div className="w-20 h-20 bg-[#F1F7F3] rounded-full flex items-center justify-center mx-auto mb-4">
+          <FiAlertCircle className="text-3xl text-[#BBD2C6]" />
         </div>
         <h2 className="text-lg font-semibold text-[#013E43] mb-2">Ticket not found</h2>
-        <p className="text-sm text-[#065A57] mb-4">
+        <p className="text-sm text-[#41635A] mb-4">
           The support ticket you're looking for doesn't exist or has been removed.
         </p>
         <Link
           to="/admin/support"
-          className="inline-flex items-center px-6 py-3 bg-[#02BB31] text-white rounded-lg font-semibold hover:bg-[#0D915C] transition-colors"
+          className="inline-flex items-center px-6 py-3 bg-[#0D915C] text-white rounded-lg font-semibold hover:bg-[#08764C] transition-colors"
         >
           <FiArrowLeft className="mr-2" />
           Back to Support
@@ -207,28 +206,28 @@ const AdminSupportDetailPage = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-[#E4EEE8]">
+      <div className="border-b border-[#DDEAE3] pb-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <Link
               to="/admin/support"
-              className="p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 hover:bg-[#F1F7F3] rounded-lg transition-colors"
             >
-              <FiArrowLeft className="text-xl text-[#065A57]" />
+              <FiArrowLeft className="text-xl text-[#41635A]" />
             </Link>
             <div className="p-3 bg-[#013E43] rounded-md">
               <FiMessageSquare className="text-white text-2xl" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-[#013E43]">Support Ticket</h1>
-              <p className="text-sm text-[#065A57]">ID: {ticket._id.slice(-8)}</p>
+              <p className="text-sm text-[#41635A]">ID: {ticket._id.slice(-8)}</p>
             </div>
           </div>
           
           <div className="flex items-center space-x-3">
             <button
               onClick={fetchTicket}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 text-[#41635A] hover:bg-[#F1F7F3] rounded-lg transition-colors"
               title="Refresh"
             >
               <FiRefreshCw className="text-lg" />
@@ -239,13 +238,13 @@ const AdminSupportDetailPage = () => {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Main Content - Conversation */}
-        <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden">
-          <div className="p-6 border-b border-[#E4EEE8] bg-[#F8FAF8]">
+        <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] overflow-hidden">
+          <div className="p-6 border-b border-[#DDEAE3] bg-[#F8FAF8]">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-[#013E43]">{ticket.subject}</h2>
                 <div className="flex flex-wrap items-center gap-3 mt-2">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#F0F7F4] text-[#065A57]">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#F1F7F3] text-[#41635A]">
                     {categoryInfo.icon} {categoryInfo.label}
                   </span>
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium capitalize ${statusClasses[ticket.status]}`}>
@@ -255,7 +254,7 @@ const AdminSupportDetailPage = () => {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-[#065A57]">Created</p>
+                <p className="text-sm text-[#41635A]">Created</p>
                 <p className="text-sm font-medium text-[#013E43]">{formatDate(ticket.createdAt)}</p>
               </div>
             </div>
@@ -264,7 +263,7 @@ const AdminSupportDetailPage = () => {
           {/* Messages */}
           <div className="p-6">
             <h3 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-              <FiMessageSquare className="mr-2 text-[#02BB31]" />
+              <FiMessageSquare className="mr-2 text-[#0D915C]" />
               Conversation
             </h3>
 
@@ -274,15 +273,15 @@ const AdminSupportDetailPage = () => {
                   key={msg._id || index}
                   className={`rounded-md p-4 ${
                     msg.senderRole === "admin"
-                      ? "bg-[#02BB31]/5 border-l-4 border-[#02BB31]"
-                      : "bg-[#F0F7F4] border border-[#E4EEE8]"
+                      ? "bg-[#0D915C]/5 border-l-4 border-[#0D915C]"
+                      : "bg-[#F1F7F3] border border-[#DDEAE3]"
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center space-x-2">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         msg.senderRole === "admin"
-                          ? "bg-[#02BB31]"
+                          ? "bg-[#0D915C]"
                           : "bg-[#013E43]"
                       }`}>
                         <span className="text-white text-xs font-bold">
@@ -293,12 +292,12 @@ const AdminSupportDetailPage = () => {
                         {msg.senderRole === "admin" ? "Admin Support" : ticket.landlord?.name || "Landlord"}
                       </span>
                     </div>
-                    <span className="text-xs text-[#065A57] flex items-center">
+                    <span className="text-xs text-[#41635A] flex items-center">
                       <FiClock className="mr-1" />
                       {formatTimeAgo(msg.createdAt)}
                     </span>
                   </div>
-                  <p className="text-sm text-[#065A57] whitespace-pre-wrap ml-10">
+                  <p className="text-sm text-[#41635A] whitespace-pre-wrap ml-10">
                     {msg.message}
                   </p>
                 </div>
@@ -308,9 +307,9 @@ const AdminSupportDetailPage = () => {
 
           {/* Reply Form */}
           {ticket.status !== "closed" ? (
-            <div className="p-6 border-t border-[#E4EEE8] bg-[#F0F7F4]">
+            <div className="p-6 border-t border-[#DDEAE3] bg-[#F1F7F3]">
               <h3 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-                <FiSend className="mr-2 text-[#02BB31]" />
+                <FiSend className="mr-2 text-[#0D915C]" />
                 Send Reply
               </h3>
               <form onSubmit={handleReply} className="space-y-4">
@@ -319,14 +318,14 @@ const AdminSupportDetailPage = () => {
                   placeholder="Write your reply to the landlord..."
                   value={reply}
                   onChange={(e) => setReply(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-[#E4EEE8] rounded-lg focus:border-[#02BB31] outline-none transition-colors resize-none"
+                  className="w-full px-4 py-3 border-2 border-[#DDEAE3] rounded-lg focus:border-[#0D915C] outline-none transition-colors resize-none"
                   required
                 />
                 <div className="flex justify-end">
                   <button
                     type="submit"
                     disabled={replying}
-                    className="px-6 py-3 bg-[#02BB31] text-white rounded-lg font-semibold hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    className="px-6 py-3 bg-[#0D915C] text-white rounded-lg font-semibold  transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
                     {replying ? (
                       <>
@@ -344,7 +343,7 @@ const AdminSupportDetailPage = () => {
               </form>
             </div>
           ) : (
-            <div className="p-6 border-t border-[#E4EEE8] bg-[#F0F7F4]">
+            <div className="p-6 border-t border-[#DDEAE3] bg-[#F1F7F3]">
               <div className="bg-gray-100 rounded-md p-4 text-sm text-gray-600 flex items-center">
                 <FiInfo className="mr-2 text-gray-500" />
                 This ticket is closed. Change status to reopen if you need to continue the conversation.
@@ -356,9 +355,9 @@ const AdminSupportDetailPage = () => {
         {/* Sidebar - Ticket Details */}
         <div className="space-y-6">
           {/* Landlord Information */}
-          <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] p-6">
+          <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] p-6">
             <h3 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-              <FiUser className="mr-2 text-[#02BB31]" />
+              <FiUser className="mr-2 text-[#0D915C]" />
               Landlord Information
             </h3>
             <div className="space-y-3 text-sm">
@@ -368,11 +367,11 @@ const AdminSupportDetailPage = () => {
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-[#013E43]">{ticket.landlord?.name || 'Unknown'}</p>
-                  <p className="text-xs text-[#065A57] flex items-center mt-1">
+                  <p className="text-xs text-[#41635A] flex items-center mt-1">
                     <FiMail className="mr-1" /> {ticket.landlord?.email}
                   </p>
                   {ticket.landlord?.phone && (
-                    <p className="text-xs text-[#065A57] flex items-center mt-1">
+                    <p className="text-xs text-[#41635A] flex items-center mt-1">
                       <FiPhone className="mr-1" /> {ticket.landlord.phone}
                     </p>
                   )}
@@ -382,42 +381,42 @@ const AdminSupportDetailPage = () => {
           </div>
 
           {/* Ticket Details */}
-          <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] p-6">
+          <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] p-6">
             <h3 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-              <FiInfo className="mr-2 text-[#02BB31]" />
+              <FiInfo className="mr-2 text-[#0D915C]" />
               Ticket Details
             </h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-[#065A57]">Created:</span>
+                <span className="text-[#41635A]">Created:</span>
                 <span className="text-[#013E43]">{formatDate(ticket.createdAt)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#065A57]">Last Updated:</span>
+                <span className="text-[#41635A]">Last Updated:</span>
                 <span className="text-[#013E43]">{formatDate(ticket.updatedAt)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#065A57]">Category:</span>
+                <span className="text-[#41635A]">Category:</span>
                 <span className="text-[#013E43]">{categoryInfo.label}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#065A57]">Messages:</span>
+                <span className="text-[#41635A]">Messages:</span>
                 <span className="text-[#013E43]">{ticket.messages?.length || 0}</span>
               </div>
             </div>
           </div>
 
           {/* Status Management */}
-          <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] p-6">
+          <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] p-6">
             <h3 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-              <FiRefreshCw className="mr-2 text-[#02BB31]" />
+              <FiRefreshCw className="mr-2 text-[#0D915C]" />
               Update Status
             </h3>
             <div className="space-y-4">
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-[#E4EEE8] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                className="w-full px-4 py-3 border-2 border-[#DDEAE3] rounded-lg focus:border-[#0D915C] outline-none transition-colors"
               >
                 <option value="open">Open</option>
                 <option value="in_progress">In Progress</option>
@@ -428,7 +427,7 @@ const AdminSupportDetailPage = () => {
               <button
                 onClick={handleStatusUpdate}
                 disabled={savingStatus}
-                className="w-full py-3 bg-[#02BB31] text-white rounded-lg font-semibold hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="w-full py-3 bg-[#0D915C] text-white rounded-lg font-semibold  transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {savingStatus ? (
                   <>
@@ -453,15 +452,15 @@ const AdminSupportDetailPage = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] p-6">
+          <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] p-6">
             <h3 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-              <FiSend className="mr-2 text-[#02BB31]" />
+              <FiSend className="mr-2 text-[#0D915C]" />
               Quick Actions
             </h3>
             <div className="space-y-3">
               <a
                 href={`mailto:${ticket.landlord?.email}`}
-                className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-[#013E43] text-white rounded-lg hover:bg-[#005C57] transition-colors"
+                className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-[#013E43] text-white rounded-lg hover:bg-[#075B53] transition-colors"
               >
                 <FiMail />
                 <span>Email Landlord</span>
@@ -470,7 +469,7 @@ const AdminSupportDetailPage = () => {
                 <>
                   <a
                     href={`tel:${ticket.landlord.phone}`}
-                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-[#013E43] text-white rounded-lg hover:bg-[#005C57] transition-colors"
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-[#013E43] text-white rounded-lg hover:bg-[#075B53] transition-colors"
                   >
                     <FiPhone />
                     <span>Call Landlord</span>

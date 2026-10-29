@@ -19,3 +19,18 @@ export const getMySubscription = async () => {
   const response = await api.get("/payments/subscription");
   return response.data;
 };
+
+export const getWhatsAppListingAddon = async () => {
+  const response = await api.get("/payments/whatsapp-listing-addon");
+  return response.data;
+};
+
+export const initializeWhatsAppListingAddon = async () => {
+  const response = await api.post("/payments/whatsapp-listing-addon/initialize");
+  return response.data;
+};
+
+export const cancelWhatsAppListingAddon = async () => {
+  const response = await api.post("/payments/whatsapp-listing-addon/cancel");
+  return response.data;
+};

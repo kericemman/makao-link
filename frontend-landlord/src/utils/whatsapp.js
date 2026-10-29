@@ -5,18 +5,18 @@ export const buildWhatsAppUrl = (message) =>
 
 export const landlordOnboardingMessage = (user) =>
   [
-    "Hello RendaHomes, I need help listing my property.",
+    "Hello RendaHomes, I want to list my property directly on WhatsApp.",
     user?.name ? `Name: ${user.name}` : "",
     user?.phone ? `Phone: ${user.phone}` : "",
     user?.email ? `Email: ${user.email}` : "",
-    "I would like guidance on photos, price, location, and property details."
+    "Please start the WhatsApp property-listing process for my account."
   ]
     .filter(Boolean)
     .join("\n");
 
 export const listingDraftMessage = (user, formData = {}) =>
   [
-    "Hello RendaHomes, please help me review this property listing draft.",
+    "Hello RendaHomes, I want to list this property directly on WhatsApp.",
     user?.name ? `Landlord: ${user.name}` : "",
     formData.title ? `Title: ${formData.title}` : "",
     formData.purpose ? `Purpose: ${formData.purpose}` : "",
@@ -26,7 +26,7 @@ export const listingDraftMessage = (user, formData = {}) =>
       ? `Location: ${[formData.area, formData.town, formData.county].filter(Boolean).join(", ")}`
       : "",
     formData.contactPhone ? `Contact phone: ${formData.contactPhone}` : "",
-    "I need help confirming if the details are ready to publish."
+    "Please continue the WhatsApp listing process for this property."
   ]
     .filter(Boolean)
     .join("\n");

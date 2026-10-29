@@ -8,8 +8,8 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import {
   FiCreditCard,
-  FiCalendar,
   FiCheckCircle,
+  FiCheck,
   FiAlertCircle,
   FiClock,
   FiTrendingUp,
@@ -25,35 +25,76 @@ import toast from "react-hot-toast";
 const allPlans = [
   {
     key: "normal",
-    name: "Normal",
+    name: "Free",
+    audience: "For an individual landlord starting out",
     price: 0,
     limit: 2,
     icon: FiHome,
-    features: ["Basic property listing", "Direct tenant contact", "Dashboard access"]
+    features: [
+      "Publish up to 2 active listings",
+      "Create and manage property listings",
+      "Receive tenant inquiries",
+      "Update listing details and availability",
+      "Listings reviewed before going public",
+      "Property pages discoverable on RendaHomes"
+    ],
+    whatsappAddon: true
   },
   {
     key: "basic",
     name: "Basic",
+    audience: "For growing property owners",
     price: 500,
     limit: 7,
     icon: FiStar,
-    features: ["5 More listing slots", "Inquiry management", "Email notifications"]
+    features: [
+      "Publish up to 7 active listings",
+      "Create and manage property listings",
+      "Receive tenant inquiries",
+      "Update listing details and availability",
+      "Listings reviewed before going public",
+      "Property pages discoverable on RendaHomes"
+    ],
+    whatsappAddon: true
   },
   {
     key: "premium",
     name: "Premium",
+    audience: "For active property owners managing up to 15 listings",
     price: 1500,
     limit: 15,
     icon: FiTrendingUp,
-    features: ["Featured listings", "Priority support", "Advanced analytics"]
+    featured: true,
+    features: [
+      "Publish up to 15 active listings",
+      "Eligible listings appear in featured discovery",
+      "Create and manage property listings",
+      "Receive and manage tenant inquiries",
+      "Update listing details and availability",
+      "Listings reviewed before going public",
+      "Portfolio performance view for listing views and inquiries"
+    ],
+    planned: ["Automated direct WhatsApp listing and notifications are not live yet"]
   },
   {
     key: "pro",
     name: "Pro",
+    audience: "For real-estate companies and larger portfolios",
     price: 2500,
     limit: 50,
     icon: FiAward,
-    features: ["Top visibility", "Bulk property support", "Priority support"]
+    features: [
+      "Publish up to 50 active listings",
+      "All Premium listing and inquiry features",
+      "Pro listings rank ahead in featured discovery",
+      "Create and manage property listings",
+      "Update listing details and availability",
+      "Group properties by building and unit category in the dashboard"
+    ],
+    planned: [
+      "Automated WhatsApp intake for multiple properties is not live yet",
+      "Combined public building pages and live remaining-unit totals are still in development"
+    ]
   }
 ];
 
@@ -87,6 +128,7 @@ const LandlordSubscription = () => {
   const [loading, setLoading] = useState(true);
   const [payLoading, setPayLoading] = useState(false);
   const [upgradeLoadingPlan, setUpgradeLoadingPlan] = useState("");
+  const [expandedPlans, setExpandedPlans] = useState({});
   const [error, setError] = useState("");
 
   const fetchSubscription = async () => {
@@ -249,7 +291,6 @@ const LandlordSubscription = () => {
 
   const renderStatusMessage = () => {
     if (!subscription) return null;
-
     const messages = {
       free: `You are on the Free plan. You can publish up to ${usage.limit} active listings.`,
       pending_payment: `Your ${subscription.plan?.toUpperCase()} plan is waiting for payment.`,
@@ -258,12 +299,7 @@ const LandlordSubscription = () => {
       expired: "Your subscription has expired. Renew to restore listing access.",
       cancelled: "Your subscription has been cancelled."
     };
-
-    return (
-      <div className="rounded-xl border border-[#A8D8C1] bg-[#F0F7F4] p-4 text-sm text-[#065A57]">
-        {messages[subscription.status] || "Subscription status unavailable."}
-      </div>
-    );
+    return messages[subscription.status] || "Subscription status unavailable.";
   };
 
   if (loading) {
@@ -294,189 +330,104 @@ const LandlordSubscription = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto min-h-[calc(100vh-8rem)] w-full max-w-[1600px] space-y-6 text-slate-900">
       {renderGuardReason()}
 
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-2xl border border-[#A8D8C1] bg-white p-6 shadow-lg">
+      <section className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="border border-slate-200 bg-white p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-sm text-[#065A57]">Current Plan</p>
-
-              <h2 className="mt-1 text-2xl font-bold text-[#013E43]">
-                {subscription?.plan?.toUpperCase()}
-              </h2>
-
-              <p className="mt-2 text-sm text-[#065A57]">
-                {currentPlanDetails.price === 0
-                  ? "Free plan"
-                  : `${formatCurrency(currentPlanDetails.price)} / month`}
-              </p>
+              <p className="text-sm font-medium text-slate-500">Your current plan</p>
+              <h2 className="mt-1 text-2xl font-bold text-slate-950">{currentPlanDetails.name}</h2>
+              <p className="mt-1 text-sm text-slate-600">{currentPlanDetails.price === 0 ? "Free" : `${formatCurrency(currentPlanDetails.price)} per month`}</p>
             </div>
-
-            <span
-              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-medium capitalize ${
-                statusStyles[subscription?.status] || statusStyles.free
-              }`}
-            >
+            <span className={`inline-flex items-center gap-1.5 border px-3 py-1.5 text-sm font-semibold capitalize ${statusStyles[subscription?.status] || statusStyles.free}`}>
               {statusIcons[subscription?.status] || statusIcons.free}
-              {subscription?.status?.replace("_", " ") || "unknown"}
+              {subscription?.status?.replaceAll("_", " ") || "unknown"}
             </span>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <div className="rounded-xl border border-[#A8D8C1] bg-[#F0F7F4] p-4">
-              <p className="text-xs uppercase text-[#065A57]">Used Listings</p>
-
-              <h3 className="mt-2 text-xl font-bold text-[#013E43]">
-                {usage.used} / {usage.limit}
-              </h3>
-
-              <p className="mt-1 text-xs text-[#065A57]">
-                {usage.remaining} slots remaining
-              </p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Active listings</p>
+              <p className="mt-2 text-xl font-bold text-slate-950">{usage.used} <span className="text-sm font-medium text-slate-500">/ {usage.limit}</span></p>
+              <p className="mt-1 text-xs text-slate-600">{usage.remaining} slots remaining</p>
             </div>
-
-            <div className="rounded-xl border border-[#A8D8C1] bg-[#F0F7F4] p-4">
-              <p className="flex items-center text-xs uppercase text-[#065A57]">
-                <FiCalendar className="mr-1" />
-                Billing Date
-              </p>
-
-              <h3 className="mt-2 text-sm font-semibold text-[#013E43] md:text-lg">
-                {subscription?.currentPeriodEnd
-                  ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
-                  : "Not available"}
-              </h3>
+            <div className="border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Billing date</p>
+              <p className="mt-2 text-base font-bold text-slate-950">{subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : "Not available"}</p>
+              <p className="mt-1 text-xs text-slate-600">Next renewal or plan expiry</p>
+            </div>
+            <div className="border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Plan price</p>
+              <p className="mt-2 text-base font-bold text-slate-950">{currentPlanDetails.price === 0 ? "KES 0" : `${formatCurrency(currentPlanDetails.price)} / mo`}</p>
+              <p className="mt-1 text-xs text-slate-600">Billed monthly in KES</p>
             </div>
           </div>
 
-          <div className="mt-6">
-            <div className="mb-2 flex justify-between text-sm text-[#065A57]">
-              <span>Listing usage</span>
-              <span>{Math.round(usagePercentage)}%</span>
-            </div>
-
-            <div className="h-3 overflow-hidden rounded-full bg-[#F0F7F4]">
-              <div
-                className="h-full bg-gradient-to-r from-[#02BB31] to-[#0D915C]"
-                style={{ width: `${usagePercentage}%` }}
-              />
-            </div>
+          <div className="mt-5">
+            <div className="mb-2 flex justify-between text-sm"><span className="font-semibold text-slate-700">Listing capacity</span><span className="text-slate-600">{Math.round(usagePercentage)}%</span></div>
+            <div className="h-2 overflow-hidden bg-slate-100"><div className="h-full bg-emerald-700 transition-[width]" style={{ width: `${usagePercentage}%` }} /></div>
+            <p className="mt-2 text-xs text-slate-500">{renderStatusMessage()}</p>
           </div>
 
-          <div className="mt-6">{renderStatusMessage()}</div>
-
-          {showPaymentAction && (
-            <button
-              onClick={handlePayNow}
-              disabled={payLoading}
-              className="mt-6 flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#02BB31] to-[#0D915C] py-4 font-semibold text-white disabled:opacity-50"
-            >
-              {payLoading ? (
-                "Redirecting..."
-              ) : (
-                <>
-                  <FiCreditCard className="mr-2" />
-                  Pay / Renew Subscription
-                </>
-              )}
-            </button>
-          )}
+          {showPaymentAction && <button onClick={handlePayNow} disabled={payLoading} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 bg-emerald-800 px-5 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50">{payLoading ? "Redirecting..." : <><FiCreditCard /> Pay / renew subscription</>}</button>}
         </div>
 
-        <div className="rounded-2xl border border-[#A8D8C1] bg-white p-6 shadow-lg">
-          <h2 className="flex items-center text-xl font-bold text-[#013E43]">
-            <FiTrendingUp className="mr-2 text-[#02BB31]" />
-            Available Plans
-          </h2>
+        <aside className="border border-emerald-200 bg-[#F0F8F3] p-5 sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">WhatsApp listing</p>
+          <h2 className="mt-2 text-xl font-bold text-slate-950">List your property directly on WhatsApp</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-700">Free and Basic landlords can add WhatsApp listing for KES 300 per month. Premium and Pro include the listing entitlement. Your plan and add-on controls are available here in the signed-in dashboard.</p>
+          <p className="mt-3 text-xs leading-5 text-slate-600">WhatsApp plan eligibility is shown here. Automated WhatChimp intake and notification workflows are not live yet.</p>
+        </aside>
+      </section>
 
-          <div className="mt-6 space-y-4">
-            {allPlans.map((plan) => {
-              const isCurrent = plan.key === subscription?.plan;
-              const planIndex = planOrder.indexOf(plan.key);
-              const isUpgrade = planIndex > currentPlanIndex;
-              const isDowngrade = planIndex < currentPlanIndex;
+      <section aria-labelledby="plan-comparison-heading">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div><p className="text-xs font-bold uppercase tracking-wide text-emerald-800">Plans & limits</p><h2 id="plan-comparison-heading" className="mt-1 text-xl font-bold text-slate-950 sm:text-2xl">Choose the right listing capacity</h2></div>
+          <p className="text-sm text-slate-600">Paid plan changes take effect after payment. Free downgrades take effect at period end.</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+          {allPlans.map((plan) => {
+            const isCurrent = plan.key === subscription?.plan;
+            const planIndex = planOrder.indexOf(plan.key);
+            const isUpgrade = planIndex > currentPlanIndex;
+            const isDowngrade = planIndex < currentPlanIndex;
+            const visibleFeatures = expandedPlans[plan.key] ? plan.features : plan.features.slice(0, 5);
+            const PlanIcon = plan.icon;
 
-              return (
-                <div
-                  key={plan.key}
-                  className={`rounded-xl border p-4 ${
-                    isCurrent
-                      ? "border-[#02BB31] bg-[#02BB31]/5"
-                      : "border-[#A8D8C1] bg-white"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="font-semibold text-[#013E43]">
-                        {plan.name}
-                      </h3>
+            return (
+              <article key={plan.key} className={`flex min-w-0 flex-col border bg-white ${plan.featured ? "border-emerald-700 ring-1 ring-emerald-700" : "border-slate-200"}`}>
+                <div className={`border-b p-5 ${plan.featured ? "bg-emerald-50" : "bg-white"}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div><span className="inline-flex h-9 w-9 items-center justify-center bg-emerald-100 text-emerald-900"><PlanIcon /></span><h3 className="mt-3 text-lg font-bold text-slate-950">{plan.name}</h3></div>
+                    {isCurrent ? <span className="border border-emerald-200 bg-white px-2.5 py-1 text-xs font-semibold text-emerald-800">Current plan</span> : plan.featured ? <span className="bg-emerald-800 px-2.5 py-1 text-xs font-semibold text-white">Popular</span> : null}
+                  </div>
+                  <p className="mt-2 min-h-10 text-sm leading-5 text-slate-600">{plan.audience}</p>
+                  <p className="mt-4 text-2xl font-bold text-slate-950">{plan.price === 0 ? "Free" : formatCurrency(plan.price)}<span className="ml-1 text-xs font-medium text-slate-500">{plan.price ? "/ month" : "forever"}</span></p>
+                  <p className="mt-1 text-sm font-semibold text-emerald-900">Up to {plan.limit} active listings</p>
+                </div>
+                <div className="flex flex-1 flex-col p-5">
+                  <ul className="space-y-3" aria-label={`${plan.name} plan features`}>
+                    {visibleFeatures.map((feature) => <li key={feature} className="flex items-start gap-2 text-sm leading-5 text-slate-700"><FiCheck className="mt-0.5 shrink-0 text-emerald-700" />{feature}</li>)}
+                  </ul>
+                  {plan.features.length > 5 && <button type="button" aria-expanded={Boolean(expandedPlans[plan.key])} onClick={() => setExpandedPlans((current) => ({ ...current, [plan.key]: !current[plan.key] }))} className="mt-3 self-start text-xs font-semibold text-emerald-800 underline underline-offset-2">{expandedPlans[plan.key] ? "Show less" : `View all ${plan.features.length} features`}</button>}
 
-                      <p className="mt-1 text-sm font-medium text-[#02BB31]">
-                        {plan.price === 0
-                          ? "Free"
-                          : `${formatCurrency(plan.price)}/month`}
-                      </p>
+                  {plan.whatsappAddon && <div className="mt-4 border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-950"><span className="font-bold">Optional:</span> WhatsApp listing is KES 300/month, managed from your signed-in dashboard.</div>}
+                  {plan.key === "premium" && <div className="mt-4 border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">WhatsApp listing is included in the plan. Automated WhatChimp listing and notifications are not live yet.</div>}
+                  {plan.key === "pro" && <div className="mt-4 border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">WhatsApp listing is included. Portfolio grouping is available in this dashboard; automated multi-property intake and combined public building/unit pages are still in development.</div>}
 
-                      <p className="mt-1 text-xs text-[#065A57]">
-                        Up to {plan.limit} active listings
-                      </p>
-
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {plan.features.map((feature) => (
-                          <span
-                            key={feature}
-                            className="rounded-full bg-[#F0F7F4] px-2 py-0.5 text-xs text-[#065A57]"
-                          >
-                            {feature}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {isCurrent ? (
-                      <span className="rounded-full bg-[#02BB31] px-3 py-1 text-xs text-white">
-                        Current
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handlePlanChange(plan.key)}
-                        disabled={upgradeLoadingPlan === plan.key}
-                        className={`inline-flex items-center rounded-lg px-4 py-2 text-xs font-medium text-white disabled:opacity-50 ${
-                          isDowngrade
-                            ? "bg-[#013E43] hover:bg-[#005C57]"
-                            : "bg-[#02BB31] hover:bg-[#0D915C]"
-                        }`}
-                      >
-                        {upgradeLoadingPlan === plan.key ? (
-                          "Processing..."
-                        ) : (
-                          <>
-                            {isUpgrade ? "Upgrade" : "Downgrade"}
-                            <FiArrowRight className="ml-1" />
-                          </>
-                        )}
-                      </button>
-                    )}
+                  <div className="mt-auto pt-5">
+                    {isCurrent ? <div className="flex min-h-11 items-center justify-center border border-emerald-200 bg-emerald-50 text-sm font-semibold text-emerald-900">You are on this plan</div> : <button type="button" onClick={() => handlePlanChange(plan.key)} disabled={Boolean(upgradeLoadingPlan)} className={`inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60 ${isDowngrade ? "bg-slate-800 hover:bg-slate-900" : "bg-emerald-800 hover:bg-emerald-900"}`}>{upgradeLoadingPlan === plan.key ? "Processing..." : <>{isUpgrade ? "Upgrade" : "Downgrade"}<FiArrowRight /></>}</button>}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-6 rounded-xl border border-[#A8D8C1] bg-[#F0F7F4] p-4 text-sm text-[#065A57]">
-            <FiInfo className="mb-2 text-[#02BB31]" />
-            Upgrade to increase your active listing limit, or downgrade to a smaller plan when your needs change.
-          </div>
+              </article>
+            );
+          })}
         </div>
-      </div>
+      </section>
 
-      {error && subscription && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-          {error}
-        </div>
-      )}
+      {error && subscription && <div role="alert" className="border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</div>}
     </div>
   );
 };

@@ -17,13 +17,15 @@ const allowedTags = new Set([
   "ol",
   "p",
   "pre",
+  "s",
   "span",
   "strong",
   "ul"
 ]);
 
-const allowedAttrs = new Set(["alt", "class", "href", "id", "rel", "src", "target", "title"]);
+const allowedAttrs = new Set(["alt", "class", "href", "id", "rel", "src", "style", "target", "title"]);
 const urlAttrs = new Set(["href", "src"]);
+const alignedTags = new Set(["h1", "h2", "h3", "p"]);
 
 const isSafeUrl = (value = "") => {
   const trimmed = value.trim().toLowerCase();
@@ -53,6 +55,13 @@ export default function sanitizeHtml(html = "") {
     [...element.attributes].forEach((attribute) => {
       const name = attribute.name.toLowerCase();
       const value = attribute.value || "";
+
+      if (name === "style") {
+        const match = alignedTags.has(tagName) && value.match(/^\s*text-align\s*:\s*(left|center|right|justify)\s*;?\s*$/i);
+        if (match) element.setAttribute("style", `text-align: ${match[1].toLowerCase()};`);
+        else element.removeAttribute(attribute.name);
+        return;
+      }
 
       if (name.startsWith("on") || !allowedAttrs.has(name) || (urlAttrs.has(name) && !isSafeUrl(value))) {
         element.removeAttribute(attribute.name);

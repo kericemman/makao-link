@@ -70,6 +70,10 @@ const EditListingPage = () => {
     title: "",
     description: "",
     purpose: "rent",
+    maxGuests: "",
+    minNights: "1",
+    checkInTime: "15:00",
+    checkOutTime: "10:00",
     price: "",
     county: "",
     town: "",
@@ -124,7 +128,7 @@ const EditListingPage = () => {
         );
       } catch (error) {
         toast.error("Failed to load listing options", {
-          style: { background: "#013E43", color: "#fff" }
+          style: { background: "#0F172A", color: "#fff" }
         });
       } finally {
         setMetaLoading(false);
@@ -145,6 +149,10 @@ const EditListingPage = () => {
           title: listing.title || "",
           description: listing.description || "",
           purpose: listing.purpose || "rent",
+          maxGuests: listing.maxGuests ?? "",
+          minNights: String(listing.minNights || 1),
+          checkInTime: listing.checkInTime || "15:00",
+          checkOutTime: listing.checkOutTime || "10:00",
           price: listing.price ?? "",
           county: listing.county || "",
           town: listing.town || "",
@@ -180,7 +188,7 @@ const EditListingPage = () => {
         setExistingImages(listing.images || []);
       } catch (error) {
         toast.error(error.response?.data?.message || "Failed to load listing", {
-          style: { background: "#013E43", color: "#fff" }
+          style: { background: "#0F172A", color: "#fff" }
         });
         navigate("/listings");
       } finally {
@@ -216,7 +224,7 @@ const EditListingPage = () => {
   const purposes = useMemo(() => {
     return (listingMeta.listingPurposes || []).map((purpose) => ({
       value: purpose,
-      label: purpose === "rent" ? "For Rent" : "For Sale"
+      label: purpose === "rent" ? "For Rent" : purpose === "sale" ? "For Sale" : "Short-term stay"
     }));
   }, [listingMeta.listingPurposes]);
 
@@ -325,6 +333,10 @@ const EditListingPage = () => {
     if (!formData.town) newErrors.town = "Town/Location is required";
     if (!formData.type) newErrors.type = "Property type is required";
     if (!formData.purpose) newErrors.purpose = "Purpose is required";
+    if (formData.purpose === "short_stay") {
+      if (!Number.isInteger(Number(formData.maxGuests)) || Number(formData.maxGuests) < 1) newErrors.maxGuests = "Enter the maximum number of guests";
+      if (!Number.isInteger(Number(formData.minNights)) || Number(formData.minNights) < 1) newErrors.minNights = "Minimum stay must be at least one night";
+    }
     if (!formData.contactPhone.trim()) newErrors.contactPhone = "Contact phone is required";
 
     if (isResidential) {
@@ -351,7 +363,7 @@ const EditListingPage = () => {
 
     if (!validateForm()) {
       toast.error("Please fill in all required fields", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
       return;
     }
@@ -364,6 +376,12 @@ const EditListingPage = () => {
       payload.append("title", formData.title);
       payload.append("description", formData.description);
       payload.append("purpose", formData.purpose);
+      if (formData.purpose === "short_stay") {
+        payload.append("maxGuests", formData.maxGuests);
+        payload.append("minNights", formData.minNights);
+        payload.append("checkInTime", formData.checkInTime);
+        payload.append("checkOutTime", formData.checkOutTime);
+      }
       payload.append("price", formData.price);
       payload.append("county", formData.county);
       payload.append("town", formData.town);
@@ -395,7 +413,7 @@ const EditListingPage = () => {
 
       toast.success("Listing updated successfully!", {
         style: {
-          background: "#02BB31",
+          background: "#126542",
           color: "#fff"
         },
         duration: 3000
@@ -408,7 +426,7 @@ const EditListingPage = () => {
       }, 1500);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update listing", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     } finally {
       setLoading(false);
@@ -417,7 +435,7 @@ const EditListingPage = () => {
 
   if (pageLoading || metaLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1] text-[#065A57]">
+      <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0] text-[#475569]">
         Loading listing...
       </div>
     );
@@ -425,32 +443,32 @@ const EditListingPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
+      <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/listings")}
-            className="p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
+            className="p-2 hover:bg-[#F8FAFC] rounded-lg transition-colors"
           >
-            <FiArrowLeft className="text-xl text-[#065A57]" />
+            <FiArrowLeft className="text-xl text-[#475569]" />
           </button>
 
           <div>
-            <h1 className="text-xl font-bold text-[#013E43]">Edit Listing</h1>
-            <p className="text-sm text-[#065A57]">Update your property details</p>
+            <h1 className="text-xl font-bold text-[#0F172A]">Edit Listing</h1>
+            <p className="text-sm text-[#475569]">Update your property details</p>
           </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiFileText className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiFileText className="mr-2 text-[#126542]" />
             Basic Information
           </h2>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Title <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -465,7 +483,7 @@ const EditListingPage = () => {
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
                     errors.title
                       ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      : "border-[#E2E8F0] focus:border-[#126542]"
                   }`}
                   disabled={loading}
                 />
@@ -474,7 +492,7 @@ const EditListingPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Description <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -486,7 +504,7 @@ const EditListingPage = () => {
                 className={`w-full px-4 py-3 rounded-lg border-2 outline-none transition-all resize-none ${
                   errors.description
                     ? "border-red-400 focus:border-red-500 bg-red-50"
-                    : "border-[#A8D8C1] focus:border-[#02BB31]"
+                    : "border-[#E2E8F0] focus:border-[#126542]"
                 }`}
                 disabled={loading}
               />
@@ -497,15 +515,15 @@ const EditListingPage = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiMapPin className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiMapPin className="mr-2 text-[#126542]" />
             Location & Price
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Purpose <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -516,7 +534,7 @@ const EditListingPage = () => {
                   name="purpose"
                   value={formData.purpose}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none appearance-none bg-white"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#E2E8F0] focus:border-[#126542] outline-none appearance-none bg-white"
                   disabled={loading}
                 >
                   {purposes.map((purpose) => (
@@ -530,8 +548,8 @@ const EditListingPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
-                Price (KES) <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
+                {formData.purpose === "short_stay" ? "Price per night (KES)" : "Price (KES)"} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -542,11 +560,11 @@ const EditListingPage = () => {
                   type="number"
                   value={formData.price}
                   onChange={handleChange}
-                  placeholder="e.g., 25000"
+                  placeholder={formData.purpose === "short_stay" ? "e.g., 8500 per night" : "e.g., 25000"}
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
                     errors.price
                       ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      : "border-[#E2E8F0] focus:border-[#126542]"
                   }`}
                   disabled={loading}
                 />
@@ -554,8 +572,17 @@ const EditListingPage = () => {
               {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price}</p>}
             </div>
 
+            {formData.purpose === "short_stay" && (
+              <div className="md:col-span-2 grid grid-cols-2 gap-4 rounded-xl bg-[#F3F8F5] p-4">
+                <div><label className="mb-1 block text-sm font-medium text-[#0F172A]">Maximum guests</label><input name="maxGuests" type="number" min="1" value={formData.maxGuests} onChange={handleChange} className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2.5" />{errors.maxGuests && <p className="mt-1 text-sm text-red-600">{errors.maxGuests}</p>}</div>
+                <div><label className="mb-1 block text-sm font-medium text-[#0F172A]">Minimum nights</label><input name="minNights" type="number" min="1" value={formData.minNights} onChange={handleChange} className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2.5" />{errors.minNights && <p className="mt-1 text-sm text-red-600">{errors.minNights}</p>}</div>
+                <div><label className="mb-1 block text-sm font-medium text-[#0F172A]">Check-in from</label><input name="checkInTime" type="time" value={formData.checkInTime} onChange={handleChange} className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2.5" /></div>
+                <div><label className="mb-1 block text-sm font-medium text-[#0F172A]">Check-out by</label><input name="checkOutTime" type="time" value={formData.checkOutTime} onChange={handleChange} className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2.5" /></div>
+              </div>
+            )}
+
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 County <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -569,7 +596,7 @@ const EditListingPage = () => {
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
                     errors.county
                       ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      : "border-[#E2E8F0] focus:border-[#126542]"
                   }`}
                   disabled={loading}
                 >
@@ -585,7 +612,7 @@ const EditListingPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Town / Location <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -600,7 +627,7 @@ const EditListingPage = () => {
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
                     errors.town
                       ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      : "border-[#E2E8F0] focus:border-[#126542]"
                   }`}
                 >
                   <option value="">Select Town</option>
@@ -615,7 +642,7 @@ const EditListingPage = () => {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Specific Area (Optional)
               </label>
               <div className="relative">
@@ -627,7 +654,7 @@ const EditListingPage = () => {
                   value={formData.area}
                   onChange={handleChange}
                   placeholder="e.g., Next to Garden City Mall"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#E2E8F0] focus:border-[#126542] outline-none transition-colors"
                   disabled={loading}
                 />
               </div>
@@ -635,15 +662,15 @@ const EditListingPage = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiGrid className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiGrid className="mr-2 text-[#126542]" />
             Property Details
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Property Type <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -657,7 +684,7 @@ const EditListingPage = () => {
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
                     errors.type
                       ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      : "border-[#E2E8F0] focus:border-[#126542]"
                   }`}
                   disabled={loading}
                 >
@@ -675,7 +702,7 @@ const EditListingPage = () => {
             {isResidential ? (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1">
                     Bedrooms <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -691,7 +718,7 @@ const EditListingPage = () => {
                       className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
                         errors.bedrooms
                           ? "border-red-400 focus:border-red-500 bg-red-50"
-                          : "border-[#A8D8C1] focus:border-[#02BB31]"
+                          : "border-[#E2E8F0] focus:border-[#126542]"
                       }`}
                       disabled={loading}
                     />
@@ -700,7 +727,7 @@ const EditListingPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1">
                     Bathrooms <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -716,7 +743,7 @@ const EditListingPage = () => {
                       className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
                         errors.bathrooms
                           ? "border-red-400 focus:border-red-500 bg-red-50"
-                          : "border-[#A8D8C1] focus:border-[#02BB31]"
+                          : "border-[#E2E8F0] focus:border-[#126542]"
                       }`}
                       disabled={loading}
                     />
@@ -729,7 +756,7 @@ const EditListingPage = () => {
             {isOffice ? (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1">
                     Size <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -745,7 +772,7 @@ const EditListingPage = () => {
                       className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
                         errors.size
                           ? "border-red-400 focus:border-red-500 bg-red-50"
-                          : "border-[#A8D8C1] focus:border-[#02BB31]"
+                          : "border-[#E2E8F0] focus:border-[#126542]"
                       }`}
                       disabled={loading}
                     />
@@ -754,7 +781,7 @@ const EditListingPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#013E43] mb-1">
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1">
                     Size Unit
                   </label>
                   <div className="relative">
@@ -765,7 +792,7 @@ const EditListingPage = () => {
                       name="sizeUnit"
                       value={formData.sizeUnit}
                       onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none appearance-none bg-white"
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#E2E8F0] focus:border-[#126542] outline-none appearance-none bg-white"
                       disabled={loading}
                     >
                       {(listingMeta.officeSizeUnits || []).map((unit) => (
@@ -780,7 +807,7 @@ const EditListingPage = () => {
             ) : null}
 
             <div>
-              <label className="block text-sm font-medium text-[#013E43] mb-1">
+              <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 Contact Phone <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -794,7 +821,7 @@ const EditListingPage = () => {
                   className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
                     errors.contactPhone
                       ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#A8D8C1] focus:border-[#02BB31]"
+                      : "border-[#E2E8F0] focus:border-[#126542]"
                   }`}
                   disabled={loading}
                 />
@@ -811,9 +838,9 @@ const EditListingPage = () => {
                   name="kitchen"
                   checked={formData.kitchen}
                   onChange={handleChange}
-                  className="w-5 h-5 text-[#02BB31] border-[#A8D8C1] rounded focus:ring-[#02BB31]"
+                  className="w-5 h-5 text-[#126542] border-[#E2E8F0] rounded focus:ring-[#126542]"
                 />
-                <span className="text-sm text-[#065A57] flex items-center">
+                <span className="text-sm text-[#475569] flex items-center">
                   <FaUtensils className="mr-2" />
                   Kitchen available
                 </span>
@@ -822,14 +849,14 @@ const EditListingPage = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiVideo className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiVideo className="mr-2 text-[#126542]" />
             Virtual Tour (Optional)
           </h2>
 
           <div>
-            <label className="block text-sm font-medium text-[#013E43] mb-1">
+            <label className="block text-sm font-medium text-[#0F172A] mb-1">
               Video URL
             </label>
             <div className="relative">
@@ -841,16 +868,16 @@ const EditListingPage = () => {
                 value={formData.video}
                 onChange={handleChange}
                 placeholder="https://youtube.com/watch?v=..."
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#A8D8C1] focus:border-[#02BB31] outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#E2E8F0] focus:border-[#126542] outline-none transition-colors"
                 disabled={loading}
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiCheckCircle className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiCheckCircle className="mr-2 text-[#126542]" />
             Amenities
           </h2>
 
@@ -861,42 +888,42 @@ const EditListingPage = () => {
                   type="checkbox"
                   checked={formData.amenities[amenity.key]}
                   onChange={() => handleAmenityChange(amenity.key)}
-                  className="w-5 h-5 text-[#02BB31] border-[#A8D8C1] rounded focus:ring-[#02BB31]"
+                  className="w-5 h-5 text-[#126542] border-[#E2E8F0] rounded focus:ring-[#126542]"
                 />
-                <span className="text-sm text-[#065A57]">{amenity.label}</span>
+                <span className="text-sm text-[#475569]">{amenity.label}</span>
               </label>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
-          <h2 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-            <FiCamera className="mr-2 text-[#02BB31]" />
+        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
+            <FiCamera className="mr-2 text-[#126542]" />
             Property Images
           </h2>
 
           {existingImages.length > 0 && (
             <div className="mb-6">
-              <p className="text-sm font-medium text-[#013E43] mb-3">Current Images</p>
+              <p className="text-sm font-medium text-[#0F172A] mb-3">Current Images</p>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {existingImages.map((img, index) => (
                   <div key={index} className="relative">
                     <img
                       src={img}
                       alt={`Existing ${index + 1}`}
-                      className="h-24 w-full object-cover rounded-lg border border-[#A8D8C1]"
+                      className="h-24 w-full object-cover rounded-lg border border-[#E2E8F0]"
                     />
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-[#065A57] mt-2">
+              <p className="text-xs text-[#475569] mt-2">
                 Upload new images below only if you want to replace the current ones.
               </p>
             </div>
           )}
 
           <div className="mb-4">
-            <div className="border-2 border-dashed rounded-xl p-6 text-center transition-all border-[#A8D8C1] hover:border-[#02BB31]">
+            <div className="border-2 border-dashed rounded-md p-6 text-center transition-all border-[#E2E8F0] hover:border-[#126542]">
               <input
                 type="file"
                 multiple
@@ -907,26 +934,26 @@ const EditListingPage = () => {
                 disabled={loading}
               />
               <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center">
-                <FiUpload className="text-3xl text-[#065A57] mb-2" />
-                <span className="text-sm text-[#065A57]">Click to upload replacement images</span>
-                <span className="text-xs text-[#065A57] mt-1">
+                <FiUpload className="text-3xl text-[#475569] mb-2" />
+                <span className="text-sm text-[#475569]">Click to upload replacement images</span>
+                <span className="text-xs text-[#475569] mt-1">
                   Select multiple images. Large files are compressed before upload. Max {MAX_LISTING_IMAGES} images.
                 </span>
               </label>
             </div>
-            <p className="text-xs text-[#065A57] mt-2">{images.length}/{MAX_LISTING_IMAGES} new image(s) selected</p>
+            <p className="text-xs text-[#475569] mt-2">{images.length}/{MAX_LISTING_IMAGES} new image(s) selected</p>
           </div>
 
           {preview.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-[#013E43] mb-3">New Images Preview</p>
+              <p className="text-sm font-medium text-[#0F172A] mb-3">New Images Preview</p>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {preview.map((img, index) => (
                   <div key={index} className="relative group">
                     <img
                       src={img}
                       alt={`Preview ${index + 1}`}
-                      className="h-24 w-full object-cover rounded-lg border border-[#A8D8C1]"
+                      className="h-24 w-full object-cover rounded-lg border border-[#E2E8F0]"
                     />
                     <button
                       type="button"
@@ -946,7 +973,7 @@ const EditListingPage = () => {
           <button
             type="button"
             onClick={() => navigate("/listings")}
-            className="px-6 py-3 text-[#065A57] border border-[#A8D8C1] rounded-lg hover:bg-[#F0F7F4] transition-colors"
+            className="px-6 py-3 text-[#475569] border border-[#E2E8F0] rounded-lg hover:bg-[#F8FAFC] transition-colors"
             disabled={loading}
           >
             Cancel
@@ -954,7 +981,7 @@ const EditListingPage = () => {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-3 bg-[#126542] text-white rounded-lg font-semibold hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {loading ? (
               <>

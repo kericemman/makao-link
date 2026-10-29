@@ -1,63 +1,70 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAdminPayments } from "../../services/admin.service";
-import { Link } from "react-router-dom";
-import { 
-  FiDollarSign, 
-  FiCreditCard, 
-  FiCalendar, 
-  FiUser,
-  FiMail,
-
-  FiPhone,
-  FiCheckCircle,
+import {
   FiAlertCircle,
+  FiCheckCircle,
+  FiClock,
+  FiCreditCard,
+  FiDownload,
+  FiInfo,
   FiRefreshCw,
   FiSearch,
-  FiFilter,
-  FiTrendingUp,
-  FiArrowRight,
-  FiClock,
-  FiInfo,
-  FiDownload,
-  FiEye
 } from "react-icons/fi";
-import { FaBuilding, FaKey } from "react-icons/fa";
 import toast from "react-hot-toast";
 
-const statusClasses = {
-  free: "bg-gray-100 text-gray-600",
-  pending_payment: "bg-yellow-100 text-yellow-600",
-  active: "bg-[#02BB31]/10 text-[#02BB31]",
-  grace: "bg-orange-100 text-orange-600",
-  expired: "bg-red-100 text-red-600",
-  cancelled: "bg-gray-100 text-gray-600"
+const subscriptionStatus = {
+  free: "bg-[#F1F5F3] text-[#526760]",
+  pending_payment: "bg-amber-50 text-amber-800",
+  active: "bg-emerald-50 text-emerald-800",
+  grace: "bg-orange-50 text-orange-800",
+  expired: "bg-red-50 text-red-700",
+  cancelled: "bg-[#F1F5F3] text-[#526760]",
 };
 
-const paymentClasses = {
-  success: "bg-[#02BB31]/10 text-[#02BB31]",
-  failed: "bg-red-100 text-red-600",
-  pending: "bg-yellow-100 text-yellow-600"
+const paymentStatus = {
+  success: "bg-emerald-50 text-emerald-800",
+  failed: "bg-red-50 text-red-700",
+  pending: "bg-amber-50 text-amber-800",
 };
 
-const statusIcons = {
-  free: <FiInfo className="text-gray-500" />,
-  pending_payment: <FiAlertCircle className="text-yellow-500" />,
-  active: <FiCheckCircle className="text-[#02BB31]" />,
-  grace: <FiAlertCircle className="text-orange-500" />,
-  expired: <FiAlertCircle className="text-red-500" />,
-  cancelled: <FiAlertCircle className="text-gray-500" />
+const paymentIcons = {
+  success: FiCheckCircle,
+  failed: FiAlertCircle,
+  pending: FiClock,
 };
+
+const formatDate = (date) => {
+  if (!date) return "—";
+  const parsedDate = new Date(date);
+  return Number.isNaN(parsedDate.getTime())
+    ? "—"
+    : parsedDate.toLocaleDateString("en-KE", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+};
+
+const formatCurrency = (amount, currency = "KES") => {
+  if (amount == null || Number.isNaN(Number(amount))) return "—";
+  return new Intl.NumberFormat("en-KE", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(Number(amount));
+};
+
+const escapeCsv = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
 
 const AdminPaymentsPage = () => {
   const [records, setRecords] = useState([]);
-  const [filteredRecords, setFilteredRecords] = useState([]);
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -66,144 +73,82 @@ const AdminPaymentsPage = () => {
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load payment records");
       toast.error("Failed to load payment records", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#013E43", color: "#fff" },
       });
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchPayments();
   }, []);
 
   useEffect(() => {
-    filterPayments();
+    fetchPayments();
+  }, [fetchPayments]);
+
+  const filteredRecords = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    const cutoff = new Date();
+    if (dateRange === "today") cutoff.setHours(0, 0, 0, 0);
+    if (dateRange === "week") cutoff.setDate(cutoff.getDate() - 7);
+    if (dateRange === "month") cutoff.setMonth(cutoff.getMonth() - 1);
+
+    return records
+      .filter((record) => filter === "all" || record.subscription?.status === filter)
+      .filter((record) => {
+        if (!term) return true;
+        return [
+          record.landlord?.name,
+          record.landlord?.email,
+          record.latestPayment?.reference,
+        ].some((value) => value?.toLowerCase().includes(term));
+      })
+      .filter((record) => {
+        if (dateRange === "all") return true;
+        const paidAt = record.latestPayment?.paidAt;
+        return paidAt && new Date(paidAt) >= cutoff;
+      })
+      .sort((a, b) => {
+        const dateA = a.latestPayment?.paidAt ? new Date(a.latestPayment.paidAt) : new Date(0);
+        const dateB = b.latestPayment?.paidAt ? new Date(b.latestPayment.paidAt) : new Date(0);
+        return dateB - dateA;
+      });
   }, [records, filter, searchTerm, dateRange]);
 
-  const filterPayments = () => {
-    let filtered = [...records];
+  const stats = useMemo(() => ({
+    accounts: records.length,
+    latestPaymentValue: records.reduce((sum, record) =>
+      sum + (record.latestPayment?.status === "success" ? Number(record.latestPayment.amount) || 0 : 0), 0),
+    activeSubscriptions: records.filter((record) => record.subscription?.status === "active").length,
+    pendingSubscriptions: records.filter((record) => record.subscription?.status === "pending_payment").length,
+  }), [records]);
 
-    // Status filter
-    if (filter !== "all") {
-      filtered = filtered.filter((item) => item.subscription?.status === filter);
-    }
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(item => 
-        item.landlord?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.landlord?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.latestPayment?.reference?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Date range filter
-    if (dateRange !== "all" && records.length > 0) {
-      const now = new Date();
-      const filterDate = new Date();
-      
-      switch(dateRange) {
-        case "today":
-          filterDate.setHours(0, 0, 0, 0);
-          filtered = filtered.filter(item => 
-            item.latestPayment?.paidAt && new Date(item.latestPayment.paidAt) >= filterDate
-          );
-          break;
-        case "week":
-          filterDate.setDate(filterDate.getDate() - 7);
-          filtered = filtered.filter(item => 
-            item.latestPayment?.paidAt && new Date(item.latestPayment.paidAt) >= filterDate
-          );
-          break;
-        case "month":
-          filterDate.setMonth(filterDate.getMonth() - 1);
-          filtered = filtered.filter(item => 
-            item.latestPayment?.paidAt && new Date(item.latestPayment.paidAt) >= filterDate
-          );
-          break;
-      }
-    }
-
-    // Sort by latest payment date (newest first)
-    filtered.sort((a, b) => {
-      const dateA = a.latestPayment?.paidAt ? new Date(a.latestPayment.paidAt) : new Date(0);
-      const dateB = b.latestPayment?.paidAt ? new Date(b.latestPayment.paidAt) : new Date(0);
-      return dateB - dateA;
-    });
-
-    setFilteredRecords(filtered);
-  };
-
-  const getStatusBadge = (status) => {
-    const statusKey = status?.replace("_", " ") || "N/A";
-    const style = statusClasses[status] || "bg-gray-100 text-gray-600";
-    const Icon = statusIcons[status] || <FiInfo className="text-gray-500" />;
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${style}`}>
-        {Icon}
-        <span className="ml-1 capitalize">{statusKey}</span>
-      </span>
-    );
-  };
-
-  const getPaymentBadge = (status) => {
-    const style = paymentClasses[status] || "bg-gray-100 text-gray-600";
-    let Icon;
-    switch(status) {
-      case "success":
-        Icon = <FiCheckCircle className="mr-1" />;
-        break;
-      case "failed":
-        Icon = <FiAlertCircle className="mr-1" />;
-        break;
-      case "pending":
-        Icon = <FiClock className="mr-1" />;
-        break;
-      default:
-        Icon = null;
-    }
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${style}`}>
-        {Icon}
-        {status?.toUpperCase() || "N/A"}
-      </span>
-    );
-  };
-
-  const formatDate = (date) => {
-    if (!date) return "—";
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatCurrency = (amount, currency = "KES") => {
-    if (!amount) return "—";
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const stats = {
-    total: records.length,
-    totalRevenue: records.reduce((sum, r) => sum + (r.latestPayment?.amount || 0), 0),
-    activeSubscriptions: records.filter(r => r.subscription?.status === "active").length,
-    pendingPayments: records.filter(r => r.subscription?.status === "pending_payment").length
+  const exportPayments = () => {
+    const columns = ["landlord", "email", "subscription_status", "plan", "reference", "payment_status", "amount", "currency", "paid_at"];
+    const rows = filteredRecords.map((record) => [
+      record.landlord?.name,
+      record.landlord?.email,
+      record.subscription?.status,
+      record.latestPayment?.plan || record.subscription?.plan,
+      record.latestPayment?.reference,
+      record.latestPayment?.status,
+      record.latestPayment?.amount,
+      record.latestPayment?.currency || "KES",
+      record.latestPayment?.paidAt,
+    ]);
+    const csv = [columns, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "rendahomes-payments.csv";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex min-h-72 items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E4EEE8] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading payment records...</p>
+          <div className="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-[#DDEAE3] border-t-[#0D915C]" />
+          <p className="text-sm font-semibold text-[#013E43]">Loading payment records...</p>
         </div>
       </div>
     );
@@ -211,16 +156,11 @@ const AdminPaymentsPage = () => {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-[#E4EEE8]">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <FiAlertCircle className="text-3xl text-red-500" />
-        </div>
-        <p className="text-red-600 mb-4">{error}</p>
-        <button
-          onClick={fetchPayments}
-          className="px-4 py-2 bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
-        >
-          Try Again
+      <div role="alert" className="mx-auto max-w-xl border-y border-red-200 bg-white px-5 py-8 text-center">
+        <FiAlertCircle className="mx-auto mb-3 text-3xl text-red-600" />
+        <p className="text-sm font-semibold text-[#013E43]">{error}</p>
+        <button onClick={fetchPayments} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#0D915C] px-4 py-2 text-sm font-semibold text-white hover:bg-[#08764C]">
+          <FiRefreshCw /> Retry
         </button>
       </div>
     );
@@ -228,254 +168,116 @@ const AdminPaymentsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-[#E4EEE8]">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            
-            <div>
-              <h1 className="text-lg font-bold text-[#013E43]">Payments & Subscriptions</h1>
-              <p className="text-sm text-[#065A57]">
-                Track landlord billing state, latest payments, and subscription health
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={fetchPayments}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-              title="Refresh"
-            >
-              <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
-            </button>
-            <button
-              className="px-4 py-2 bg-[#013E43] text-white rounded-lg hover:bg-[#005C57] transition-colors flex items-center space-x-2"
-            >
-              <FiDownload />
-              <span>Export</span>
-            </button>
-          </div>
+      <header className="flex flex-col justify-between gap-4 border-b border-[#DDEAE3] pb-5 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0D915C]">Revenue</p>
+          <h1 className="mt-1 text-2xl font-semibold text-[#013E43]">Payments</h1>
+          <p className="mt-1 text-sm text-[#647C75]">Review landlord billing activity and latest transaction status.</p>
         </div>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={fetchPayments} title="Refresh payments" aria-label="Refresh payments" className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#DDEAE3] text-[#41635A] transition hover:bg-[#F1F7F3]">
+            <FiRefreshCw />
+          </button>
+          <button type="button" onClick={exportPayments} disabled={!filteredRecords.length} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#013E43] px-4 text-sm font-semibold text-white transition hover:bg-[#075B53] disabled:cursor-not-allowed disabled:opacity-50">
+            <FiDownload /> Export CSV
+          </button>
+        </div>
+      </header>
+
+      <section aria-label="Payment overview" className="grid grid-cols-2 border-y border-[#DDEAE3] sm:grid-cols-4">
+        {[
+          ["Landlord accounts", stats.accounts],
+          ["Latest successful payment value", formatCurrency(stats.latestPaymentValue)],
+          ["Active subscriptions", stats.activeSubscriptions],
+          ["Awaiting payment", stats.pendingSubscriptions],
+        ].map(([label, value], index) => (
+          <div key={label} className={`py-4 ${index % 2 ? "pl-4 sm:pl-5" : "pr-4 sm:pr-5"} ${index > 1 ? "border-t border-[#DDEAE3] sm:border-t-0" : ""} ${index > 0 ? "sm:border-l sm:border-[#DDEAE3] sm:pl-5" : ""}`}>
+            <p className="text-xs font-medium text-[#647C75]">{label}</p>
+            <p className="mt-1 text-xl font-semibold text-[#013E43]">{value}</p>
+          </div>
+        ))}
+      </section>
+      <p className="-mt-4 text-xs text-[#647C75]">Payment value sums each landlord account’s latest successful transaction only; it is not lifetime revenue.</p>
+
+      <section aria-label="Payment filters" className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label className="relative min-w-0 flex-1">
+          <FiSearch aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#647C75]" />
+          <input type="search" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search landlord or transaction reference" className="h-11 w-full rounded-lg border border-[#DDEAE3] bg-white pl-10 pr-3 text-sm text-[#013E43] outline-none placeholder:text-[#84958F] focus:border-[#0D915C] focus:ring-2 focus:ring-[#0D915C]/15" />
+        </label>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <select aria-label="Filter by subscription status" value={filter} onChange={(event) => setFilter(event.target.value)} className="h-11 min-w-0 rounded-lg border border-[#DDEAE3] bg-white px-3 text-sm text-[#013E43] outline-none focus:border-[#0D915C]">
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="pending_payment">Pending payment</option>
+            <option value="grace">Grace</option>
+            <option value="expired">Expired</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="free">Free</option>
+          </select>
+          <select aria-label="Filter by payment date" value={dateRange} onChange={(event) => setDateRange(event.target.value)} className="h-11 min-w-0 rounded-lg border border-[#DDEAE3] bg-white px-3 text-sm text-[#013E43] outline-none focus:border-[#0D915C]">
+            <option value="all">Any date</option>
+            <option value="today">Today</option>
+            <option value="week">Last 7 days</option>
+            <option value="month">Last 30 days</option>
+          </select>
+        </div>
+      </section>
+
+      <div className="flex items-center justify-between border-b border-[#DDEAE3] pb-2 text-xs text-[#647C75]">
+        <span>{filteredRecords.length} of {records.length} landlord accounts</span>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Total Records</p>
-          <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
-        </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Total Revenue</p>
-          <p className="text-2xl font-bold text-[#02BB31]">{formatCurrency(stats.totalRevenue)}</p>
-        </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Active Subscriptions</p>
-          <p className="text-2xl font-bold text-purple-600">{stats.activeSubscriptions}</p>
-        </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Pending Payments</p>
-          <p className="text-2xl font-bold text-yellow-600">{stats.pendingPayments}</p>
-        </div>
-      </div>
-
-      {/* Search and Filter Bar */}
-      <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E4EEE8]">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#065A57]" />
-            <input
-              type="text"
-              placeholder="Search by landlord name, email, or transaction reference..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] focus:border-transparent"
-            />
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap gap-3">
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="pending_payment">Pending Payment</option>
-              <option value="grace">Grace</option>
-              <option value="expired">Expired</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="free">Free</option>
-            </select>
-
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
-            >
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">Last 7 Days</option>
-              <option value="month">Last 30 Days</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Results count */}
-        <div className="mt-4 text-sm text-[#065A57]">
-          Showing {filteredRecords.length} of {records.length} payment records
-        </div>
-      </div>
-
-      {/* Payment Records List */}
       {filteredRecords.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center border border-[#E4EEE8]">
-          <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-            <FiDollarSign className="text-3xl text-[#A8D8C1]" />
-          </div>
-          <h2 className="text-lg font-semibold text-[#013E43] mb-2">No records found</h2>
-          <p className="text-sm text-[#065A57]">
-            {searchTerm || filter !== "all" || dateRange !== "all"
-              ? "Try adjusting your search or filters"
-              : "There are no billing records available yet."}
-          </p>
+        <div className="border-y border-[#DDEAE3] px-5 py-12 text-center">
+          <FiCreditCard className="mx-auto mb-3 text-2xl text-[#83958E]" />
+          <h2 className="text-base font-semibold text-[#013E43]">No payment records found</h2>
+          <p className="mt-1 text-sm text-[#647C75]">{searchTerm || filter !== "all" || dateRange !== "all" ? "Try adjusting your search or filters." : "Billing activity will appear here when available."}</p>
         </div>
       ) : (
-        <div className="grid gap-6">
-          {filteredRecords.map((record) => (
-            <div
-              key={record._id}
-              className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden transition-all"
-            >
-              <div className="p-6">
-                <div className="flex flex-col lg:flex-row gap-6">
-                  {/* Left Column - Landlord Info */}
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-[#013E43] rounded-full flex items-center justify-center text-white font-bold text-lg">
-                          {record.landlord?.name?.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <h2 className="text-lg font-semibold text-[#013E43]">
-                            {record.landlord?.name}
-                          </h2>
-                          <p className="text-sm text-[#065A57]">
-                            {record.landlord?.email}
-                          </p>
-                          {record.landlord?.phone && (
-                            <p className="text-xs text-[#065A57] mt-1 flex items-center">
-                              <FiPhone className="mr-1" /> {record.landlord.phone}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      {getStatusBadge(record.subscription?.status)}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-                      <div className="bg-[#F0F7F4] rounded-md p-3">
-                        <p className="text-xs text-[#065A57] uppercase tracking-wide">Plan</p>
-                        <p className="mt-1 font-semibold text-[#013E43] capitalize">
-                          {record.subscription?.plan || "Free"}
-                        </p>
-                        <p className="text-xs text-[#065A57]">
-                          Limit: {record.subscription?.listingLimit || 1}
-                        </p>
-                      </div>
-
-                      <div className="bg-[#F0F7F4] rounded-md p-3">
-                        <p className="text-xs text-[#065A57] uppercase tracking-wide">Listings</p>
-                        <p className="mt-1 font-semibold text-[#013E43]">
-                          {record.activeListings || 0} active
-                        </p>
-                        <p className="text-xs text-[#065A57]">
-                          Total: {record.totalListings || 0}
-                        </p>
-                      </div>
-
-                      <div className="bg-[#F0F7F4] rounded-md p-3">
-                        <p className="text-xs text-[#065A57] uppercase tracking-wide">Billing End</p>
-                        <p className="mt-1 font-semibold text-[#013E43]">
-                          {record.subscription?.currentPeriodEnd
-                            ? formatDate(record.subscription.currentPeriodEnd)
-                            : "—"}
-                        </p>
-                        {record.subscription?.gracePeriodEnd && (
-                          <p className="mt-1 text-xs text-orange-600">
-                            Grace until {formatDate(record.subscription.gracePeriodEnd)}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="bg-[#F0F7F4] rounded-md p-3">
-                        <p className="text-xs text-[#065A57] uppercase tracking-wide">Latest Payment</p>
-                        <p className="mt-1 font-semibold text-[#013E43]">
-                          {record.latestPayment
-                            ? formatCurrency(record.latestPayment.amount, record.latestPayment.currency)
-                            : "No payment"}
-                        </p>
-                        {record.latestPayment?.paidAt && (
-                          <p className="text-xs text-[#065A57]">
-                            {formatDate(record.latestPayment.paidAt)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+        <div className="divide-y divide-[#E7EFEB]">
+          {filteredRecords.map((record) => {
+            const latest = record.latestPayment;
+            const paymentState = latest?.status || "none";
+            const PaymentIcon = paymentIcons[paymentState] || FiInfo;
+            const subscriptionState = record.subscription?.status || "free";
+            return (
+              <article key={record._id} className="grid gap-4 py-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(190px,0.8fr)_minmax(180px,0.75fr)_auto] lg:items-center">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E8F0F0] text-sm font-semibold text-[#013E43]">
+                    {(record.landlord?.name || "?").trim().charAt(0).toUpperCase()}
                   </div>
-
-                  {/* Right Column - Transaction Details */}
-                  <div className="lg:w-80">
-                    <div className="bg-[#F0F7F4] rounded-md p-4 border border-[#E4EEE8]">
-                      <p className="text-sm font-medium text-[#013E43] flex items-center">
-                        <FiCreditCard className="mr-2 text-[#02BB31]" />
-                        Latest Transaction
-                      </p>
-
-                      {record.latestPayment ? (
-                        <div className="mt-3 space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-[#065A57]">Reference:</span>
-                            <span className="font-mono text-xs text-[#013E43]">
-                              {record.latestPayment.reference?.slice(-8)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[#065A57]">Plan:</span>
-                            <span className="font-medium capitalize text-[#013E43]">
-                              {record.latestPayment.plan || record.subscription?.plan || "N/A"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[#065A57]">Amount:</span>
-                            <span className="font-bold text-[#02BB31]">
-                              {formatCurrency(record.latestPayment.amount, record.latestPayment.currency)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center pt-1">
-                            <span className="text-[#065A57]">Status:</span>
-                            {getPaymentBadge(record.latestPayment.status)}
-                          </div>
-                          {record.latestPayment.paidAt && (
-                            <div className="flex justify-between">
-                              <span className="text-[#065A57]">Date:</span>
-                              <span className="text-[#013E43]">{formatDate(record.latestPayment.paidAt)}</span>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="mt-3 text-sm text-[#065A57]">
-                          No payment record available yet.
-                        </p>
-                      )}
-                    </div>
+                  <div className="min-w-0">
+                    <h2 className="truncate text-sm font-semibold text-[#013E43]">{record.landlord?.name || "Unknown landlord"}</h2>
+                    <p className="truncate text-xs text-[#647C75]">{record.landlord?.email || "No email"}</p>
+                    <p className="mt-1 text-xs text-[#526760]">{record.subscription?.plan || "Free"} plan <span className="px-1 text-[#B0C1BA]">·</span> {record.activeListings || 0} active listings</p>
                   </div>
                 </div>
-              </div>
-            </div>
-          ))}
+
+                <div className="flex flex-wrap items-center gap-2 lg:block">
+                  <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${subscriptionStatus[subscriptionState] || subscriptionStatus.free}`}>
+                    {subscriptionState.replaceAll("_", " ")}
+                  </span>
+                  {record.subscription?.currentPeriodEnd && <p className="mt-1 text-xs text-[#647C75]">Period ends {formatDate(record.subscription.currentPeriodEnd)}</p>}
+                </div>
+
+                <div className="min-w-0">
+                  {latest ? (
+                    <>
+                      <p className="text-sm font-semibold text-[#013E43]">{formatCurrency(latest.amount, latest.currency)}</p>
+                      <p className="truncate font-mono text-xs text-[#647C75]">{latest.reference || "No reference"}</p>
+                    </>
+                  ) : <p className="text-sm text-[#647C75]">No payment recorded</p>}
+                  {latest?.paidAt && <p className="text-xs text-[#647C75]">{formatDate(latest.paidAt)}</p>}
+                </div>
+
+                <div className="flex items-center gap-2 lg:justify-end">
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${paymentStatus[paymentState] || "bg-[#F1F5F3] text-[#526760]"}`}>
+                    <PaymentIcon aria-hidden="true" />{paymentState === "none" ? "No payment" : paymentState}
+                  </span>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
     </div>

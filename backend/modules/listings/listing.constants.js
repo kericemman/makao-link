@@ -127,7 +127,7 @@ const LISTING_TYPES = [
   "other"
 ];
 
-const LISTING_PURPOSES = ["rent", "sale"];
+const LISTING_PURPOSES = ["rent", "sale", "short_stay"];
 const OFFICE_SIZE_UNITS = ["sqft"];
 
 module.exports = {

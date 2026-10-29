@@ -28,18 +28,19 @@ const emptyForm = {
   title: "",
   body: "",
   category: "Product Update",
+  emailAudience: "mobile_app",
   isPublished: true
 };
 
 const categoryIcons = {
-  "Product Update": <FaMoneyBillWave className="text-[#02BB31]" />,
+  "Product Update": <FaMoneyBillWave className="text-[#0D915C]" />,
   "News": <FaNewspaper className="text-blue-500" />,
   "Announcement": <FaPhone className="text-purple-500" />,
   "Maintenance": <FaTools className="text-orange-500" />
 };
 
 const categoryColors = {
-  "Product Update": "bg-[#02BB31]/10 text-[#0D915C] border-[#02BB31]/20",
+  "Product Update": "bg-[#0D915C]/10 text-[#0D915C] border-[#0D915C]/20",
   "News": "bg-blue-100 text-blue-600 border-blue-200",
   "Announcement": "bg-purple-100 text-purple-600 border-purple-200",
   "Maintenance": "bg-orange-100 text-orange-600 border-orange-200"
@@ -67,7 +68,7 @@ export default function AppUpdatesPage() {
       setFetching(true);
       const { data } = await getUpdates();
       setUpdates(data.updates || []);
-    } catch (err) {
+    } catch {
       toast.error("Failed to load updates", {
         style: { background: "#013E43", color: "#fff" }
       });
@@ -103,12 +104,12 @@ export default function AppUpdatesPage() {
       if (editingId) {
         await updateUpdate(editingId, form);
         toast.success("Update edited successfully", {
-          style: { background: "#02BB31", color: "#fff" }
+          style: { background: "#0D915C", color: "#fff" }
         });
       } else {
         await createUpdate(form);
         toast.success("Update published successfully", {
-          style: { background: "#02BB31", color: "#fff" }
+          style: { background: "#0D915C", color: "#fff" }
         });
       }
 
@@ -131,6 +132,7 @@ export default function AppUpdatesPage() {
       title: item.title || "",
       body: item.body || "",
       category: item.category || "Product Update",
+      emailAudience: item.emailAudience || "mobile_app",
       isPublished: item.isPublished
     });
     setCharCount(stripHtml(item.body).length);
@@ -152,7 +154,7 @@ export default function AppUpdatesPage() {
     try {
       await deleteUpdate(deleteId);
       toast.success("Update deleted successfully", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
       loadUpdates();
     } catch (err) {
@@ -183,8 +185,8 @@ export default function AppUpdatesPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E4EEE8] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading app updates...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#DDEAE3] border-t-[#0D915C] mx-auto mb-4"></div>
+          <p className="text-[#41635A]">Loading app updates...</p>
         </div>
       </div>
     );
@@ -193,7 +195,7 @@ export default function AppUpdatesPage() {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-[#E4EEE8]">
+      <div className="border-b border-[#DDEAE3] pb-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <div className="p-3 bg-[#013E43] rounded-md">
@@ -201,7 +203,7 @@ export default function AppUpdatesPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-[#013E43]">App Updates</h1>
-              <p className="text-sm text-[#065A57]">
+              <p className="text-sm text-[#41635A]">
                 Manage updates, news, and announcements for the mobile app
               </p>
             </div>
@@ -210,7 +212,7 @@ export default function AppUpdatesPage() {
           <div className="flex items-center space-x-3">
             <button
               onClick={loadUpdates}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 text-[#41635A] hover:bg-[#F1F7F3] rounded-lg transition-colors"
               title="Refresh"
             >
               <FiRefreshCw className={`text-lg ${fetching ? 'animate-spin' : ''}`} />
@@ -221,29 +223,29 @@ export default function AppUpdatesPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-md shadow-sm p-4 border-l-4 border-[#013E43]">
-          <p className="text-sm text-[#065A57]">Total Updates</p>
+        <div className="border-b border-[#DDEAE3] py-4">
+          <p className="text-sm text-[#41635A]">Total Updates</p>
           <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4 border-l-4 border-[#02BB31]">
-          <p className="text-sm text-[#065A57]">Published</p>
-          <p className="text-2xl font-bold text-[#02BB31]">{stats.published}</p>
+        <div className="border-b border-[#DDEAE3] py-4">
+          <p className="text-sm text-[#41635A]">Published</p>
+          <p className="text-2xl font-bold text-[#0D915C]">{stats.published}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4 border-l-4 border-yellow-400">
-          <p className="text-sm text-[#065A57]">Drafts</p>
+        <div className="border-b border-[#DDEAE3] py-4">
+          <p className="text-sm text-[#41635A]">Drafts</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.draft}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Create/Edit Form */}
-        <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden lg:col-span-2">
-          <div className="bg-[#013E43] p-6">
-            <h2 className="text-xl font-bold text-white flex items-center">
+        <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] overflow-hidden lg:col-span-2">
+          <div className="border-b border-[#DDEAE3] bg-[#F8FAF8] px-5 py-4">
+            <h2 className="flex items-center text-lg font-semibold text-[#013E43]">
               {editingId ? <FiEdit2 className="mr-2" /> : <FiPlus className="mr-2" />}
               {editingId ? "Edit Update" : "Create App Update"}
             </h2>
-            <p className="text-sm text-[#A8D8C1] mt-1">
+            <p className="mt-1 text-sm text-[#647C75]">
               Updates appear in the mobile app updates/news section
             </p>
           </div>
@@ -260,7 +262,7 @@ export default function AppUpdatesPage() {
                 <input
                   value={form.title}
                   onChange={(e) => updateField("title", e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-[#E4EEE8] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-[#DDEAE3] rounded-lg focus:border-[#0D915C] outline-none transition-colors"
                   placeholder="e.g., Map discovery is coming"
                 />
               </div>
@@ -273,7 +275,7 @@ export default function AppUpdatesPage() {
               <select
                 value={form.category}
                 onChange={(e) => updateField("category", e.target.value)}
-                className="w-full px-4 py-3 border-2 border-[#E4EEE8] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                className="w-full px-4 py-3 border-2 border-[#DDEAE3] rounded-lg focus:border-[#0D915C] outline-none transition-colors"
               >
                 <option>Product Update</option>
                 <option>News</option>
@@ -281,6 +283,33 @@ export default function AppUpdatesPage() {
                 <option>Maintenance</option>
               </select>
             </div>
+
+            <fieldset>
+              <legend className="mb-2 text-sm font-medium text-[#013E43]">Email update to</legend>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {[
+                  ["mobile_app", "Mobile app subscribers"],
+                  ["website", "Website subscribers"],
+                  ["all", "Both audiences"],
+                ].map(([value, label]) => (
+                  <label key={value} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-3 text-sm transition ${form.emailAudience === value ? "border-[#0D915C] bg-[#F1F7F3] text-[#013E43]" : "border-[#DDEAE3] text-[#526760] hover:bg-[#F8FAF8]"}`}>
+                    <input
+                      type="radio"
+                      name="emailAudience"
+                      value={value}
+                      checked={form.emailAudience === value}
+                      onChange={() => updateField("emailAudience", value)}
+                      className="accent-[#0D915C]"
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-[#647C75]">Publishing sends one email per unique address in the selected audience.</p>
+              {editingId && form.isPublished && (
+                <p className="mt-1 text-xs font-medium text-amber-800">This update is already published. Changing the audience will not resend its email.</p>
+              )}
+            </fieldset>
 
             <div>
               <label className="block text-sm font-medium text-[#013E43] mb-1">
@@ -291,7 +320,7 @@ export default function AppUpdatesPage() {
                 onChange={(html) => updateField("body", html)}
               />
               <div className="flex justify-between items-center mt-1">
-                <p className="text-xs text-[#065A57]">
+                <p className="text-xs text-[#41635A]">
                   {charCount} text characters
                 </p>
                 {charCount > 500 && (
@@ -300,7 +329,7 @@ export default function AppUpdatesPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-[#F0F7F4] rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-[#F1F7F3] rounded-lg">
               <label className="flex items-center gap-3 cursor-pointer">
                 <div className="relative">
                   <input
@@ -310,7 +339,7 @@ export default function AppUpdatesPage() {
                     className="sr-only"
                   />
                   <div className={`w-10 h-6 rounded-full transition-colors ${
-                    form.isPublished ? 'bg-[#02BB31]' : 'bg-[#A8D8C1]'
+                    form.isPublished ? 'bg-[#0D915C]' : 'bg-[#BBD2C6]'
                   }`}>
                     <div className={`w-4 h-4 bg-white rounded-full transform transition-transform absolute top-1 ${
                       form.isPublished ? 'translate-x-5' : 'translate-x-1'
@@ -319,8 +348,8 @@ export default function AppUpdatesPage() {
                 </div>
                 <span className="text-sm font-medium text-[#013E43]">Published</span>
               </label>
-              <span className="text-xs text-[#065A57] flex items-center gap-1">
-                {form.isPublished ? <FiEye className="text-[#02BB31]" /> : <FiEyeOff className="text-gray-400" />}
+              <span className="text-xs text-[#41635A] flex items-center gap-1">
+                {form.isPublished ? <FiEye className="text-[#0D915C]" /> : <FiEyeOff className="text-gray-400" />}
                 {form.isPublished ? "Visible to users" : "Hidden from users"}
               </span>
             </div>
@@ -328,7 +357,7 @@ export default function AppUpdatesPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#02BB31] text-white rounded-lg font-semibold hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-[#0D915C] text-white rounded-lg font-semibold  transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -342,7 +371,7 @@ export default function AppUpdatesPage() {
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="w-full py-3 border-2 border-[#E4EEE8] text-[#065A57] rounded-lg font-medium hover:bg-[#F0F7F4] transition-colors"
+                className="w-full py-3 border-2 border-[#DDEAE3] text-[#41635A] rounded-lg font-medium hover:bg-[#F1F7F3] transition-colors"
               >
                 Cancel Edit
               </button>
@@ -352,15 +381,15 @@ export default function AppUpdatesPage() {
 
         {/* Updates List */}
         <div>
-          <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden">
-            <div className="bg-[#F8FAF8] p-6 border-b border-[#E4EEE8]">
+          <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] overflow-hidden">
+            <div className="bg-[#F8FAF8] p-6 border-b border-[#DDEAE3]">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-bold text-[#013E43] flex items-center">
-                    <FiSend className="mr-2 text-[#02BB31]" />
+                    <FiSend className="mr-2 text-[#0D915C]" />
                     Published Updates
                   </h2>
-                  <p className="text-sm text-[#065A57] mt-1">
+                  <p className="text-sm text-[#41635A] mt-1">
                     Manage your app updates and announcements
                   </p>
                 </div>
@@ -370,11 +399,11 @@ export default function AppUpdatesPage() {
             <div className="p-6">
               {updates.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FaMoneyBillWave className="text-3xl text-[#A8D8C1]" />
+                  <div className="w-20 h-20 bg-[#F1F7F3] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FaMoneyBillWave className="text-3xl text-[#BBD2C6]" />
                   </div>
                   <h3 className="text-lg font-semibold text-[#013E43] mb-2">No updates yet</h3>
-                  <p className="text-sm text-[#065A57]">
+                  <p className="text-sm text-[#41635A]">
                     Create your first app update to keep users informed.
                   </p>
                 </div>
@@ -387,7 +416,7 @@ export default function AppUpdatesPage() {
                     return (
                       <div
                         key={item._id}
-                        className="group rounded-md border border-[#E4EEE8] p-5 transition-all hover:border-[#02BB31]/30"
+                        className="group rounded-md border border-[#DDEAE3] p-5 transition-all hover:border-[#0D915C]/30"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
@@ -402,19 +431,25 @@ export default function AppUpdatesPage() {
                                   Draft
                                 </span>
                               )}
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#F1F5F3] px-2.5 py-1 text-xs font-medium text-[#526760]">
+                                Email: {item.emailAudience === "all" ? "Website + app" : item.emailAudience === "website" ? "Website" : "Mobile app"}
+                              </span>
+                              {item.emailNotifiedAt && (
+                                <span className="text-xs text-[#647C75]">Sent {formatDate(item.emailNotifiedAt)}</span>
+                              )}
                             </div>
                             <h3 className="font-bold text-[#013E43] text-lg mb-2">{item.title}</h3>
-                            <p className="text-sm text-[#065A57] leading-relaxed line-clamp-3">
+                            <p className="text-sm text-[#41635A] leading-relaxed line-clamp-3">
                               {stripHtml(item.body)}
                             </p>
-                            <div className="flex items-center gap-3 mt-3 text-xs text-[#065A57]">
+                            <div className="flex items-center gap-3 mt-3 text-xs text-[#41635A]">
                               <span className="flex items-center gap-1">
-                                <FiCalendar className="text-[#02BB31]" />
+                                <FiCalendar className="text-[#0D915C]" />
                                 {formatDate(item.createdAt)}
                               </span>
                               {item.updatedAt !== item.createdAt && (
                                 <span className="flex items-center gap-1">
-                                  <FiClock className="text-[#02BB31]" />
+                                  <FiClock className="text-[#0D915C]" />
                                   Updated: {formatDate(item.updatedAt)}
                                 </span>
                               )}
@@ -424,7 +459,7 @@ export default function AppUpdatesPage() {
                           <div className="flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={() => edit(item)}
-                              className="p-2 text-[#02BB31] hover:bg-[#02BB31]/10 rounded-lg transition-colors"
+                              className="p-2 text-[#0D915C] hover:bg-[#08764C]/10 rounded-lg transition-colors"
                               title="Edit"
                             >
                               <FiEdit2 className="text-lg" />
@@ -451,13 +486,13 @@ export default function AppUpdatesPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-sm max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-none max-w-md w-full p-6">
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
                 <FiTrash2 className="text-3xl text-red-500" />
               </div>
               <h3 className="text-xl font-bold text-[#013E43] mb-2">Delete Update</h3>
-              <p className="text-sm text-[#065A57]">
+              <p className="text-sm text-[#41635A]">
                 Are you sure you want to delete this update? This action cannot be undone.
               </p>
             </div>
@@ -468,7 +503,7 @@ export default function AppUpdatesPage() {
                   setShowDeleteConfirm(false);
                   setDeleteId(null);
                 }}
-                className="flex-1 px-4 py-2 border border-[#E4EEE8] text-[#065A57] rounded-lg hover:bg-[#F0F7F4] transition-colors"
+                className="flex-1 px-4 py-2 border border-[#DDEAE3] text-[#41635A] rounded-lg hover:bg-[#F1F7F3] transition-colors"
               >
                 Cancel
               </button>

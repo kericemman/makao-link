@@ -18,3 +18,13 @@ export const changePassword = async (payload) => {
   const response = await api.patch("/users/change-password", payload);
   return response.data;
 };
+
+export const getWhatsAppUpdatePreference = async () => {
+  const response = await api.get("/users/whatsapp-updates");
+  return response.data;
+};
+
+export const updateWhatsAppUpdatePreference = async (payload) => {
+  const response = await api.patch("/users/whatsapp-updates", payload);
+  return response.data;
+};

@@ -22,13 +22,13 @@ export default function ListingResults({ listings, pagination, loading, error, p
           <p className="mt-2 text-sm text-[#065A57]">{error}</p>
         </div>
       ) : loading ? (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="h-96 animate-pulse rounded-[1.35rem] border border-[#A8D8C1] bg-white" />
           ))}
         </div>
       ) : listings.length ? (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
           {listings.map((listing) => (
             <PropertyCard key={listing._id} listing={listing} />
           ))}

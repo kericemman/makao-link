@@ -1,5 +1,6 @@
 const Listing = require("../listings/listings.model");
 const ListingReport = require("./listingReport.model");
+const { recordAdminActivity } = require("../admin/adminActivity.service");
 
 const validStatuses = ["new", "reviewing", "resolved", "dismissed"];
 
@@ -35,6 +36,16 @@ exports.createListingReport = async (req, res, next) => {
       name,
       email,
       phone
+    });
+
+    await recordAdminActivity({
+      eventType: "listing_report",
+      description: "Listing report received",
+      details: `${listing.title} • ${reason.replace(/_/g, " ")}`,
+      path: "/admin/listings/reports",
+      actorName: name || email || "Public user",
+      entityType: "listing_report",
+      entityId: String(report._id)
     });
 
     res.status(201).json({

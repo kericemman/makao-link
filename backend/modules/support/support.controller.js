@@ -2,6 +2,7 @@ const SupportTicket = require("./support.model");
 const User = require("../users/user.model");
 const sendEmail = require("../../utils/sendEmail");
 const { supportReplyEmail } = require("../../utils/emailTemplates");
+const { recordAdminActivity } = require("../admin/adminActivity.service");
 
 
 // landlord creates ticket
@@ -26,6 +27,17 @@ exports.createTicket = async (req, res, next) => {
         }
       ],
       lastReplyAt: new Date()
+    });
+
+    await recordAdminActivity({
+      eventType: "support_ticket",
+      description: "Website support ticket received",
+      details: `${ticket.subject} • ${req.user.name}`,
+      path: `/admin/support/${ticket._id}`,
+      actor: req.user._id,
+      actorName: req.user.name,
+      entityType: "support_ticket",
+      entityId: String(ticket._id)
     });
 
     res.status(201).json({
@@ -110,6 +122,17 @@ exports.replyToMyTicket = async (req, res, next) => {
 
     ticket.lastReplyAt = new Date();
     await ticket.save();
+    await recordAdminActivity({
+      eventType: "support_ticket",
+      description: "Landlord replied to support ticket",
+      details: `${ticket.subject} • ${req.user.name}`,
+      path: `/admin/support/${ticket._id}`,
+      actor: req.user._id,
+      actorName: req.user.name,
+      entityType: "support_ticket",
+      entityId: String(ticket._id),
+      dedupeKey: `support_ticket_reply:${ticket._id}:${ticket.updatedAt.getTime()}`
+    });
 
     const populatedTicket = await SupportTicket.findById(ticket._id)
       .populate("landlord", "name email phone")

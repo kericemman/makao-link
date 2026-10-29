@@ -29,9 +29,25 @@ const userSchema = new mongoose.Schema(
       trim: true
     },
 
+    whatsappUpdatesOptIn: {
+      type: Boolean,
+      default: false
+    },
+
+    whatsappUpdatesPhone: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+
+    whatsappUpdatesSubscribedAt: {
+      type: Date,
+      default: null
+    },
+
     role: {
       type: String,
-      enum: ["user", "tenant", "landlord", "admin", "service_provider", "agent", "app_manager"],
+      enum: ["user", "tenant", "landlord", "landlord_staff", "admin", "service_provider", "agent", "app_manager"],
       default: "user"
     },
 
@@ -54,6 +70,31 @@ const userSchema = new mongoose.Schema(
       default: 10,
       min: 0,
       max: 100
+    },
+
+    landlordOwner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true
+    },
+
+    teamRole: {
+      type: String,
+      enum: ["manager", "agent", "viewer", null],
+      default: null
+    },
+
+    teamPermissions: {
+      type: [String],
+      enum: ["listings", "inquiries", "team", "reports", "deals"],
+      default: []
+    },
+
+    teamStatus: {
+      type: String,
+      enum: ["invited", "active", "suspended"],
+      default: "active"
     },
 
     createdByAdmin: {
@@ -87,6 +128,11 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Subscription",
       default: null
+    },
+
+    savedListings: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Listing" }],
+      default: []
     },
 
     businessName: {

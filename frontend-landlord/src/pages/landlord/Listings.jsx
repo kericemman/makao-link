@@ -48,7 +48,7 @@ const LandlordListings = () => {
       setListings(data.listings || []);
     } catch (error) {
       toast.error("Failed to load listings", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     } finally {
       setLoading(false);
@@ -92,12 +92,12 @@ const LandlordListings = () => {
     try {
       await markListingTaken(id);
       toast.success("Listing marked as taken", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#126542", color: "#fff" }
       });
       fetchListings();
     } catch (error) {
       toast.error("Failed to update listing", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     }
   };
@@ -106,12 +106,12 @@ const LandlordListings = () => {
     try {
       await markListingAvailable(id);
       toast.success("Listing marked as available", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#126542", color: "#fff" }
       });
       fetchListings();
     } catch (error) {
       toast.error("Failed to update listing", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     }
   };
@@ -120,14 +120,14 @@ const LandlordListings = () => {
     try {
       await deleteListing(selectedListing._id);
       toast.success("Listing deleted successfully", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#126542", color: "#fff" }
       });
       setShowDeleteModal(false);
       setSelectedListing(null);
       fetchListings();
     } catch (error) {
       toast.error("Failed to delete listing", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#0F172A", color: "#fff" }
       });
     }
   };
@@ -144,7 +144,7 @@ const LandlordListings = () => {
     switch(status) {
       case "approved":
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#02BB31]/10 text-[#02BB31]">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#126542]/10 text-[#126542]">
             <FiCheckCircle className="mr-1" />
             Approved
           </span>
@@ -174,7 +174,7 @@ const LandlordListings = () => {
 
   const getAvailabilityBadge = (availability) => {
     return availability === "available" ? (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#02BB31]/10 text-[#02BB31]">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#126542]/10 text-[#126542]">
         <FiCheckCircle className="mr-1" />
         Available
       </span>
@@ -197,8 +197,8 @@ const LandlordListings = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A8D8C1] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading your listings...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E2E8F0] border-t-[#126542] mx-auto mb-4"></div>
+          <p className="text-[#475569]">Loading your listings...</p>
         </div>
       </div>
     );
@@ -207,28 +207,28 @@ const LandlordListings = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#A8D8C1]">
+      <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           
           
           <div className="flex items-center space-x-3">
             <button
               onClick={fetchListings}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 text-[#475569] hover:bg-[#F8FAFC] rounded-lg transition-colors"
               title="Refresh"
             >
               <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
             </button>
             {/* <button
               onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 text-[#475569] hover:bg-[#F8FAFC] rounded-lg transition-colors"
               title={viewMode === "grid" ? "Switch to table view" : "Switch to grid view"}
             >
               {viewMode === "grid" ? <FiList className="text-lg" /> : <FiGrid className="text-lg" />}
             </button> */}
             <Link
               to="/listings/new"
-              className="px-4 py-2 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-light hover:shadow-lg transition-all flex items-center"
+              className="px-4 py-2 bg-[#126542] text-white rounded-lg font-light hover:shadow-md transition-all flex items-center"
             >
               <FiPlus className="mr-2" />
               Add Listing
@@ -239,36 +239,36 @@ const LandlordListings = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
-          <p className="text-sm text-[#065A57]">Total Listings</p>
-          <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
+        <div className="bg-white rounded-md shadow-sm p-4 ">
+          <p className="text-sm text-[#475569]">Total Listings</p>
+          <p className="text-2xl font-bold text-[#0F172A]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
-          <p className="text-sm text-[#065A57]">Approved</p>
-          <p className="text-2xl font-bold text-[#02BB31]">{stats.approved}</p>
+        <div className="bg-white rounded-md shadow-sm p-4 ">
+          <p className="text-sm text-[#475569]">Approved</p>
+          <p className="text-2xl font-bold text-[#126542]">{stats.approved}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
-          <p className="text-sm text-[#065A57]">Pending</p>
+        <div className="bg-white rounded-md shadow-sm p-4 ">
+          <p className="text-sm text-[#475569]">Pending</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-4 ">
-          <p className="text-sm text-[#065A57]">Available</p>
-          <p className="text-2xl font-bold text-[#02BB31]">{stats.available}</p>
+        <div className="bg-white rounded-md shadow-sm p-4 ">
+          <p className="text-sm text-[#475569]">Available</p>
+          <p className="text-2xl font-bold text-[#126542]">{stats.available}</p>
         </div>
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="bg-white rounded-2xl shadow-lg p-4 border border-[#A8D8C1]">
+      <div className="bg-white rounded-md shadow-sm p-4 border border-[#E2E8F0]">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#065A57]" />
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#475569]" />
             <input
               type="text"
               placeholder="Search by title or location..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#126542] focus:border-transparent"
             />
           </div>
 
@@ -277,7 +277,7 @@ const LandlordListings = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              className="px-3 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#126542] text-[#475569]"
             >
               <option value="all">All Status</option>
               <option value="approved">Approved</option>
@@ -288,7 +288,7 @@ const LandlordListings = () => {
             <select
               value={availabilityFilter}
               onChange={(e) => setAvailabilityFilter(e.target.value)}
-              className="px-3 py-2 border border-[#A8D8C1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              className="px-3 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#126542] text-[#475569]"
             >
               <option value="all">All Availability</option>
               <option value="available">Available</option>
@@ -298,26 +298,26 @@ const LandlordListings = () => {
         </div>
 
         {/* Results count */}
-        <div className="mt-4 text-sm text-[#065A57]">
+        <div className="mt-4 text-sm text-[#475569]">
           Showing {filteredListings.length} of {listings.length} listings
         </div>
       </div>
 
       {/* Listings Display */}
       {filteredListings.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-[#A8D8C1]">
-          <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-            <FiHome className="text-3xl text-[#A8D8C1]" />
+        <div className="bg-white rounded-md shadow-sm p-12 text-center border border-[#E2E8F0]">
+          <div className="w-20 h-20 bg-[#F8FAFC] rounded-full flex items-center justify-center mx-auto mb-4">
+            <FiHome className="text-3xl text-[#E2E8F0]" />
           </div>
-          <h3 className="text-lg font-semibold text-[#013E43] mb-2">No listings found</h3>
-          <p className="text-sm text-[#065A57] mb-4">
+          <h3 className="text-lg font-semibold text-[#0F172A] mb-2">No listings found</h3>
+          <p className="text-sm text-[#475569] mb-4">
             {searchTerm || statusFilter !== "all" || availabilityFilter !== "all"
               ? "Try adjusting your filters"
               : "You haven't added any properties yet"}
           </p>
           <Link
             to="/listings/new"
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-light hover:shadow-lg transition-all"
+            className="inline-flex items-center px-6 py-3 bg-[#126542] text-white rounded-lg font-light hover:shadow-md transition-all"
           >
             <FiPlus className="mr-2" />
             Add Your First Listing
@@ -329,7 +329,7 @@ const LandlordListings = () => {
           {filteredListings.map((listing) => (
             <div
               key={listing._id}
-              className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1"
+              className="bg-white rounded-md shadow-sm border border-[#E2E8F0] overflow-hidden hover:shadow-md transition-all transform hover:-translate-y-1"
             >
               {/* Property Image */}
               <div className="relative h-48 overflow-hidden">
@@ -340,7 +340,7 @@ const LandlordListings = () => {
                     className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-r from-[#013E43] to-[#005C57] flex items-center justify-center">
+                  <div className="w-full h-full bg-[#123D38] flex items-center justify-center">
                     <FiHome className="text-4xl text-white opacity-50" />
                   </div>
                 )}
@@ -351,9 +351,9 @@ const LandlordListings = () => {
                 </div>
 
                 {/* Price Tag */}
-                <div className="absolute bottom-3 left-3 px-3 py-1 bg-[#013E43]/90 text-white text-sm font-semibold rounded-full">
+                <div className="absolute bottom-3 left-3 px-3 py-1 bg-[#0F172A]/90 text-white text-sm font-semibold rounded-full">
                   {formatPrice(listing.price)}
-                  <span className="text-xs text-[#A8D8C1]">/month</span>
+                  <span className="text-xs text-[#E2E8F0]">/month</span>
                 </div>
 
                 {/* Availability Badge */}
@@ -364,17 +364,17 @@ const LandlordListings = () => {
 
               {/* Content */}
               <div className="p-4">
-                <h3 className="text-lg font-semibold text-[#013E43] mb-1 line-clamp-1">
+                <h3 className="text-lg font-semibold text-[#0F172A] mb-1 line-clamp-1">
                   {listing.title}
                 </h3>
                 
-                <p className="text-sm text-[#065A57] mb-3 flex items-center">
+                <p className="text-sm text-[#475569] mb-3 flex items-center">
                   <FiMapPin className="mr-1 flex-shrink-0" />
                   <span className="line-clamp-1">{listing.location}</span>
                 </p>
 
                 {/* Property Features */}
-                <div className="flex items-center space-x-4 mb-3 text-sm text-[#065A57]">
+                <div className="flex items-center space-x-4 mb-3 text-sm text-[#475569]">
                   <span className="flex items-center">
                     <FaBed className="mr-1" /> {listing.bedrooms || 0}
                   </span>
@@ -387,12 +387,12 @@ const LandlordListings = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between pt-3 border-t border-[#A8D8C1]">
+                <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0]">
                   <a
                     href={`${mainUrl}/listings/${listing._id}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-sm text-[#02BB31] hover:text-[#0D915C] flex items-center"
+                    className="text-sm text-[#126542] hover:text-[#0D915C] flex items-center"
                   >
                     <FiEye className="mr-1" />
                     View Details
@@ -401,7 +401,7 @@ const LandlordListings = () => {
                   <div className="flex items-center space-x-2">
                     <Link
                       to={`/listings/${listing._id}/edit`}
-                      className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+                      className="p-2 text-[#475569] hover:bg-[#F8FAFC] rounded-lg transition-colors"
                       title="Edit"
                     >
                       <FiEdit2 />
@@ -431,7 +431,7 @@ const LandlordListings = () => {
                   ) : (
                     <button
                       onClick={() => handleAvailable(listing._id)}
-                      className="w-full py-2 text-sm bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
+                      className="w-full py-2 text-sm bg-[#126542] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
                     >
                       Mark as Available
                     </button>
@@ -443,10 +443,10 @@ const LandlordListings = () => {
         </div>
       ) : (
         /* Table View */
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-[#A8D8C1]">
+        <div className="bg-white rounded-md shadow-sm overflow-hidden border border-[#E2E8F0]">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gradient-to-r from-[#013E43] to-[#005C57] text-white">
+              <thead className="bg-[#123D38] text-white">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Property</th>
                   <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Location</th>
@@ -456,12 +456,12 @@ const LandlordListings = () => {
                   <th className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#A8D8C1]">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {filteredListings.map((listing) => (
-                  <tr key={listing._id} className="hover:bg-[#F0F7F4] transition-colors">
+                  <tr key={listing._id} className="hover:bg-[#F8FAFC] transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-[#013E43] to-[#005C57] rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="w-10 h-10 bg-[#123D38] rounded-lg overflow-hidden flex-shrink-0">
                           {listing.images?.[0] ? (
                             <img
                               src={listing.images[0].url || listing.images[0]}
@@ -475,27 +475,27 @@ const LandlordListings = () => {
                           )}
                         </div>
                         <div>
-                          <p className="font-medium text-[#013E43]">{listing.title}</p>
-                          <p className="text-xs text-[#065A57]">{listing.bedrooms} bed, {listing.bathrooms} bath</p>
+                          <p className="font-medium text-[#0F172A]">{listing.title}</p>
+                          <p className="text-xs text-[#475569]">{listing.bedrooms} bed, {listing.bathrooms} bath</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#013E43]">{listing.location}</td>
-                    <td className="px-6 py-4 font-bold text-[#02BB31]">{formatPrice(listing.price)}</td>
+                    <td className="px-6 py-4 text-sm text-[#0F172A]">{listing.location}</td>
+                    <td className="px-6 py-4 font-bold text-[#126542]">{formatPrice(listing.price)}</td>
                     <td className="px-6 py-4">{getStatusBadge(listing.status)}</td>
                     <td className="px-6 py-4">{getAvailabilityBadge(listing.availability)}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
                         <Link
                           to={`/listings/${listing._id}`}
-                          className="p-2 text-[#02BB31] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+                          className="p-2 text-[#126542] hover:bg-[#F8FAFC] rounded-lg transition-colors"
                           title="View Details"
                         >
                           <FiEye />
                         </Link>
                         <Link
                           to={`/listings/edit/${listing._id}`}
-                          className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+                          className="p-2 text-[#475569] hover:bg-[#F8FAFC] rounded-lg transition-colors"
                           title="Edit"
                         >
                           <FiEdit2 />
@@ -523,13 +523,13 @@ const LandlordListings = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedListing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <div className="bg-white rounded-md shadow-2xl max-w-md w-full p-6">
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
                 <FiTrash2 className="text-3xl text-red-500" />
               </div>
-              <h3 className="text-xl font-bold text-[#013E43] mb-2">Delete Listing</h3>
-              <p className="text-sm text-[#065A57]">
+              <h3 className="text-xl font-bold text-[#0F172A] mb-2">Delete Listing</h3>
+              <p className="text-sm text-[#475569]">
                 Are you sure you want to delete "{selectedListing.title}"? This action cannot be undone.
               </p>
             </div>
@@ -540,7 +540,7 @@ const LandlordListings = () => {
                   setShowDeleteModal(false);
                   setSelectedListing(null);
                 }}
-                className="flex-1 px-4 py-2 border border-[#A8D8C1] text-[#065A57] rounded-lg hover:bg-[#F0F7F4] transition-colors"
+                className="flex-1 px-4 py-2 border border-[#E2E8F0] text-[#475569] rounded-lg hover:bg-[#F8FAFC] transition-colors"
               >
                 Cancel
               </button>

@@ -11,7 +11,7 @@ import { getServiceCategories } from "../services/services.service";
 import { getApiErrorMessage } from "../utils/apiError";
 import { useSeo } from "../utils/seo";
 
-const homeCategorySlugs = ["rentals", "for-sale", "apartments", "office", "family"];
+const homeCategorySlugs = ["rentals", "for-sale", "apartments", "short-stays", "office", "family"];
 
 export default function Home() {
   useSeo({
@@ -76,7 +76,7 @@ export default function Home() {
 
   const visibleCategories = listingCategories.filter((category) => homeCategorySlugs.includes(category.slug));
   const categoriesBeforeServices = visibleCategories.filter((category) => ["rentals", "for-sale", "apartments"].includes(category.slug));
-  const categoriesAfterServices = visibleCategories.filter((category) => ["office", "family"].includes(category.slug));
+  const categoriesAfterServices = visibleCategories.filter((category) => ["short-stays", "office", "family"].includes(category.slug));
 
   if (loading) {
     return <LoadingScreen label="Loading RendaHomes" />;
@@ -87,15 +87,15 @@ export default function Home() {
       <HeroSearch listings={recent} />
       <BackendNotice message={error} />
       <CategoryStrip />
-      <ListingRail title="Featured listings" eyebrow="Premium and highlighted homes" listings={featured.slice(0, 10)} viewAllTo="/listings?sort=popular" />
+      <ListingRail title="Featured listings" listings={featured.slice(0, 10)} viewAllTo="/listings?sort=popular" gridOnMobile />
       {categoriesBeforeServices.map((category) => (
         <ListingRail
           key={category.slug}
           title={category.title}
-          eyebrow={category.eyebrow}
           listings={categoryListings[category.slug] || []}
           viewAllTo={`/categories/${category.slug}`}
           emptyText={`No ${category.title.toLowerCase()} available yet.`}
+          gridOnMobile
         />
       ))}
       <ServicesPreview categories={serviceCategories} />
@@ -103,10 +103,10 @@ export default function Home() {
         <ListingRail
           key={category.slug}
           title={category.title}
-          eyebrow={category.eyebrow}
           listings={categoryListings[category.slug] || []}
           viewAllTo={`/categories/${category.slug}`}
           emptyText={`No ${category.title.toLowerCase()} available yet.`}
+          gridOnMobile
         />
       ))}
     </div>

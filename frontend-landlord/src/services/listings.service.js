@@ -24,6 +24,16 @@ export const getMyListings = async () => {
   return response.data;
 };
 
+export const groupMyPortfolioListings = async (payload) => {
+  const response = await api.patch("/listings/landlord/portfolio/group", payload);
+  return response.data;
+};
+
+export const importListingsCsv = async (csv) => {
+  const response = await api.post("/listings/landlord/import-csv", { csv });
+  return response.data;
+};
+
 export const markListingTaken = async (id) => {
   const response = await api.patch(`/listings/${id}/mark-taken`);
   return response.data;
@@ -59,6 +69,16 @@ export const deleteListing = async (id) => {
 
 export const getListingMeta = async () => {
   const response = await api.get("/listings/meta");
+  return response.data;
+};
+
+export const getLandlordStayRequests = async () => {
+  const response = await api.get("/stays/landlord/requests");
+  return response.data;
+};
+
+export const updateLandlordStayRequest = async (id, status) => {
+  const response = await api.patch(`/stays/landlord/requests/${id}/status`, { status });
   return response.data;
 };
 

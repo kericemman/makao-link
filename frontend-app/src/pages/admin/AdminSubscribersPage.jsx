@@ -1,180 +1,120 @@
-import { useEffect, useState } from "react";
-import { getNewsletterSubscribers} from "../../services/blog.service";
-import { 
-  FiMail, 
-  FiUsers, 
-  FiDownload, 
-  FiTrash2,
-  FiSearch,
-  FiFilter,
-  FiRefreshCw,
-  FiCalendar,
-  FiCheckCircle,
-  FiXCircle,
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { getSubscribers, updateSubscriberStatus } from "../../services/app/adminContent.service";
+import {
   FiAlertCircle,
-  FiUserCheck,
-  FiUserX,
-  FiChevronDown,
-  FiArrowRight
+  FiCheckCircle,
+  FiDownload,
+  FiGlobe,
+  FiMail,
+  FiRefreshCw,
+  FiSearch,
+  FiSmartphone,
+  FiUsers,
+  FiXCircle,
 } from "react-icons/fi";
-import { FaEnvelope, FaUserPlus } from "react-icons/fa";
 import toast from "react-hot-toast";
 
-const AdminNewsletterSubscribersPage = () => {
-  const [subscribers, setSubscribers] = useState([]);
-  const [filteredSubscribers, setFilteredSubscribers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [dateRange, setDateRange] = useState("all");
-  const [error, setError] = useState("");
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedSubscriber, setSelectedSubscriber] = useState(null);
-  const [deletingId, setDeletingId] = useState("");
-  const [exporting, setExporting] = useState(false);
+const dateLabel = (date) => {
+  if (!date) return "—";
+  const parsed = new Date(date);
+  return Number.isNaN(parsed.getTime()) ? "—" : parsed.toLocaleDateString("en-KE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
 
-  const fetchSubscribers = async () => {
+const csvCell = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+
+export default function AdminSubscribersPage() {
+  const [subscribers, setSubscribers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [updatingEmail, setUpdatingEmail] = useState("");
+  const [fetching, setFetching] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadSubscribers = useCallback(async () => {
     try {
-      setLoading(true);
+      setFetching(true);
       setError("");
-      const data = await getNewsletterSubscribers();
+      const { data } = await getSubscribers();
       setSubscribers(data.subscribers || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load subscribers");
       toast.error("Failed to load subscribers", {
-        style: { background: "#013E43", color: "#fff" }
+        style: { background: "#013E43", color: "#fff" },
       });
     } finally {
-      setLoading(false);
+      setFetching(false);
     }
-  };
-
-  useEffect(() => {
-    fetchSubscribers();
   }, []);
 
   useEffect(() => {
-    filterSubscribers();
-  }, [subscribers, searchTerm, statusFilter, dateRange]);
+    loadSubscribers();
+  }, [loadSubscribers]);
 
-  const filterSubscribers = () => {
-    let filtered = [...subscribers];
+  const filteredSubscribers = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return subscribers
+      .filter((subscriber) => !query || subscriber.email?.toLowerCase().includes(query))
+      .filter((subscriber) => sourceFilter === "all" || subscriber.sources?.includes(sourceFilter))
+      .filter((subscriber) => statusFilter === "all" || (statusFilter === "active" ? subscriber.isActive : !subscriber.isActive))
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }, [subscribers, search, sourceFilter, statusFilter]);
 
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(sub => 
-        sub.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Status filter
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(sub => 
-        statusFilter === "active" ? sub.isActive : !sub.isActive
-      );
-    }
-
-    // Date range filter
-    if (dateRange !== "all") {
-      const now = new Date();
-      const filterDate = new Date();
-      
-      switch(dateRange) {
-        case "today":
-          filterDate.setHours(0, 0, 0, 0);
-          filtered = filtered.filter(sub => new Date(sub.createdAt) >= filterDate);
-          break;
-        case "week":
-          filterDate.setDate(filterDate.getDate() - 7);
-          filtered = filtered.filter(sub => new Date(sub.createdAt) >= filterDate);
-          break;
-        case "month":
-          filterDate.setMonth(filterDate.getMonth() - 1);
-          filtered = filtered.filter(sub => new Date(sub.createdAt) >= filterDate);
-          break;
-      }
-    }
-
-    setFilteredSubscribers(filtered);
-  };
-
-  const handleUnsubscribe = async () => {
-    try {
-      setDeletingId(selectedSubscriber._id);
-      await unsubscribeSubscriber(selectedSubscriber._id);
-      toast.success("Subscriber removed successfully", {
-        style: { background: "#02BB31", color: "#fff" }
-      });
-      setShowDeleteModal(false);
-      setSelectedSubscriber(null);
-      fetchSubscribers();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to remove subscriber", {
-        style: { background: "#013E43", color: "#fff" }
-      });
-    } finally {
-      setDeletingId("");
-    }
-  };
-
-  const handleExport = async () => {
-    try {
-      setExporting(true);
-      const data = await exportSubscribers();
-      
-      // Create CSV content
-      const csvContent = "Email,Status,Subscribed At\n" + 
-        subscribers.map(sub => 
-          `${sub.email},${sub.isActive ? "Active" : "Inactive"},${new Date(sub.createdAt).toLocaleString()}`
-        ).join("\n");
-      
-      const blob = new Blob([csvContent], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `subscribers_${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      toast.success("Subscribers exported successfully", {
-        style: { background: "#02BB31", color: "#fff" }
-      });
-    } catch (err) {
-      toast.error("Failed to export subscribers", {
-        style: { background: "#013E43", color: "#fff" }
-      });
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const stats = {
+  const stats = useMemo(() => ({
     total: subscribers.length,
-    active: subscribers.filter(s => s.isActive).length,
-    inactive: subscribers.filter(s => !s.isActive).length,
-    newThisMonth: subscribers.filter(s => {
-      const monthAgo = new Date();
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      return new Date(s.createdAt) >= monthAgo;
-    }).length
+    website: subscribers.filter((subscriber) => subscriber.sources?.includes("website")).length,
+    mobile: subscribers.filter((subscriber) => subscriber.sources?.includes("mobile_app")).length,
+    active: subscribers.filter((subscriber) => subscriber.isActive).length,
+  }), [subscribers]);
+
+  const toggleSubscriber = async (subscriber) => {
+    try {
+      setUpdatingEmail(subscriber.email);
+      await updateSubscriberStatus({ email: subscriber.email, isActive: !subscriber.isActive });
+      setSubscribers((current) => current.map((item) => item.email === subscriber.email
+        ? { ...item, isActive: !subscriber.isActive }
+        : item));
+      toast.success(subscriber.isActive ? "Subscriber deactivated" : "Subscriber activated", {
+        style: { background: "#013E43", color: "#fff" },
+      });
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update subscriber", {
+        style: { background: "#013E43", color: "#fff" },
+      });
+    } finally {
+      setUpdatingEmail("");
+    }
   };
 
-  if (loading) {
+  const exportSubscribers = () => {
+    const rows = [
+      ["email", "audiences", "status", "joined"],
+      ...filteredSubscribers.map((subscriber) => [
+        subscriber.email,
+        (subscriber.sources || []).join("; "),
+        subscriber.isActive ? "active" : "inactive",
+        subscriber.createdAt,
+      ]),
+    ];
+    const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `rendahomes-subscribers-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (fetching) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex min-h-72 items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E4EEE8] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading subscribers...</p>
+          <div className="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-[#DDEAE3] border-t-[#0D915C]" />
+          <p className="text-sm font-semibold text-[#013E43]">Loading subscriber audiences...</p>
         </div>
       </div>
     );
@@ -182,16 +122,11 @@ const AdminNewsletterSubscribersPage = () => {
 
   if (error && subscribers.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-[#E4EEE8]">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <FiAlertCircle className="text-3xl text-red-500" />
-        </div>
-        <p className="text-red-600 mb-4">{error}</p>
-        <button
-          onClick={fetchSubscribers}
-          className="px-4 py-2 bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
-        >
-          Try Again
+      <div role="alert" className="mx-auto max-w-xl border-y border-red-200 bg-white px-5 py-8 text-center">
+        <FiAlertCircle className="mx-auto mb-3 text-3xl text-red-600" />
+        <p className="text-sm font-semibold text-[#013E43]">{error}</p>
+        <button onClick={loadSubscribers} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#0D915C] px-4 py-2 text-sm font-semibold text-white hover:bg-[#08764C]">
+          <FiRefreshCw /> Retry
         </button>
       </div>
     );
@@ -199,243 +134,94 @@ const AdminNewsletterSubscribersPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-[#E4EEE8]">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-[#013E43] rounded-md">
-              <FiMail className="text-white text-2xl" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-[#013E43]">Newsletter Subscribers</h1>
-              <p className="text-sm text-[#065A57]">
-                Manage and export your email subscriber list
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={fetchSubscribers}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-              title="Refresh"
-            >
-              <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
-            </button>
-            <button
-              onClick={handleExport}
-              disabled={exporting || subscribers.length === 0}
-              className="px-4 py-2 bg-[#013E43] text-white rounded-lg hover:bg-[#005C57] transition-colors flex items-center gap-2 disabled:opacity-50"
-            >
-              <FiDownload />
-              <span>{exporting ? "Exporting..." : "Export CSV"}</span>
-            </button>
-          </div>
+      <header className="flex flex-col justify-between gap-4 border-b border-[#DDEAE3] pb-5 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0D915C]">Audience</p>
+          <h1 className="mt-1 text-2xl font-semibold text-[#013E43]">Subscribers</h1>
+          <p className="mt-1 text-sm text-[#647C75]">Website and mobile app update audiences, combined by email address.</p>
         </div>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={loadSubscribers} title="Refresh subscribers" aria-label="Refresh subscribers" className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#DDEAE3] text-[#41635A] transition hover:bg-[#F1F7F3]">
+            <FiRefreshCw />
+          </button>
+          <button type="button" onClick={exportSubscribers} disabled={!filteredSubscribers.length} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#013E43] px-4 text-sm font-semibold text-white transition hover:bg-[#075B53] disabled:cursor-not-allowed disabled:opacity-50">
+            <FiDownload /> Export CSV
+          </button>
+        </div>
+      </header>
+
+      <section aria-label="Subscriber overview" className="grid grid-cols-2 border-y border-[#DDEAE3] sm:grid-cols-4">
+        {[
+          ["Unique subscribers", stats.total],
+          ["Website audience", stats.website],
+          ["Mobile app audience", stats.mobile],
+          ["Active emails", stats.active],
+        ].map(([label, value], index) => (
+          <div key={label} className={`py-4 ${index % 2 ? "pl-4 sm:pl-5" : "pr-4 sm:pr-5"} ${index > 1 ? "border-t border-[#DDEAE3] sm:border-t-0" : ""} ${index > 0 ? "sm:border-l sm:border-[#DDEAE3] sm:pl-5" : ""}`}>
+            <p className="text-xs font-medium text-[#647C75]">{label}</p>
+            <p className="mt-1 text-xl font-semibold text-[#013E43]">{value}</p>
+          </div>
+        ))}
+      </section>
+      <p className="-mt-4 text-xs text-[#647C75]">People subscribed to both audiences appear once and are counted in each audience total.</p>
+
+      <section aria-label="Subscriber filters" className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label className="relative min-w-0 flex-1">
+          <FiSearch aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#647C75]" />
+          <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by email" className="h-11 w-full rounded-lg border border-[#DDEAE3] bg-white pl-10 pr-3 text-sm text-[#013E43] outline-none placeholder:text-[#84958F] focus:border-[#0D915C] focus:ring-2 focus:ring-[#0D915C]/15" />
+        </label>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <select aria-label="Filter by audience" value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} className="h-11 min-w-0 rounded-lg border border-[#DDEAE3] bg-white px-3 text-sm text-[#013E43] outline-none focus:border-[#0D915C]">
+            <option value="all">All audiences</option>
+            <option value="website">Website</option>
+            <option value="mobile_app">Mobile app</option>
+          </select>
+          <select aria-label="Filter by status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-11 min-w-0 rounded-lg border border-[#DDEAE3] bg-white px-3 text-sm text-[#013E43] outline-none focus:border-[#0D915C]">
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </section>
+
+      <div className="flex items-center justify-between border-b border-[#DDEAE3] pb-2 text-xs text-[#647C75]">
+        <span>{filteredSubscribers.length} of {subscribers.length} unique subscribers</span>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Total Subscribers</p>
-          <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
-        </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Active</p>
-          <p className="text-2xl font-bold text-[#02BB31]">{stats.active}</p>
-        </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Inactive</p>
-          <p className="text-2xl font-bold text-red-500">{stats.inactive}</p>
-        </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">New This Month</p>
-          <p className="text-2xl font-bold text-purple-600">{stats.newThisMonth}</p>
-        </div>
-      </div>
-
-      {/* Search and Filter Bar */}
-      <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E4EEE8]">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#065A57]" />
-            <input
-              type="text"
-              placeholder="Search by email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] focus:border-transparent"
-            />
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap gap-3">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
-            >
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">Last 7 Days</option>
-              <option value="month">Last 30 Days</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Results count */}
-        <div className="mt-4 text-sm text-[#065A57]">
-          Showing {filteredSubscribers.length} of {subscribers.length} subscribers
-        </div>
-      </div>
-
-      {/* Subscribers Table */}
       {filteredSubscribers.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center border border-[#E4EEE8]">
-          <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-            <FiMail className="text-3xl text-[#A8D8C1]" />
-          </div>
-          <h3 className="text-lg font-semibold text-[#013E43] mb-2">No subscribers found</h3>
-          <p className="text-sm text-[#065A57]">
-            {searchTerm || statusFilter !== "all" || dateRange !== "all"
-              ? "Try adjusting your filters"
-              : "No one has subscribed to the newsletter yet"}
-          </p>
+        <div className="border-y border-[#DDEAE3] px-5 py-12 text-center">
+          <FiUsers className="mx-auto mb-3 text-2xl text-[#83958E]" />
+          <h2 className="text-base font-semibold text-[#013E43]">No subscribers found</h2>
+          <p className="mt-1 text-sm text-[#647C75]">{search || sourceFilter !== "all" || statusFilter !== "all" ? "Try adjusting your search or filters." : "New website and mobile app signups will appear here."}</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-[#E4EEE8]">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#013E43] text-white">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Subscribed At</th>
-                  <th className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#A8D8C1]">
-                {filteredSubscribers.map((subscriber) => (
-                  <tr key={subscriber._id} className="hover:bg-[#F0F7F4] transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-[#013E43] rounded-full flex items-center justify-center text-white font-bold">
-                          {subscriber.email?.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-medium text-[#013E43]">{subscriber.email}</p>
-                          <p className="text-xs text-[#065A57]">ID: {subscriber._id.slice(-8)}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {subscriber.isActive ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#02BB31]/10 text-white">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">
-                          <FiXCircle className="mr-1" />
-                          Inactive
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="text-sm text-[#013E43]">{formatDate(subscriber.createdAt)}</p>
-                        <p className="text-xs text-[#065A57] flex items-center mt-0.5">
-                          <FiCalendar className="mr-1 text-[#02BB31]" />
-                          {new Date(subscriber.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedSubscriber(subscriber);
-                          setShowDeleteModal(true);
-                        }}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Remove Subscriber"
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="px-6 py-4 border-t border-[#E4EEE8] flex items-center justify-between">
-            <p className="text-sm text-[#065A57]">
-              Showing 1-{filteredSubscribers.length} of {filteredSubscribers.length} subscribers
-            </p>
-            <div className="flex space-x-2">
-              <button className="px-3 py-1 border border-[#E4EEE8] rounded text-[#065A57] hover:bg-[#F0F7F4]">
-                Previous
-              </button>
-              <button className="px-3 py-1 bg-[#02BB31] text-white rounded hover:bg-[#0D915C]">
-                1
-              </button>
-              <button className="px-3 py-1 border border-[#E4EEE8] rounded text-[#065A57] hover:bg-[#F0F7F4]">
-                Next
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedSubscriber && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-sm max-w-md w-full p-6">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-                <FiTrash2 className="text-3xl text-red-500" />
+        <div className="divide-y divide-[#E7EFEB]">
+          {filteredSubscribers.map((subscriber) => (
+            <article key={subscriber.email} className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(145px,auto)_auto] sm:items-center">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E8F0F0] text-[#013E43]"><FiMail aria-hidden="true" /></div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[#013E43]">{subscriber.email}</p>
+                  <p className="mt-0.5 text-xs text-[#647C75]">Joined {dateLabel(subscriber.createdAt)}</p>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-[#013E43] mb-2">Remove Subscriber</h3>
-              <p className="text-sm text-[#065A57]">
-                Are you sure you want to remove "{selectedSubscriber.email}" from the newsletter list? 
-                This action cannot be undone.
-              </p>
-            </div>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setSelectedSubscriber(null);
-                }}
-                className="flex-1 px-4 py-2 border border-[#E4EEE8] text-[#065A57] rounded-lg hover:bg-[#F0F7F4] transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUnsubscribe}
-                disabled={deletingId === selectedSubscriber._id}
-                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
-              >
-                {deletingId === selectedSubscriber._id ? "Removing..." : "Remove"}
-              </button>
-            </div>
-          </div>
+              <div className="flex flex-wrap gap-1.5">
+                {subscriber.sources?.includes("website") && <span className="inline-flex items-center gap-1 rounded-full bg-[#E8F0F0] px-2.5 py-1 text-xs font-medium text-[#013E43]"><FiGlobe aria-hidden="true" /> Website</span>}
+                {subscriber.sources?.includes("mobile_app") && <span className="inline-flex items-center gap-1 rounded-full bg-[#EAF5EF] px-2.5 py-1 text-xs font-medium text-[#08764C]"><FiSmartphone aria-hidden="true" /> Mobile app</span>}
+              </div>
+              <div className="flex items-center justify-between gap-3 sm:justify-end">
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${subscriber.isActive ? "bg-emerald-50 text-emerald-800" : "bg-[#F1F5F3] text-[#526760]"}`}>
+                  {subscriber.isActive ? <FiCheckCircle aria-hidden="true" /> : <FiXCircle aria-hidden="true" />}
+                  {subscriber.isActive ? "Active" : "Inactive"}
+                </span>
+                <button type="button" disabled={updatingEmail === subscriber.email} onClick={() => toggleSubscriber(subscriber)} className="min-w-24 rounded-lg border border-[#DDEAE3] px-3 py-2 text-xs font-semibold text-[#41635A] transition hover:bg-[#F1F7F3] disabled:opacity-50">
+                  {updatingEmail === subscriber.email ? "Saving..." : subscriber.isActive ? "Deactivate" : "Activate"}
+                </button>
+              </div>
+            </article>
+          ))}
         </div>
       )}
     </div>
   );
-};
-
-export default AdminNewsletterSubscribersPage;
+}

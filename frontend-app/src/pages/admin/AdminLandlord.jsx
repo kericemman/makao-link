@@ -25,7 +25,7 @@ import toast from "react-hot-toast";
 const statusClasses = {
   free: "bg-gray-100 text-gray-600",
   pending_payment: "bg-yellow-100 text-yellow-600",
-  active: "bg-[#02BB31]/10 text-[#02BB31]",
+  active: "bg-[#0D915C]/10 text-[#0D915C]",
   grace: "bg-orange-100 text-orange-600",
   expired: "bg-red-100 text-red-600",
   cancelled: "bg-gray-100 text-gray-600"
@@ -34,7 +34,7 @@ const statusClasses = {
 const statusIcons = {
   free: <FiInfo className="text-gray-500" />,
   pending_payment: <FiAlertCircle className="text-yellow-500" />,
-  active: <FiCheckCircle className="text-[#02BB31]" />,
+  active: <FiCheckCircle className="text-[#0D915C]" />,
   grace: <FiAlertCircle className="text-orange-500" />,
   expired: <FiAlertCircle className="text-red-500" />,
   cancelled: <FiAlertCircle className="text-gray-500" />
@@ -144,8 +144,8 @@ const AdminLandlordsPage = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E4EEE8] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading landlords...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#DDEAE3] border-t-[#0D915C] mx-auto mb-4"></div>
+          <p className="text-[#41635A]">Loading landlords...</p>
         </div>
       </div>
     );
@@ -153,14 +153,14 @@ const AdminLandlordsPage = () => {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-[#E4EEE8]">
+      <div className="bg-white rounded-lg shadow-none p-8 text-center border border-[#DDEAE3]">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <FiAlertCircle className="text-3xl text-red-500" />
         </div>
         <p className="text-red-600 mb-4">{error}</p>
         <button
           onClick={fetchLandlords}
-          className="px-4 py-2 bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
+          className="px-4 py-2 bg-[#0D915C] text-white rounded-lg hover:bg-[#08764C] transition-colors"
         >
           Try Again
         </button>
@@ -171,13 +171,13 @@ const AdminLandlordsPage = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-[#E4EEE8]">
+      <div className="border-b border-[#DDEAE3] pb-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
            
             <div>
               <h1 className="text-xl font-bold text-[#013E43]">Landlords</h1>
-              <p className="text-sm text-[#065A57]">
+              <p className="text-sm text-[#41635A]">
                 View and manage landlord accounts, plans, and listing activity
               </p>
             </div>
@@ -186,7 +186,7 @@ const AdminLandlordsPage = () => {
           <div className="flex items-center space-x-3">
             <button
               onClick={fetchLandlords}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 text-[#41635A] hover:bg-[#F1F7F3] rounded-lg transition-colors"
               title="Refresh"
             >
               <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
@@ -197,40 +197,40 @@ const AdminLandlordsPage = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Total Landlords</p>
+        <div className="border-b border-[#DDEAE3] py-4 ">
+          <p className="text-sm text-[#41635A]">Total Landlords</p>
           <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Active</p>
-          <p className="text-2xl font-bold text-[#02BB31]">{stats.active}</p>
+        <div className="border-b border-[#DDEAE3] py-4 ">
+          <p className="text-sm text-[#41635A]">Active</p>
+          <p className="text-2xl font-bold text-[#0D915C]">{stats.active}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Pending Payment</p>
+        <div className="border-b border-[#DDEAE3] py-4 ">
+          <p className="text-sm text-[#41635A]">Pending Payment</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Expired</p>
+        <div className="border-b border-[#DDEAE3] py-4 ">
+          <p className="text-sm text-[#41635A]">Expired</p>
           <p className="text-2xl font-bold text-red-500">{stats.expired}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Total Listings</p>
+        <div className="border-b border-[#DDEAE3] py-4 ">
+          <p className="text-sm text-[#41635A]">Total Listings</p>
           <p className="text-2xl font-bold text-purple-600">{stats.totalListings}</p>
         </div>
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E4EEE8]">
+      <div className="border-y border-[#DDEAE3] py-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#065A57]" />
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#41635A]" />
             <input
               type="text"
               placeholder="Search by name, email, or phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-[#DDEAE3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D915C] focus:border-transparent"
             />
           </div>
 
@@ -239,7 +239,7 @@ const AdminLandlordsPage = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              className="px-3 py-2 border border-[#DDEAE3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D915C] text-[#41635A]"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -252,7 +252,7 @@ const AdminLandlordsPage = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              className="px-3 py-2 border border-[#DDEAE3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D915C] text-[#41635A]"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -263,26 +263,26 @@ const AdminLandlordsPage = () => {
         </div>
 
         {/* Results count */}
-        <div className="mt-4 text-sm text-[#065A57]">
+        <div className="mt-4 text-sm text-[#41635A]">
           Showing {filteredLandlords.length} of {landlords.length} landlords
         </div>
       </div>
 
       {/* Landlords Table */}
       {filteredLandlords.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center border border-[#E4EEE8]">
-          <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-            <FiUsers className="text-3xl text-[#A8D8C1]" />
+        <div className="border-y border-[#DDEAE3] px-6 py-12 text-center">
+          <div className="w-20 h-20 bg-[#F1F7F3] rounded-full flex items-center justify-center mx-auto mb-4">
+            <FiUsers className="text-3xl text-[#BBD2C6]" />
           </div>
           <h2 className="text-lg font-semibold text-[#013E43] mb-2">No landlords found</h2>
-          <p className="text-sm text-[#065A57]">
+          <p className="text-sm text-[#41635A]">
             {searchTerm || statusFilter !== "all"
               ? "Try adjusting your search or filters"
               : "Landlord accounts will appear here once they register."}
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-[#E4EEE8]">
+        <div className="border-y border-[#DDEAE3] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-[#013E43] text-white">
@@ -295,9 +295,9 @@ const AdminLandlordsPage = () => {
                   <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Joined</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#A8D8C1]">
+              <tbody className="divide-y divide-[#BBD2C6]">
                 {filteredLandlords.map((landlord) => (
-                  <tr key={landlord._id} className="hover:bg-[#F0F7F4] transition-colors">
+                  <tr key={landlord._id} className="hover:bg-[#F1F7F3] transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-[#013E43] rounded-full flex items-center justify-center text-white font-bold">
@@ -305,11 +305,11 @@ const AdminLandlordsPage = () => {
                         </div>
                         <div>
                           <p className="font-medium text-[#013E43]">{landlord.name}</p>
-                          <p className="text-xs text-[#065A57] flex items-center">
+                          <p className="text-xs text-[#41635A] flex items-center">
                             <FiMail className="mr-1" /> {landlord.email}
                           </p>
                           {landlord.phone && (
-                            <p className="text-xs text-[#065A57] flex items-center mt-0.5">
+                            <p className="text-xs text-[#41635A] flex items-center mt-0.5">
                               <FiPhone className="mr-1" /> {landlord.phone}
                             </p>
                           )}
@@ -321,7 +321,7 @@ const AdminLandlordsPage = () => {
                         <p className="font-medium text-[#013E43] capitalize">
                           {landlord.subscription?.plan || "Free"}
                         </p>
-                        <p className="text-xs text-[#065A57]">
+                        <p className="text-xs text-[#41635A]">
                           Limit: {landlord.subscription?.listingLimit || 1}
                         </p>
                       </div>
@@ -341,7 +341,7 @@ const AdminLandlordsPage = () => {
                         <p className="font-medium text-[#013E43]">
                           {landlord.stats?.activeListings || 0} active
                         </p>
-                        <p className="text-xs text-[#065A57]">
+                        <p className="text-xs text-[#41635A]">
                           {landlord.stats?.totalListings || 0} total
                         </p>
                       </div>
@@ -353,11 +353,11 @@ const AdminLandlordsPage = () => {
                             {formatDate(landlord.subscription.currentPeriodEnd)}
                           </p>
                           {landlord.subscription?.status === "active" && (
-                            <p className="text-xs text-[#02BB31]">Next billing</p>
+                            <p className="text-xs text-[#0D915C]">Next billing</p>
                           )}
                         </div>
                       ) : (
-                        <p className="text-sm text-[#065A57]">—</p>
+                        <p className="text-sm text-[#41635A]">—</p>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -365,7 +365,7 @@ const AdminLandlordsPage = () => {
                         <p className="text-sm text-[#013E43]">
                           {formatDate(landlord.createdAt)}
                         </p>
-                        <p className="text-xs text-[#065A57]">
+                        <p className="text-xs text-[#41635A]">
                           {new Date(landlord.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                         </p>
                       </div>
@@ -377,18 +377,18 @@ const AdminLandlordsPage = () => {
           </div>
 
           {/* Pagination */}
-          <div className="px-6 py-4 border-t border-[#E4EEE8] flex items-center justify-between">
-            <p className="text-sm text-[#065A57]">
+          <div className="px-6 py-4 border-t border-[#DDEAE3] flex items-center justify-between">
+            <p className="text-sm text-[#41635A]">
               Showing 1-{filteredLandlords.length} of {filteredLandlords.length} landlords
             </p>
             <div className="flex space-x-2">
-              <button className="px-3 py-1 border border-[#E4EEE8] rounded text-[#065A57] hover:bg-[#F0F7F4]">
+              <button className="px-3 py-1 border border-[#DDEAE3] rounded text-[#41635A] hover:bg-[#F1F7F3]">
                 Previous
               </button>
-              <button className="px-3 py-1 bg-[#02BB31] text-white rounded hover:bg-[#0D915C]">
+              <button className="px-3 py-1 bg-[#0D915C] text-white rounded hover:bg-[#08764C]">
                 1
               </button>
-              <button className="px-3 py-1 border border-[#E4EEE8] rounded text-[#065A57] hover:bg-[#F0F7F4]">
+              <button className="px-3 py-1 border border-[#DDEAE3] rounded text-[#41635A] hover:bg-[#F1F7F3]">
                 Next
               </button>
             </div>

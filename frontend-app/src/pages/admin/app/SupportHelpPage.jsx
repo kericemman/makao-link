@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   deleteHelpRequest,
   deleteSupportTicket,
@@ -42,9 +43,10 @@ const formatDate = (date) =>
     : "";
 
 export default function SupportHelpPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tickets, setTickets] = useState([]);
   const [requests, setRequests] = useState([]);
-  const [activeTab, setActiveTab] = useState("tickets");
+  const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") === "requests" ? "requests" : "tickets");
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -119,7 +121,7 @@ export default function SupportHelpPage() {
     try {
       await updateSupportTicket(id, { status });
       toast.success("Ticket updated", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
       loadData();
     } catch (err) {
@@ -133,7 +135,7 @@ export default function SupportHelpPage() {
     try {
       await updateHelpRequest(id, { status });
       toast.success("Help request updated", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
       loadData();
     } catch (err) {
@@ -149,7 +151,7 @@ export default function SupportHelpPage() {
     try {
       await deleteSupportTicket(id);
       toast.success("Ticket deleted", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
       loadData();
     } catch (err) {
@@ -165,7 +167,7 @@ export default function SupportHelpPage() {
     try {
       await deleteHelpRequest(id);
       toast.success("Help request deleted", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
       loadData();
     } catch (err) {
@@ -177,12 +179,20 @@ export default function SupportHelpPage() {
 
   const statuses = activeTab === "tickets" ? ticketStatuses : requestStatuses;
 
+  const selectTab = (tab) => {
+    setActiveTab(tab);
+    setStatusFilter("all");
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", tab);
+    setSearchParams(next, { replace: true });
+  };
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#E4EEE8] border-t-[#02BB31]" />
-          <p className="text-[#065A57]">Loading support and help...</p>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#DDEAE3] border-t-[#0D915C]" />
+          <p className="text-[#41635A]">Loading support and help...</p>
         </div>
       </div>
     );
@@ -190,7 +200,7 @@ export default function SupportHelpPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-[#E4EEE8] bg-white p-6 shadow-sm">
+      <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
             <div className="rounded-md bg-[#013E43] p-3">
@@ -198,7 +208,7 @@ export default function SupportHelpPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-[#013E43]">Support & Help</h1>
-              <p className="text-sm text-[#065A57]">
+              <p className="text-sm text-[#41635A]">
                 Manage mobile app support tickets and property help requests
               </p>
             </div>
@@ -207,7 +217,7 @@ export default function SupportHelpPage() {
           <button
             type="button"
             onClick={loadData}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#E4EEE8] px-4 py-2 text-[#065A57] transition-colors hover:bg-[#F0F7F4]"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#DDEAE3] px-4 py-2 text-[#41635A] transition-colors hover:bg-[#F1F7F3]"
           >
             <FiRefreshCw />
             Refresh
@@ -216,23 +226,23 @@ export default function SupportHelpPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <div className="rounded-md border-l-4 border-[#013E43] bg-white p-4 shadow-sm">
-          <p className="text-sm text-[#065A57]">Support Tickets</p>
+        <div className="rounded-md border-l-4 border-[#013E43] bg-white p-4 shadow-none">
+          <p className="text-sm text-[#41635A]">Support Tickets</p>
           <p className="text-2xl font-bold text-[#013E43]">{tickets.length}</p>
         </div>
-        <div className="rounded-md border-l-4 border-[#02BB31] bg-white p-4 shadow-sm">
-          <p className="text-sm text-[#065A57]">Help Requests</p>
-          <p className="text-2xl font-bold text-[#02BB31]">{requests.length}</p>
+        <div className="rounded-md border-l-4 border-[#0D915C] bg-white p-4 shadow-none">
+          <p className="text-sm text-[#41635A]">Help Requests</p>
+          <p className="text-2xl font-bold text-[#0D915C]">{requests.length}</p>
         </div>
-        <div className="rounded-md border-l-4 border-amber-400 bg-white p-4 shadow-sm">
-          <p className="text-sm text-[#065A57]">Open Items</p>
+        <div className="rounded-md border-l-4 border-amber-400 bg-white p-4 shadow-none">
+          <p className="text-sm text-[#41635A]">Open Items</p>
           <p className="text-2xl font-bold text-amber-600">
             {tickets.filter((item) => item.status !== "resolved").length +
               requests.filter((item) => item.status !== "resolved").length}
           </p>
         </div>
-        <div className="rounded-md border-l-4 border-blue-400 bg-white p-4 shadow-sm">
-          <p className="text-sm text-[#065A57]">Resolved</p>
+        <div className="rounded-md border-l-4 border-blue-400 bg-white p-4 shadow-none">
+          <p className="text-sm text-[#41635A]">Resolved</p>
           <p className="text-2xl font-bold text-blue-600">
             {tickets.filter((item) => item.status === "resolved").length +
               requests.filter((item) => item.status === "resolved").length}
@@ -240,33 +250,27 @@ export default function SupportHelpPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-[#E4EEE8] bg-white p-4 shadow-sm">
+      <div className="rounded-lg border border-[#DDEAE3] bg-white p-4 shadow-none">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="inline-flex rounded-md bg-[#F0F7F4] p-1">
+          <div className="inline-flex rounded-md bg-[#F1F7F3] p-1">
             <button
               type="button"
-              onClick={() => {
-                setActiveTab("tickets");
-                setStatusFilter("all");
-              }}
+              onClick={() => selectTab("tickets")}
               className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                 activeTab === "tickets"
                   ? "bg-white text-[#013E43] shadow"
-                  : "text-[#065A57]"
+                  : "text-[#41635A]"
               }`}
             >
               Support Tickets
             </button>
             <button
               type="button"
-              onClick={() => {
-                setActiveTab("requests");
-                setStatusFilter("all");
-              }}
+              onClick={() => selectTab("requests")}
               className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                 activeTab === "requests"
                   ? "bg-white text-[#013E43] shadow"
-                  : "text-[#065A57]"
+                  : "text-[#41635A]"
               }`}
             >
               Help Requests
@@ -280,13 +284,13 @@ export default function SupportHelpPage() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search"
-                className="w-full rounded-lg border-2 border-[#E4EEE8] py-2 pl-10 pr-3 outline-none focus:border-[#02BB31] sm:w-72"
+                className="w-full rounded-lg border-2 border-[#DDEAE3] py-2 pl-10 pr-3 outline-none focus:border-[#0D915C] sm:w-72"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
-              className="rounded-lg border-2 border-[#E4EEE8] px-3 py-2 outline-none focus:border-[#02BB31]"
+              className="rounded-lg border-2 border-[#DDEAE3] px-3 py-2 outline-none focus:border-[#0D915C]"
             >
               <option value="all">All statuses</option>
               {statuses.map((status) => (
@@ -307,7 +311,7 @@ export default function SupportHelpPage() {
             filteredTickets.map((ticket) => (
               <div
                 key={ticket._id}
-                className="rounded-lg border border-[#E4EEE8] bg-white p-5 shadow-sm"
+                className="rounded-lg border border-[#DDEAE3] bg-white p-5 shadow-none"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-3">
@@ -319,7 +323,7 @@ export default function SupportHelpPage() {
                       >
                         {ticket.status}
                       </span>
-                      <span className="text-xs text-[#065A57]">
+                      <span className="text-xs text-[#41635A]">
                         {formatDate(ticket.createdAt)}
                       </span>
                     </div>
@@ -328,12 +332,12 @@ export default function SupportHelpPage() {
                       <h2 className="text-lg font-bold text-[#013E43]">
                         {ticket.subject}
                       </h2>
-                      <p className="mt-1 text-sm text-[#065A57]">
+                      <p className="mt-1 text-sm text-[#41635A]">
                         {ticket.message}
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-3 text-sm text-[#065A57]">
+                    <div className="flex flex-wrap gap-3 text-sm text-[#41635A]">
                       <span className="inline-flex items-center gap-1">
                         <FiHelpCircle />
                         {ticket.category?.title || "Uncategorized"}
@@ -353,7 +357,7 @@ export default function SupportHelpPage() {
                       onChange={(event) =>
                         updateTicketStatus(ticket._id, event.target.value)
                       }
-                      className="rounded-lg border-2 border-[#E4EEE8] px-3 py-2 text-sm outline-none focus:border-[#02BB31]"
+                      className="rounded-lg border-2 border-[#DDEAE3] px-3 py-2 text-sm outline-none focus:border-[#0D915C]"
                     >
                       {ticketStatuses.map((status) => (
                         <option key={status} value={status}>
@@ -382,7 +386,7 @@ export default function SupportHelpPage() {
             filteredRequests.map((request) => (
               <div
                 key={request._id}
-                className="rounded-lg border border-[#E4EEE8] bg-white p-5 shadow-sm"
+                className="rounded-lg border border-[#DDEAE3] bg-white p-5 shadow-none"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-3">
@@ -394,10 +398,10 @@ export default function SupportHelpPage() {
                       >
                         {request.status.replace("_", " ")}
                       </span>
-                      <span className="rounded-full border border-[#E4EEE8] bg-[#F0F7F4] px-3 py-1 text-xs font-semibold text-[#013E43]">
+                      <span className="rounded-full border border-[#DDEAE3] bg-[#F1F7F3] px-3 py-1 text-xs font-semibold text-[#013E43]">
                         {request.purpose}
                       </span>
-                      <span className="text-xs text-[#065A57]">
+                      <span className="text-xs text-[#41635A]">
                         {formatDate(request.createdAt)}
                       </span>
                     </div>
@@ -406,12 +410,12 @@ export default function SupportHelpPage() {
                       <h2 className="text-lg font-bold text-[#013E43]">
                         {request.name}
                       </h2>
-                      <p className="mt-1 text-sm text-[#065A57]">
+                      <p className="mt-1 text-sm text-[#41635A]">
                         {request.message || "No message provided"}
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-2 text-sm text-[#065A57] md:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-2 text-sm text-[#41635A] md:grid-cols-2 xl:grid-cols-3">
                       <span className="inline-flex items-center gap-1">
                         <FiPhone />
                         {request.phone}
@@ -449,7 +453,7 @@ export default function SupportHelpPage() {
                       onChange={(event) =>
                         updateRequestStatus(request._id, event.target.value)
                       }
-                      className="rounded-lg border-2 border-[#E4EEE8] px-3 py-2 text-sm outline-none focus:border-[#02BB31]"
+                      className="rounded-lg border-2 border-[#DDEAE3] px-3 py-2 text-sm outline-none focus:border-[#0D915C]"
                     >
                       {requestStatuses.map((status) => (
                         <option key={status} value={status}>
@@ -477,8 +481,8 @@ export default function SupportHelpPage() {
 
 function EmptyState({ label }) {
   return (
-    <div className="rounded-lg border border-dashed border-[#E4EEE8] bg-white p-10 text-center">
-      <FiHelpCircle className="mx-auto mb-3 text-3xl text-[#A8D8C1]" />
+    <div className="rounded-lg border border-dashed border-[#DDEAE3] bg-white p-10 text-center">
+      <FiHelpCircle className="mx-auto mb-3 text-3xl text-[#BBD2C6]" />
       <p className="font-semibold text-[#013E43]">{label}</p>
     </div>
   );

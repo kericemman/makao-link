@@ -20,6 +20,25 @@ const listingSchema = new mongoose.Schema(
       trim: true
     },
 
+    portfolioName: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: 80
+    },
+
+    portfolioCategory: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: 60
+    },
+
+    totalUnits: { type: Number, min: 1, default: 1 },
+    availableUnits: { type: Number, min: 0, default: 1 },
+    assignedAgent: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, index: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+
     description: {
       type: String,
       required: true,
@@ -33,6 +52,13 @@ const listingSchema = new mongoose.Schema(
       default: "rent",
       index: true
     },
+
+    maxGuests: { type: Number, min: 1, default: null },
+    minNights: { type: Number, min: 1, default: 1 },
+    checkInTime: { type: String, trim: true, default: "15:00" },
+    checkOutTime: { type: String, trim: true, default: "10:00" },
+    bookingLockToken: { type: String, default: null, select: false },
+    bookingLockExpiresAt: { type: Date, default: null, select: false },
 
     price: {
       type: Number,
@@ -263,6 +289,11 @@ listingSchema.pre("validate", function () {
     }
 
     return;
+  }
+
+  if (this.purpose === "short_stay") {
+    if (!Number.isInteger(this.maxGuests) || this.maxGuests < 1) throw new Error("Short-stay listings must include a valid maximum guest count");
+    if (!Number.isInteger(this.minNights) || this.minNights < 1) throw new Error("Short-stay listings must include a valid minimum stay");
   }
 
   if (RESIDENTIAL_TYPES.includes(this.type)) {

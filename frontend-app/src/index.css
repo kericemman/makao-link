@@ -30,7 +30,7 @@
 }
 
 .admin-sleek main [class*="shadow"] {
-  box-shadow: 0 8px 24px rgba(1, 62, 67, 0.06) !important;
+  box-shadow: none !important;
 }
 
 .admin-sleek main [class*="rounded-2xl"] {
@@ -85,8 +85,11 @@
 }
 
 .admin-sleek main a[class*="bg-white"]:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(1, 62, 67, 0.09) !important;
+  box-shadow: none !important;
+}
+
+.admin-sleek main [class*="rounded-lg"] {
+  border-radius: 0.5rem;
 }
 
 .admin-sleek main input,
@@ -134,4 +137,46 @@
 
 .admin-sleek main [class*="divide-y"] > * {
   border-color: #edf2ef !important;
+}
+
+.rich-content {
+  color: #065a57;
+  font-size: 1rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.rich-content > :first-child { margin-top: 0; }
+.rich-content > :last-child { margin-bottom: 0; }
+.rich-content p { margin: 1em 0; }
+.rich-content h1,
+.rich-content h2,
+.rich-content h3 {
+  color: #013e43;
+  font-weight: 700;
+  line-height: 1.25;
+  scroll-margin-top: 6rem;
+}
+.rich-content h1 { margin: 1.5em 0 0.75em; font-size: 2rem; }
+.rich-content h2 { margin: 1.25em 0 0.75em; padding-bottom: 0.5em; border-bottom: 2px solid #a8d8c1; font-size: 1.5rem; }
+.rich-content h3 { margin: 1em 0 0.5em; font-size: 1.25rem; }
+.rich-content ul,
+.rich-content ol { margin: 1em 0; padding-left: 1.6em; }
+.rich-content ul { list-style: disc; }
+.rich-content ol { list-style: decimal; }
+.rich-content li { display: list-item; margin: 0.5em 0; padding-left: 0.2em; }
+.rich-content li::marker { color: #0d915c; }
+.rich-content blockquote { margin: 1.5em 0; padding: 0.5em 0 0.5em 1.5em; border-left: 4px solid #02bb31; border-radius: 0 0.5rem 0.5rem 0; background: #f0f7f4; color: #065a57; font-style: italic; }
+.rich-content a { color: #0d915c; text-decoration: underline; text-underline-offset: 0.15em; }
+.rich-content strong { color: #013e43; font-weight: 700; }
+.rich-content code { border-radius: 0.25rem; background: #f0f7f4; padding: 0.2em 0.4em; color: #0d915c; font-size: 0.9em; }
+.rich-content pre { max-width: 100%; margin: 1.5em 0; overflow-x: auto; border-radius: 0.5rem; background: #013e43; padding: 1rem; color: #f0f7f4; }
+.rich-content pre code { background: transparent; padding: 0; color: inherit; }
+.rich-content hr { margin: 2em 0; border: 0; border-top: 2px solid #a8d8c1; }
+.rich-content img { display: block; max-width: 100%; height: auto; margin: 1.5em auto; border-radius: 0.5rem; }
+
+@media (max-width: 640px) {
+  .rich-content h1 { font-size: 1.75rem; }
+  .rich-content h2 { font-size: 1.375rem; }
+  .rich-content h3 { font-size: 1.125rem; }
 }

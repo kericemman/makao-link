@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { FiArrowUpRight, FiGrid, FiLogIn, FiMenu, FiSearch, FiX } from "react-icons/fi";
 import { joinPortalUrl, portalLinks } from "../../config/portals";
-
-const USER_TOKEN_KEY = "renda_user_token";
+import { useSavedHomes } from "../../context/SavedHomesContext";
 
 const navigationItems = [
   { label: "Home", to: "/" },
@@ -19,28 +18,17 @@ const navLinkClass = ({ isActive }) =>
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isSignedIn, setIsSignedIn] = useState(() => Boolean(localStorage.getItem(USER_TOKEN_KEY)));
+  const { user: accountUser } = useSavedHomes();
 
   const closeMenu = () => setMenuOpen(false);
   const userLoginUrl = joinPortalUrl(portalLinks.user.href, "/login");
-  const userDashboardUrl = portalLinks.user.href;
-  const accountLink = isSignedIn
-    ? { label: "Dashboard", href: userDashboardUrl, icon: FiGrid }
+  const userDashboardUrl = joinPortalUrl(
+    portalLinks.user.href,
+    accountUser?.role === "agent" ? "/agent/dashboard" : "/"
+  );
+  const accountLink = accountUser
+    ? { label: accountUser.name || "Dashboard", href: userDashboardUrl, icon: FiGrid }
     : { label: "Account", href: userLoginUrl, icon: FiLogIn };
-
-  useEffect(() => {
-    const syncAuthState = () => {
-      setIsSignedIn(Boolean(localStorage.getItem(USER_TOKEN_KEY)));
-    };
-
-    window.addEventListener("storage", syncAuthState);
-    window.addEventListener("renda-user-auth", syncAuthState);
-
-    return () => {
-      window.removeEventListener("storage", syncAuthState);
-      window.removeEventListener("renda-user-auth", syncAuthState);
-    };
-  }, []);
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#A8D8C1] bg-white backdrop-blur-xl">
@@ -58,10 +46,11 @@ export default function Navbar() {
           <a
             href={accountLink.href}
             title={portalLinks.user.purpose}
+            aria-label={accountUser ? `Open dashboard for ${accountUser.name}` : "Sign in to your account"}
             className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-[#065A57] transition hover:bg-[#F0F7F4] hover:text-[#013E43]"
           >
             <accountLink.icon />
-            {accountLink.label}
+            <span className="max-w-36 truncate">{accountLink.label}</span>
           </a>
         </nav>
 
@@ -83,10 +72,20 @@ export default function Navbar() {
           </Link>
         </div>
 
+        <a
+          href={accountLink.href}
+          title={accountUser ? `Dashboard for ${accountUser.name}` : "Sign in to your account"}
+          aria-label={accountUser ? `Open dashboard for ${accountUser.name}` : "Sign in to your account"}
+          className="mr-2 inline-flex max-w-32 items-center gap-2 rounded-full px-2 py-2 text-sm font-bold text-[#065A57] hover:bg-[#F0F7F4] lg:hidden"
+        >
+          <accountLink.icon className="shrink-0" />
+          <span className="truncate">{accountLink.label}</span>
+        </a>
+
         <button
           type="button"
           onClick={() => setMenuOpen((value) => !value)}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#013E43] text-white md:hidden"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#013E43] text-white lg:hidden"
           aria-label="Toggle navigation"
           aria-expanded={menuOpen}
         >
@@ -95,7 +94,7 @@ export default function Navbar() {
       </div>
 
       {menuOpen ? (
-        <div className="bg-white px-4 pb-5 pt-2 md:hidden">
+        <div className="bg-white px-4 pb-5 pt-2 lg:hidden">
           <div className="space-y-1">
             {navigationItems.map((item) => (
               <NavItem
@@ -120,10 +119,11 @@ export default function Navbar() {
             <a
               href={accountLink.href}
               title={portalLinks.user.purpose}
+              aria-label={accountUser ? `Open dashboard for ${accountUser.name}` : "Sign in to your account"}
               className="block rounded-xl px-4 py-3 text-sm font-extrabold text-[#065A57] transition hover:bg-[#F0F7F4] hover:text-[#013E43]"
               onClick={closeMenu}
             >
-              {accountLink.label}
+              {accountUser ? `Dashboard · ${accountUser.name}` : accountLink.label}
             </a>
           </div>
         </div>

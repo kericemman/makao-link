@@ -24,25 +24,25 @@ import toast from "react-hot-toast";
 
 const reviewStatusClasses = {
   pending_review: "bg-yellow-100 text-yellow-600",
-  approved: "bg-[#02BB31]/10 text-[#02BB31]",
+  approved: "bg-[#0D915C]/10 text-[#0D915C]",
   rejected: "bg-red-100 text-red-600"
 };
 
 const reviewStatusIcons = {
   pending_review: <FiClock className="text-yellow-500" />,
-  approved: <FiCheckCircle className="text-[#02BB31]" />,
+  approved: <FiCheckCircle className="text-[#0D915C]" />,
   rejected: <FiAlertCircle className="text-red-500" />
 };
 
 const paymentStatusClasses = {
   pending: "bg-yellow-100 text-yellow-600",
-  success: "bg-[#02BB31]/10 text-[#02BB31]",
+  success: "bg-[#0D915C]/10 text-[#0D915C]",
   failed: "bg-red-100 text-red-600"
 };
 
 const paymentStatusIcons = {
   pending: <FiClock className="text-yellow-500" />,
-  success: <FiCheckCircle className="text-[#02BB31]" />,
+  success: <FiCheckCircle className="text-[#0D915C]" />,
   failed: <FiAlertCircle className="text-red-500" />
 };
 
@@ -101,7 +101,6 @@ const AdminServiceApplicationsPage = () => {
 
     // Date range filter
     if (dateRange !== "all") {
-      const now = new Date();
       const filterDate = new Date();
       
       switch(dateRange) {
@@ -157,8 +156,8 @@ const AdminServiceApplicationsPage = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E4EEE8] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading applications...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#DDEAE3] border-t-[#0D915C] mx-auto mb-4"></div>
+          <p className="text-[#41635A]">Loading applications...</p>
         </div>
       </div>
     );
@@ -166,14 +165,14 @@ const AdminServiceApplicationsPage = () => {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-[#E4EEE8]">
+      <div className="bg-white rounded-lg shadow-none p-8 text-center border border-[#DDEAE3]">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <FiAlertCircle className="text-3xl text-red-500" />
         </div>
         <p className="text-red-600 mb-4">{error}</p>
         <button
           onClick={fetchApplications}
-          className="px-4 py-2 bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
+          className="px-4 py-2 bg-[#0D915C] text-white rounded-lg hover:bg-[#08764C] transition-colors"
         >
           Try Again
         </button>
@@ -184,13 +183,13 @@ const AdminServiceApplicationsPage = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-[#E4EEE8]">
+      <div className="border-b border-[#DDEAE3] pb-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             
             <div>
               <h1 className="text-xl font-bold text-[#013E43]">Service Applications</h1>
-              <p className="text-sm text-[#065A57]">
+              <p className="text-sm text-[#41635A]">
                 Review partner applications, confirm payment state, and approve service listings
               </p>
             </div>
@@ -199,7 +198,7 @@ const AdminServiceApplicationsPage = () => {
           <div className="flex items-center space-x-3">
             <button
               onClick={fetchApplications}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 text-[#41635A] hover:bg-[#F1F7F3] rounded-lg transition-colors"
               title="Refresh"
             >
               <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
@@ -210,40 +209,40 @@ const AdminServiceApplicationsPage = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Total Applications</p>
+        <div className="border-b border-[#DDEAE3] py-4 ">
+          <p className="text-sm text-[#41635A]">Total Applications</p>
           <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Pending Review</p>
+        <div className="border-b border-[#DDEAE3] py-4 ">
+          <p className="text-sm text-[#41635A]">Pending Review</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Approved</p>
-          <p className="text-2xl font-bold text-[#02BB31]">{stats.approved}</p>
+        <div className="border-b border-[#DDEAE3] py-4 ">
+          <p className="text-sm text-[#41635A]">Approved</p>
+          <p className="text-2xl font-bold text-[#0D915C]">{stats.approved}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Rejected</p>
+        <div className="border-b border-[#DDEAE3] py-4 ">
+          <p className="text-sm text-[#41635A]">Rejected</p>
           <p className="text-2xl font-bold text-red-500">{stats.rejected}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Payment Success</p>
+        <div className="border-b border-[#DDEAE3] py-4 ">
+          <p className="text-sm text-[#41635A]">Payment Success</p>
           <p className="text-2xl font-bold text-green-600">{stats.paymentSuccess}</p>
         </div>
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E4EEE8]">
+      <div className="border-y border-[#DDEAE3] py-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#065A57]" />
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#41635A]" />
             <input
               type="text"
               placeholder="Search by company, contact person, email, category, or location..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-[#DDEAE3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D915C] focus:border-transparent"
             />
           </div>
 
@@ -252,7 +251,7 @@ const AdminServiceApplicationsPage = () => {
             <select
               value={reviewStatus}
               onChange={(e) => setReviewStatus(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              className="px-3 py-2 border border-[#DDEAE3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D915C] text-[#41635A]"
             >
               <option value="all">All Review Status</option>
               <option value="pending_review">Pending Review</option>
@@ -263,7 +262,7 @@ const AdminServiceApplicationsPage = () => {
             <select
               value={paymentStatus}
               onChange={(e) => setPaymentStatus(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              className="px-3 py-2 border border-[#DDEAE3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D915C] text-[#41635A]"
             >
               <option value="all">All Payment Status</option>
               <option value="pending">Pending</option>
@@ -274,7 +273,7 @@ const AdminServiceApplicationsPage = () => {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              className="px-3 py-2 border border-[#DDEAE3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D915C] text-[#41635A]"
             >
               <option value="all">All Time</option>
               <option value="today">Today</option>
@@ -285,19 +284,19 @@ const AdminServiceApplicationsPage = () => {
         </div>
 
         {/* Results count */}
-        <div className="mt-4 text-sm text-[#065A57]">
+        <div className="mt-4 text-sm text-[#41635A]">
           Showing {filteredApplications.length} of {applications.length} applications
         </div>
       </div>
 
       {/* Applications Grid */}
       {filteredApplications.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center border border-[#E4EEE8]">
-          <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-            <FiBriefcase className="text-3xl text-[#A8D8C1]" />
+        <div className="border-y border-[#DDEAE3] px-6 py-12 text-center">
+          <div className="w-20 h-20 bg-[#F1F7F3] rounded-full flex items-center justify-center mx-auto mb-4">
+            <FiBriefcase className="text-3xl text-[#BBD2C6]" />
           </div>
           <h2 className="text-lg font-semibold text-[#013E43] mb-2">No applications found</h2>
-          <p className="text-sm text-[#065A57]">
+          <p className="text-sm text-[#41635A]">
             {searchTerm || reviewStatus !== "all" || paymentStatus !== "all" || dateRange !== "all"
               ? "Try adjusting your search or filters"
               : "No service applications have been submitted yet."}
@@ -309,7 +308,7 @@ const AdminServiceApplicationsPage = () => {
             <Link
               key={application._id}
               to={`/admin/services/applications/${application._id}`}
-              className="block bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden transition-all transform"
+              className="block bg-white rounded-lg shadow-none border border-[#DDEAE3] overflow-hidden transition-all transform"
             >
               <div className="p-5">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -328,52 +327,52 @@ const AdminServiceApplicationsPage = () => {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-[#065A57] mb-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-[#41635A] mb-3">
                       <p className="flex items-center">
-                        <FiMapPin className="mr-2 text-[#02BB31]" />
+                        <FiMapPin className="mr-2 text-[#0D915C]" />
                         {application.location || "Location not specified"}
                       </p>
                       <p className="flex items-center">
-                        <FaBuilding className="mr-2 text-[#02BB31]" />
+                        <FaBuilding className="mr-2 text-[#0D915C]" />
                         Category: {application.category || "N/A"}
                       </p>
                       <p className="flex items-center">
-                        <FiUser className="mr-2 text-[#02BB31]" />
+                        <FiUser className="mr-2 text-[#0D915C]" />
                         Contact: {application.contactPerson}
                       </p>
                       <p className="flex items-center">
-                        <FiMail className="mr-2 text-[#02BB31]" />
+                        <FiMail className="mr-2 text-[#0D915C]" />
                         {application.email}
                       </p>
                       {application.phone && (
                         <p className="flex items-center">
-                          <FiPhone className="mr-2 text-[#02BB31]" />
+                          <FiPhone className="mr-2 text-[#0D915C]" />
                           {application.phone}
                         </p>
                       )}
                     </div>
 
                     {application.description && (
-                      <p className="text-sm text-[#065A57] line-clamp-2 mb-3">
+                      <p className="text-sm text-[#41635A] line-clamp-2 mb-3">
                         {application.description}
                       </p>
                     )}
 
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-[#065A57]">
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-[#41635A]">
                       <span className="flex items-center">
-                        <FiCalendar className="mr-1 text-[#02BB31]" />
+                        <FiCalendar className="mr-1 text-[#0D915C]" />
                         Submitted: {formatDate(application.createdAt)} ({formatTimeAgo(application.createdAt)})
                       </span>
                       {application.paymentAmount && (
                         <span className="flex items-center">
-                          <FiDollarSign className="mr-1 text-[#02BB31]" />
+                          <FiDollarSign className="mr-1 text-[#0D915C]" />
                           Application Fee: KES {application.paymentAmount.toLocaleString()}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-center text-[#02BB31] font-medium">
+                  <div className="flex items-center text-[#0D915C] font-medium">
                     View Details
                     <FiArrowRight className="ml-2" />
                   </div>

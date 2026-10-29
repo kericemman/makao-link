@@ -65,6 +65,9 @@ export const getSubscribers = () =>
 export const updateSubscriber = (id, payload) =>
   api.patch(`${BASE}/subscribers/${id}`, payload);
 
+export const updateSubscriberStatus = (payload) =>
+  api.patch(`${BASE}/subscribers/status`, payload);
+
 
 // Policies
 export const getPolicies = () =>

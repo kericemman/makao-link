@@ -98,6 +98,7 @@ EMAIL_FROM=RendaHomes <noreply@rendahomes.com>
 
 PAYSTACK_SECRET_KEY=your_paystack_secret_key
 PAYSTACK_PUBLIC_KEY=your_paystack_public_key
+PAYSTACK_WHATSAPP_SUPPORT=your_kes_300_monthly_plan_code
 ```
 
 ## 4. Configure Nginx

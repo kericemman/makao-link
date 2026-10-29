@@ -50,7 +50,7 @@ export default function Policy({ slug = "privacy" }) {
       </section>
       <section className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
         <div
-          className="prose prose-lg max-w-none rounded-2xl border border-[#DDEBE4] bg-white p-6 prose-headings:text-[#013E43] prose-p:text-[#065A57] prose-li:text-[#065A57]"
+          className="rich-content rounded-2xl border border-[#DDEBE4] bg-white p-6"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
         />
       </section>

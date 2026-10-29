@@ -6,6 +6,7 @@ const Subscription = require("../subscriptions/subscription.model");
 const sendEmail = require("../../utils/sendEmail");
 const { agentInviteEmail, agentInstructionEmail } = require("../../utils/emailTemplates");
 const AgentInstruction = require("./agentInstruction.model");
+const { recordAdminActivity } = require("../admin/adminActivity.service");
 
 const LANDLORD_URL = process.env.LANDLORD_URL || "https://landlord.rendahomes.com";
 const USER_URL = process.env.USER_URL || "https://user.rendahomes.com";
@@ -180,6 +181,18 @@ exports.createAgent = async (req, res, next) => {
       commissionRate,
       createdByAdmin: req.user._id,
       isEmailVerified: true
+    });
+
+    await recordAdminActivity({
+      eventType: "agent_created",
+      description: "Referral agent account created",
+      details: `${agent.name} • ${agent.agentCode}`,
+      path: "/admin/agents",
+      actor: req.user._id,
+      actorName: req.user.name,
+      readBy: [req.user._id],
+      entityType: "agent",
+      entityId: String(agent._id)
     });
 
     const links = referralLinks(agentCode);

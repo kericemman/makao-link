@@ -3,6 +3,13 @@ const Listing = require("../listings/listings.model");
 const User = require("../users/user.model");
 const sendEmail = require("../../utils/sendEmail");
 const { syncWebsiteInquiriesToAppAlertsForUser } = require("./inquiryBridge.service");
+const { recordAdminActivity } = require("../admin/adminActivity.service");
+const workspaceOwnerId = (req) => req.landlordOwnerId || req.user._id;
+const inquiryWorkspaceFilter = (req, extra = {}) => ({
+  landlord: workspaceOwnerId(req),
+  ...(req.user.role === "landlord_staff" && req.user.teamRole === "agent" ? { assignedAgent: req.user._id } : {}),
+  ...extra
+});
 const {
   inquiryReceivedEmail,
   inquiryConfirmationEmail
@@ -30,6 +37,16 @@ exports.createInquiry = async (req, res, next) => {
       email,
       phone,
       message
+    });
+
+    await recordAdminActivity({
+      eventType: "inquiry_sent",
+      description: "New listing inquiry",
+      details: `${name} asked about ${listing.title}`,
+      path: `/admin/inquiries/${inquiry._id}`,
+      actorName: name,
+      entityType: "inquiry",
+      entityId: String(inquiry._id)
     });
 
     const matchingUser = await User.findOne({ email: email.toLowerCase() });
@@ -72,8 +89,9 @@ exports.createInquiry = async (req, res, next) => {
 
 exports.getLandlordInquiries = async (req, res, next) => {
   try {
-    const inquiries = await Inquiry.find({ landlord: req.user._id })
-      .populate("listing", "title location price images")
+    const inquiries = await Inquiry.find(inquiryWorkspaceFilter(req))
+      .populate("listing", "title location price images purpose portfolioName portfolioCategory")
+      .populate("assignedAgent", "name teamRole")
       .sort({ createdAt: -1 });
 
     res.json({
@@ -94,7 +112,7 @@ exports.updateInquiryStatus = async (req, res, next) => {
     }
 
     const inquiry = await Inquiry.findOneAndUpdate(
-      { _id: req.params.id, landlord: req.user._id },
+      { _id: req.params.id, ...inquiryWorkspaceFilter(req) },
       { status },
       { new: true }
     ).populate("listing", "title location price images");

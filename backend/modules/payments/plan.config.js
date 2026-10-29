@@ -1,6 +1,6 @@
 module.exports = {
   normal: {
-    name: "Normal",
+    name: "Free",
     price: 0,
     listingLimit: 2,
     paystackPlanCode: null

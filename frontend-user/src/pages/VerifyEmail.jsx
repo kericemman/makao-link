@@ -22,7 +22,8 @@ export default function VerifyEmail() {
 
     try {
       await verifyEmail({ email, otp });
-      navigate("/", { replace: true });
+      const next = params.get("next");
+      navigate(next?.startsWith("/") && !next.startsWith("//") ? next : "/", { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err, "Could not verify your email."));
     } finally {
@@ -62,7 +63,7 @@ export default function VerifyEmail() {
       </form>
       <button onClick={resend} className="mt-4 text-sm font-extrabold text-[#065A57] hover:text-[#013E43]">Resend code</button>
       <p className="mt-5 text-sm font-bold text-[#065A57]">
-        Wrong email? <Link to="/signup" className="text-[#013E43]">Create account again</Link>
+        Wrong email? <Link to={params.get("next") ? `/signup?next=${encodeURIComponent(params.get("next"))}` : "/signup"} className="text-[#013E43]">Create account again</Link>
       </p>
     </section>
   );

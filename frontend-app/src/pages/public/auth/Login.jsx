@@ -275,12 +275,12 @@ const LoginPage = () => {
                 />
                 <span className="text-sm text-[#065A57]">Remember me</span>
               </label>
-              <a
-                href={`${import.meta.env.VITE_MAIN_URL || (import.meta.env.DEV ? "http://localhost:5173" : "https://rendahomes.com")}/forgot-password`}
+              <Link
+                to="/forgot-password"
                 className="text-sm font-medium text-[#0D915C] hover:text-[#02BB31] transition-colors"
               >
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             {/* Error Message */}

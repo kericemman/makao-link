@@ -5,6 +5,7 @@ const buildListingFilter = (query = {}) => {
     availability,
     isActive,
     purpose,
+    guests,
     type,
     county,
     town,
@@ -34,6 +35,12 @@ const buildListingFilter = (query = {}) => {
   }
 
   if (purpose) filter.purpose = purpose;
+  if (purpose === "short_stay" && guests !== undefined && guests !== "") {
+    const guestCount = Number(guests);
+    if (Number.isInteger(guestCount) && guestCount > 0 && guestCount <= 100) {
+      filter.maxGuests = { $gte: guestCount };
+    }
+  }
   if (type) filter.type = type === "office-space" ? "office" : type;
   if (county) filter.county = new RegExp(`^${escapeRegex(county)}$`, "i");
   if (town) filter.town = new RegExp(`^${escapeRegex(town)}$`, "i");

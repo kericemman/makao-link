@@ -14,11 +14,13 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { portalLinks } from "../config/portals";
 import { getMyInquiries } from "../services/alerts.service";
+import { getSavedHomes } from "../services/savedHomes.service";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [inquiries, setInquiries] = useState([]);
+  const [savedCount, setSavedCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +30,9 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const savedCount = getSavedCount();
+  useEffect(() => {
+    getSavedHomes().then((saved) => setSavedCount(saved.length)).catch(() => setSavedCount(0));
+  }, []);
   const unread = inquiries.filter((item) => !item.readByUser).length;
   const replied = inquiries.filter((item) => (item.replies || []).length > 0).length;
 
@@ -176,12 +180,4 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
-
-function getSavedCount() {
-  try {
-    return JSON.parse(localStorage.getItem("renda_saved_listings") || "[]").length;
-  } catch {
-    return 0;
-  }
 }

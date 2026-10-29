@@ -93,7 +93,7 @@ export default function ContactInfoPage() {
       setLoading(true);
       await updateContactInfo(form);
       toast.success("Contact information updated successfully", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to update contact info", {
@@ -116,8 +116,8 @@ export default function ContactInfoPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E4EEE8] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading contact information...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#DDEAE3] border-t-[#0D915C] mx-auto mb-4"></div>
+          <p className="text-[#41635A]">Loading contact information...</p>
         </div>
       </div>
     );
@@ -126,7 +126,7 @@ export default function ContactInfoPage() {
   return (
     <form onSubmit={submit} className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-[#E4EEE8]">
+      <div className="border-b border-[#DDEAE3] pb-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <div className="p-3 bg-[#013E43] rounded-md">
@@ -134,7 +134,7 @@ export default function ContactInfoPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-[#013E43]">Contact Information</h1>
-              <p className="text-sm text-[#065A57]">
+              <p className="text-sm text-[#41635A]">
                 Manage contact details displayed on the Contact Us page and mobile app
               </p>
             </div>
@@ -144,7 +144,7 @@ export default function ContactInfoPage() {
             <button
               type="button"
               onClick={loadContact}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 text-[#41635A] hover:bg-[#F1F7F3] rounded-lg transition-colors"
               title="Refresh"
             >
               <FiRefreshCw className="text-lg" />
@@ -154,13 +154,13 @@ export default function ContactInfoPage() {
       </div>
 
       {/* Contact Details Card */}
-      <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden">
-        <div className="bg-[#F8FAF8] p-6 border-b border-[#E4EEE8]">
+      <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] overflow-hidden">
+        <div className="bg-[#F8FAF8] p-6 border-b border-[#DDEAE3]">
           <h2 className="text-lg font-bold text-[#013E43] flex items-center">
-            <FiMail className="mr-2 text-[#02BB31]" />
+            <FiMail className="mr-2 text-[#0D915C]" />
             Contact Details
           </h2>
-          <p className="text-sm text-[#065A57] mt-1">
+          <p className="text-sm text-[#41635A] mt-1">
             These details appear on the Contact Us screen across web and mobile platforms
           </p>
         </div>
@@ -178,7 +178,7 @@ export default function ContactInfoPage() {
                 <input
                   value={form.email}
                   onChange={(e) => updateField("email", e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-[#E4EEE8] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-[#DDEAE3] rounded-lg focus:border-[#0D915C] outline-none transition-colors"
                   placeholder="support@rendahomes.com"
                 />
               </div>
@@ -195,7 +195,7 @@ export default function ContactInfoPage() {
                 <input
                   value={form.phone}
                   onChange={(e) => updateField("phone", e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-[#E4EEE8] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-[#DDEAE3] rounded-lg focus:border-[#0D915C] outline-none transition-colors"
                   placeholder="+254 700 000 000"
                 />
               </div>
@@ -212,7 +212,7 @@ export default function ContactInfoPage() {
                 <input
                   value={form.whatsapp}
                   onChange={(e) => updateField("whatsapp", e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-[#E4EEE8] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-[#DDEAE3] rounded-lg focus:border-[#0D915C] outline-none transition-colors"
                   placeholder="+254 700 000 000"
                 />
               </div>
@@ -229,7 +229,7 @@ export default function ContactInfoPage() {
                 <input
                   value={form.address}
                   onChange={(e) => updateField("address", e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-[#E4EEE8] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-[#DDEAE3] rounded-lg focus:border-[#0D915C] outline-none transition-colors"
                   placeholder="Nairobi, Kenya"
                 />
               </div>
@@ -239,13 +239,13 @@ export default function ContactInfoPage() {
       </div>
 
       {/* Social Media Card */}
-      <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden">
-        <div className="bg-[#F8FAF8] p-6 border-b border-[#E4EEE8]">
+      <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] overflow-hidden">
+        <div className="bg-[#F8FAF8] p-6 border-b border-[#DDEAE3]">
           <h2 className="text-lg font-bold text-[#013E43] flex items-center">
-            <FiGlobe className="mr-2 text-[#02BB31]" />
+            <FiGlobe className="mr-2 text-[#0D915C]" />
             Social Media Links
           </h2>
-          <p className="text-sm text-[#065A57] mt-1">
+          <p className="text-sm text-[#41635A] mt-1">
             Add social links that users can open from the Contact page and mobile app
           </p>
         </div>
@@ -266,7 +266,7 @@ export default function ContactInfoPage() {
                     <input
                       value={form.socials[field.key]}
                       onChange={(e) => updateSocial(field.key, e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border-2 border-[#E4EEE8] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                      className="w-full pl-10 pr-4 py-3 border-2 border-[#DDEAE3] rounded-lg focus:border-[#0D915C] outline-none transition-colors"
                       placeholder={field.placeholder}
                     />
                   </div>
@@ -278,44 +278,44 @@ export default function ContactInfoPage() {
       </div>
 
       {/* Preview Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden">
-        <div className="bg-[#F8FAF8] p-6 border-b border-[#E4EEE8]">
+      <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] overflow-hidden">
+        <div className="bg-[#F8FAF8] p-6 border-b border-[#DDEAE3]">
           <h2 className="text-lg font-bold text-[#013E43] flex items-center">
-            <FiCheckCircle className="mr-2 text-[#02BB31]" />
+            <FiCheckCircle className="mr-2 text-[#0D915C]" />
             Preview
           </h2>
-          <p className="text-sm text-[#065A57] mt-1">
+          <p className="text-sm text-[#41635A] mt-1">
             How your contact information will appear to users
           </p>
         </div>
 
         <div className="p-6">
-          <div className="bg-[#F0F7F4] rounded-md p-6 border border-[#E4EEE8]">
+          <div className="bg-[#F1F7F3] rounded-md p-6 border border-[#DDEAE3]">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-sm font-semibold text-[#013E43] mb-3">Contact Methods</h3>
                 <div className="space-y-2">
                   {form.email && (
-                    <div className="flex items-center gap-2 text-sm text-[#065A57]">
-                      <FiMail className="text-[#02BB31]" />
+                    <div className="flex items-center gap-2 text-sm text-[#41635A]">
+                      <FiMail className="text-[#0D915C]" />
                       <span>{form.email}</span>
                     </div>
                   )}
                   {form.phone && (
-                    <div className="flex items-center gap-2 text-sm text-[#065A57]">
-                      <FiPhone className="text-[#02BB31]" />
+                    <div className="flex items-center gap-2 text-sm text-[#41635A]">
+                      <FiPhone className="text-[#0D915C]" />
                       <span>{form.phone}</span>
                     </div>
                   )}
                   {form.whatsapp && (
-                    <div className="flex items-center gap-2 text-sm text-[#065A57]">
+                    <div className="flex items-center gap-2 text-sm text-[#41635A]">
                       <FaWhatsapp className="text-[#25D366]" />
                       <span>{form.whatsapp}</span>
                     </div>
                   )}
                   {form.address && (
-                    <div className="flex items-center gap-2 text-sm text-[#065A57]">
-                      <FiMapPin className="text-[#02BB31]" />
+                    <div className="flex items-center gap-2 text-sm text-[#41635A]">
+                      <FiMapPin className="text-[#0D915C]" />
                       <span>{form.address}</span>
                     </div>
                   )}
@@ -325,33 +325,33 @@ export default function ContactInfoPage() {
                 <h3 className="text-sm font-semibold text-[#013E43] mb-3">Social Media</h3>
                 <div className="flex flex-wrap gap-3">
                   {form.socials.facebook && (
-                    <a href="#" className="p-2 bg-white rounded-lg text-[#1877F2] hover:bg-[#F0F7F4] transition-colors">
+                    <a href="#" className="p-2 bg-white rounded-lg text-[#1877F2] hover:bg-[#F1F7F3] transition-colors">
                       <FiFacebook className="text-xl" />
                     </a>
                   )}
                   {form.socials.instagram && (
-                    <a href="#" className="p-2 bg-white rounded-lg text-[#E4405F] hover:bg-[#F0F7F4] transition-colors">
+                    <a href="#" className="p-2 bg-white rounded-lg text-[#E4405F] hover:bg-[#F1F7F3] transition-colors">
                       <FiInstagram className="text-xl" />
                     </a>
                   )}
                   {form.socials.linkedin && (
-                    <a href="#" className="p-2 bg-white rounded-lg text-[#0A66C2] hover:bg-[#F0F7F4] transition-colors">
+                    <a href="#" className="p-2 bg-white rounded-lg text-[#0A66C2] hover:bg-[#F1F7F3] transition-colors">
                       <FiLinkedin className="text-xl" />
                     </a>
                   )}
                   {form.socials.x && (
-                    <a href="#" className="p-2 bg-white rounded-lg text-[#1DA1F2] hover:bg-[#F0F7F4] transition-colors">
+                    <a href="#" className="p-2 bg-white rounded-lg text-[#1DA1F2] hover:bg-[#F1F7F3] transition-colors">
                       <FiTwitter className="text-xl" />
                     </a>
                   )}
                   {form.socials.tiktok && (
-                    <a href="#" className="p-2 bg-white rounded-lg text-black hover:bg-[#F0F7F4] transition-colors">
+                    <a href="#" className="p-2 bg-white rounded-lg text-black hover:bg-[#F1F7F3] transition-colors">
                       <FaTiktok className="text-xl" />
                     </a>
                   )}
                 </div>
                 {!Object.values(form.socials).some(v => v) && (
-                  <p className="text-sm text-[#065A57]">No social links added yet</p>
+                  <p className="text-sm text-[#41635A]">No social links added yet</p>
                 )}
               </div>
             </div>
@@ -364,7 +364,7 @@ export default function ContactInfoPage() {
         <button
           type="submit"
           disabled={loading}
-          className="px-8 py-3 bg-[#02BB31] text-white rounded-md font-semibold hover:shadow-sm transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-8 py-3 bg-[#0D915C] text-white rounded-md font-semibold  transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {loading ? (
             <>

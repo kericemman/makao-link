@@ -40,7 +40,8 @@ export default function FilterPanel({ filters, meta, activeFilterCount, onUpdate
           </span>
         </label>
 
-        <FilterSelect label="Purpose" value={filters.purpose} onChange={(value) => onUpdate("purpose", value)} options={[["rent", "Rent"], ["sale", "Buy"]]} />
+        <FilterSelect label="Purpose" value={filters.purpose} onChange={(value) => onUpdate("purpose", value)} options={[["rent", "Rent"], ["sale", "Buy"], ["short_stay", "BnB / Short stay"]]} />
+        {filters.purpose === "short_stay" && <FilterSelect label="Guests" value={filters.guests || ""} onChange={(value) => onUpdate("guests", value)} options={[1, 2, 3, 4, 5, 6, 8].map((count) => [String(count), count === 8 ? "8+ guests" : `${count} guest${count === 1 ? "" : "s"}`])} />}
         <FilterSelect label="Property type" value={filters.type} onChange={(value) => onUpdate("type", value)} options={(meta.listingTypes || []).map((type) => [type, type])} />
         <FilterSelect label="County" value={filters.county} onChange={onUpdateCounty} options={(meta.counties || []).map((county) => [county, county])} />
         <FilterSelect label="Town" value={filters.town} onChange={(value) => onUpdate("town", value)} options={townOptions.map((town) => [town, town])} />

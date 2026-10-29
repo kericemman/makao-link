@@ -1,40 +1,29 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAdminSubscriptions } from "../../services/admin.service";
 import { 
   FiCreditCard, 
-  FiCalendar, 
   FiCheckCircle, 
   FiAlertCircle,
   FiClock,
-  FiShield,
-  FiDollarSign,
-  FiTrendingUp,
-  FiHome,
   FiRefreshCw,
   FiSearch,
-  FiFilter,
   FiUser,
   FiMail,
   FiPhone,
   FiArrowRight,
   FiInfo,
-  FiBarChart2,
-  FiAward,
-  FiStar,
-  FiZap,
   FiXCircle,
   FiEye
 } from "react-icons/fi";
-import { FaKey, FaBuilding, FaHandshake } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const statusClasses = {
-  free: "bg-gray-100 text-gray-600 border-gray-200",
-  pending_payment: "bg-yellow-100 text-yellow-600 border-yellow-200",
-  active: "bg-[#02BB31]/10 text-[#02BB31] border-[#02BB31]/20",
-  grace: "bg-orange-100 text-orange-600 border-orange-200",
-  expired: "bg-red-100 text-red-600 border-red-200",
-  cancelled: "bg-gray-100 text-gray-600 border-gray-200"
+  free: "bg-[#F1F5F3] text-[#526760]",
+  pending_payment: "bg-amber-50 text-amber-800",
+  active: "bg-emerald-50 text-emerald-800",
+  grace: "bg-orange-50 text-orange-800",
+  expired: "bg-red-50 text-red-700",
+  cancelled: "bg-[#F1F5F3] text-[#526760]"
 };
 
 const statusIcons = {
@@ -47,15 +36,14 @@ const statusIcons = {
 };
 
 const planColors = {
-  normal: "from-gray-400 to-gray-500",
-  basic: "from-[#02BB31] to-[#0D915C]",
-  premium: "from-purple-400 to-purple-500",
-  pro: "from-[#013E43] to-[#005C57]"
+  normal: "bg-[#F1F5F3] text-[#526760]",
+  basic: "bg-[#EAF5EF] text-[#08764C]",
+  premium: "bg-[#FFF5E7] text-[#925B14]",
+  pro: "bg-[#E8F0F0] text-[#013E43]"
 };
 
 const AdminSubscriptionsPage = () => {
   const [subscriptions, setSubscriptions] = useState([]);
-  const [filteredSubscriptions, setFilteredSubscriptions] = useState([]);
   const [status, setStatus] = useState("all");
   const [plan, setPlan] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -65,7 +53,7 @@ const AdminSubscriptionsPage = () => {
   const [selectedSubscription, setSelectedSubscription] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  const fetchSubscriptions = async () => {
+  const fetchSubscriptions = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -84,31 +72,27 @@ const AdminSubscriptionsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchSubscriptions();
   }, [status, plan]);
 
   useEffect(() => {
-    filterSubscriptions();
-  }, [subscriptions, searchTerm, dateRange]);
+    fetchSubscriptions();
+  }, [fetchSubscriptions]);
 
-  const filterSubscriptions = () => {
+  const filteredSubscriptions = useMemo(() => {
     let filtered = [...subscriptions];
 
     // Search filter
-    if (searchTerm) {
+    if (searchTerm.trim()) {
+      const term = searchTerm.trim().toLowerCase();
       filtered = filtered.filter(sub => 
-        sub.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sub.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sub.user?.phone?.includes(searchTerm)
+        sub.user?.name?.toLowerCase().includes(term) ||
+        sub.user?.email?.toLowerCase().includes(term) ||
+        sub.user?.phone?.includes(searchTerm.trim())
       );
     }
 
     // Date range filter
     if (dateRange !== "all") {
-      const now = new Date();
       const filterDate = new Date();
       
       switch(dateRange) {
@@ -129,9 +113,8 @@ const AdminSubscriptionsPage = () => {
 
     // Sort by date (newest first)
     filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    setFilteredSubscriptions(filtered);
-  };
+    return filtered;
+  }, [subscriptions, searchTerm, dateRange]);
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -164,10 +147,10 @@ const AdminSubscriptionsPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex min-h-72 items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E4EEE8] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading subscriptions...</p>
+          <div className="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-[#DDEAE3] border-t-[#0D915C]" />
+          <p className="text-sm font-semibold text-[#013E43]">Loading subscriptions...</p>
         </div>
       </div>
     );
@@ -175,95 +158,70 @@ const AdminSubscriptionsPage = () => {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-[#E4EEE8]">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <FiAlertCircle className="text-3xl text-red-500" />
-        </div>
-        <p className="text-red-600 mb-4">{error}</p>
+      <div role="alert" className="mx-auto max-w-xl border-y border-red-200 bg-white px-5 py-8 text-center">
+        <FiAlertCircle className="mx-auto mb-3 text-3xl text-red-600" />
+        <p className="text-sm font-semibold text-[#013E43]">{error}</p>
         <button
           onClick={fetchSubscriptions}
-          className="px-4 py-2 bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#0D915C] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#08764C]"
         >
-          Try Again
+          <FiRefreshCw /> Retry
         </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-[#013E43] rounded-md">
-              <FiCreditCard className="text-white text-2xl" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-[#013E43]">Subscriptions</h1>
-              <p className="text-sm text-[#065A57]">
-                Track landlord subscription health across the platform
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={fetchSubscriptions}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
-              title="Refresh"
-            >
-              <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
+    <div className="space-y-5">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[#DDEAE3] pb-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0D915C]">People &amp; Revenue</p>
+          <h1 className="mt-1 text-2xl font-semibold text-[#013E43]">Subscriptions</h1>
+          <p className="mt-1 text-sm text-[#647C75]">Review landlord plans, renewal periods, and payment status.</p>
         </div>
-      </div>
+        <button
+          type="button"
+          onClick={fetchSubscriptions}
+          className="inline-flex items-center gap-2 rounded-lg border border-[#DDEAE3] bg-white px-3 py-2 text-sm font-semibold text-[#013E43] transition hover:bg-[#F6FAF7]"
+        >
+          <FiRefreshCw /> Refresh
+        </button>
+      </header>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Total Subscriptions</p>
-          <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
-        </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Active</p>
-          <p className="text-2xl font-bold text-[#02BB31]">{stats.active}</p>
-        </div>
-        <div className="bg-white rounded-md shadow-sm p-4">
-          <p className="text-sm text-[#065A57]">Pending Payment</p>
-          <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-        </div>
-        <div className="bg-white rounded-md shadow-sm p-4">
-          <p className="text-sm text-[#065A57]">Expired</p>
-          <p className="text-2xl font-bold text-red-500">{stats.expired}</p>
-        </div>
-        <div className="bg-white rounded-md shadow-sm p-4">
-          <p className="text-sm text-[#065A57]">Monthly Revenue</p>
-          <p className="text-2xl font-bold text-purple-600">{formatCurrency(stats.revenue)}</p>
-        </div>
-      </div>
+      <section aria-label="Subscription summary" className="grid grid-cols-2 gap-y-4 border-b border-[#DDEAE3] py-4 sm:grid-cols-3 lg:grid-cols-5">
+        {[
+          ["Subscriptions", stats.total],
+          ["Active", stats.active],
+          ["Pending payment", stats.pending],
+          ["Expired", stats.expired],
+          ["Active plan value", formatCurrency(stats.revenue)]
+        ].map(([label, value], index) => (
+          <div key={label} className={`${index ? "sm:border-l sm:border-[#E7F0EA] sm:pl-4" : ""} ${index === 1 ? "pl-3 sm:pl-4" : ""}`}>
+            <p className="text-xs font-semibold text-[#647C75]">{label}</p>
+            <p className="mt-1 text-xl font-semibold text-[#013E43]">{value}</p>
+          </div>
+        ))}
+      </section>
 
-      {/* Search and Filter Bar */}
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#065A57]" />
+      <section aria-label="Subscription filters" className="space-y-3 border-b border-[#DDEAE3] pb-4">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+          <div className="relative min-w-0 flex-1">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#82958D]" />
             <input
               type="text"
               placeholder="Search by landlord name, email, or phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] focus:border-transparent"
+              className="w-full rounded-lg border border-[#DDEAE3] bg-white py-2.5 pl-10 pr-4 text-sm text-[#013E43] outline-none focus:border-[#0D915C]"
             />
           </div>
 
-          {/* Filters */}
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 xl:flex">
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              aria-label="Filter by subscription status"
+              className="min-w-0 rounded-lg border border-[#DDEAE3] bg-white px-3 py-2.5 text-sm text-[#013E43] outline-none focus:border-[#0D915C]"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -277,7 +235,8 @@ const AdminSubscriptionsPage = () => {
             <select
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              aria-label="Filter by plan"
+              className="min-w-0 rounded-lg border border-[#DDEAE3] bg-white px-3 py-2.5 text-sm text-[#013E43] outline-none focus:border-[#0D915C]"
             >
               <option value="all">All Plans</option>
               <option value="normal">Normal</option>
@@ -289,7 +248,8 @@ const AdminSubscriptionsPage = () => {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              aria-label="Filter by signup date"
+              className="min-w-0 rounded-lg border border-[#DDEAE3] bg-white px-3 py-2.5 text-sm text-[#013E43] outline-none focus:border-[#0D915C]"
             >
               <option value="all">All Time</option>
               <option value="today">Today</option>
@@ -299,142 +259,86 @@ const AdminSubscriptionsPage = () => {
           </div>
         </div>
 
-        {/* Results count */}
-        <div className="mt-4 text-sm text-[#065A57]">
-          Showing {filteredSubscriptions.length} of {subscriptions.length} subscriptions
-        </div>
-      </div>
+        <p className="text-xs text-[#647C75]">Showing {filteredSubscriptions.length} of {subscriptions.length} subscriptions in the current result set.</p>
+      </section>
 
       {/* Subscriptions Grid */}
       {filteredSubscriptions.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center border border-[#E4EEE8]">
-          <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-            <FiCreditCard className="text-3xl text-[#A8D8C1]" />
-          </div>
-          <h2 className="text-lg font-semibold text-[#013E43] mb-2">No subscriptions found</h2>
-          <p className="text-sm text-[#065A57]">
+        <div className="border-y border-[#DDEAE3] bg-white px-5 py-12 text-center">
+          <FiCreditCard className="mx-auto mb-3 text-3xl text-[#9BB8AA]" />
+          <h2 className="text-base font-semibold text-[#013E43]">No subscriptions found</h2>
+          <p className="mt-1 text-sm text-[#647C75]">
             {searchTerm || status !== "all" || plan !== "all" || dateRange !== "all"
               ? "Try adjusting your search or filters"
               : "No subscriptions have been created yet"}
           </p>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {filteredSubscriptions.map((subscription) => {
-            const planColor = planColors[subscription.plan] || "from-gray-400 to-gray-500";
-            
-            return (
-              <div
-                key={subscription._id}
-                className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden transition-all cursor-pointer"
-                onClick={() => {
-                  setSelectedSubscription(subscription);
-                  setShowDetailsModal(true);
-                }}
-              >
-                <div className={`h-1.5 bg-gradient-to-r `}></div>
-                <div className="p-5">
-                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-3 mb-2">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-[#013E43] rounded-full flex items-center justify-center text-white font-bold text-lg">
-                            {subscription.user?.name?.charAt(0).toUpperCase() || 'U'}
-                          </div>
-                          <div>
-                            <h2 className="text-lg font-semibold text-[#013E43]">
-                              {subscription.user?.name || "Unknown User"}
-                            </h2>
-                            <p className="text-sm text-[#065A57] flex items-center gap-2">
-                              <FiMail className="text-[#02BB31]" />
-                              {subscription.user?.email || "No email"}
-                              {subscription.user?.phone && (
-                                <>
-                                  <span className="w-1 h-1 bg-[#A8D8C1] rounded-full"></span>
-                                  <FiPhone className="text-[#02BB31]" />
-                                  {subscription.user.phone}
-                                </>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+        <div className="border-y border-[#DDEAE3] bg-white">
+          <div className="hidden grid-cols-[minmax(190px,1.4fr)_minmax(120px,0.8fr)_minmax(120px,0.8fr)_minmax(130px,0.8fr)_auto] gap-4 border-b border-[#DDEAE3] bg-[#F6FAF7] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.1em] text-[#647C75] lg:grid lg:px-5">
+            <span>Landlord</span><span>Plan &amp; status</span><span>Plan value</span><span>Renewal period</span><span className="sr-only">Actions</span>
+          </div>
+          <div className="divide-y divide-[#E7F0EA]">
+            {filteredSubscriptions.map((subscription) => {
+              const planColor = planColors[subscription.plan] || planColors.normal;
+              const subscriptionStatus = statusClasses[subscription.status] || statusClasses.free;
 
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium capitalize ${statusClasses[subscription.status]}`}>
-                          {statusIcons[subscription.status]}
-                          <span className="ml-1">{subscription.status?.replace("_", " ")}</span>
-                        </span>
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#F0F7F4] text-[#013E43] uppercase">
-                          {subscription.plan}
-                        </span>
-                      </div>
-
-                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div className="bg-[#F0F7F4] rounded-md p-3">
-                          <p className="text-xs text-[#065A57]">Active Listings</p>
-                          <p className="text-lg font-bold text-[#013E43]">{subscription.activeListings || 0}</p>
-                        </div>
-
-                        <div className="bg-[#F0F7F4] rounded-md p-3">
-                          <p className="text-xs text-[#065A57]">Amount</p>
-                          <p className="text-lg font-bold text-[#02BB31]">{formatCurrency(subscription.amount || 0)}</p>
-                        </div>
-
-                        <div className="bg-[#F0F7F4] rounded-md p-3">
-                          <p className="text-xs text-[#065A57]">Period Start</p>
-                          <p className="text-sm font-semibold text-[#013E43]">
-                            {subscription.currentPeriodStart
-                              ? formatDate(subscription.currentPeriodStart)
-                              : "—"}
-                          </p>
-                        </div>
-
-                        <div className="bg-[#F0F7F4] rounded-md p-3">
-                          <p className="text-xs text-[#065A57]">Period End</p>
-                          <p className="text-sm font-semibold text-[#013E43]">
-                            {subscription.currentPeriodEnd
-                              ? formatDate(subscription.currentPeriodEnd)
-                              : "—"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {subscription.gracePeriodEnd && (
-                        <div className="mt-3 rounded-md bg-orange-50 p-3 text-sm text-orange-700 border border-orange-200">
-                          <div className="flex items-center gap-2">
-                            <FiAlertCircle className="text-orange-500" />
-                            <span>Grace ends on {formatDate(subscription.gracePeriodEnd)}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center text-[#02BB31] font-medium">
-                      View Details
-                      <FiArrowRight className="ml-2" />
+              return (
+                <div key={subscription._id} className="grid gap-3 px-4 py-4 transition hover:bg-[#FAFCFA] lg:grid-cols-[minmax(190px,1.4fr)_minmax(120px,0.8fr)_minmax(120px,0.8fr)_minmax(130px,0.8fr)_auto] lg:items-center lg:gap-4 lg:px-5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EAF2ED] text-sm font-bold text-[#0D7250]">{subscription.user?.name?.charAt(0).toUpperCase() || "U"}</span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[#013E43]">{subscription.user?.name || "Unknown landlord"}</p>
+                      <p className="flex min-w-0 items-center gap-1.5 truncate text-xs text-[#647C75]"><FiMail className="shrink-0" /><span className="truncate">{subscription.user?.email || "No email"}</span></p>
+                      {subscription.user?.phone ? <p className="mt-0.5 flex items-center gap-1.5 text-xs text-[#647C75]"><FiPhone className="shrink-0" />{subscription.user.phone}</p> : null}
                     </div>
                   </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5 lg:flex-col lg:items-start">
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${planColor}`}>{subscription.plan || "normal"}</span>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${subscriptionStatus}`}>
+                      {statusIcons[subscription.status] || <FiInfo />}
+                      {subscription.status?.replace(/_/g, " ") || "unknown"}
+                    </span>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-semibold text-[#013E43]">{formatCurrency(subscription.amount || 0)}</p>
+                    <p className="mt-0.5 text-xs text-[#647C75]">{subscription.activeListings || 0} active listings</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-[#013E43]">{subscription.currentPeriodEnd ? formatDate(subscription.currentPeriodEnd) : "No renewal date"}</p>
+                    <p className="mt-0.5 text-xs text-[#647C75]">{subscription.currentPeriodStart ? `Started ${formatDate(subscription.currentPeriodStart)}` : `Joined ${formatDate(subscription.createdAt)}`}</p>
+                    {subscription.gracePeriodEnd ? <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-orange-800"><FiAlertCircle /> Grace to {formatDate(subscription.gracePeriodEnd)}</p> : null}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedSubscription(subscription); setShowDetailsModal(true); }}
+                    aria-label={`View subscription for ${subscription.user?.name || "landlord"}`}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#DDEAE3] px-3 text-sm font-semibold text-[#013E43] transition hover:bg-[#F0F7F4]"
+                  >
+                    <FiEye /> <span className="lg:hidden">Details</span><span className="hidden lg:inline">Details</span><FiArrowRight className="hidden lg:block" />
+                  </button>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 
       {/* Details Modal */}
       {showDetailsModal && selectedSubscription && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-sm max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#062E2B]/55 p-4">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-[#DDEAE3] bg-white shadow-2xl">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-[#E4EEE8] p-6 flex items-center justify-between">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#DDEAE3] bg-white px-5 py-4 sm:px-6">
               <div className="flex items-center space-x-3">
-                <div className="p-3 bg-[#013E43] rounded-md">
-                  <FiCreditCard className="text-white text-xl" />
-                </div>
                 <div>
-                  <h2 className="text-xl font-bold text-[#013E43]">Subscription Details</h2>
-                  <p className="text-sm text-[#065A57]">ID: {selectedSubscription._id.slice(-8)}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0D915C]">Billing record</p>
+                  <h2 className="mt-0.5 text-lg font-semibold text-[#013E43]">Subscription details</h2>
+                  <p className="text-xs text-[#647C75]">ID: {selectedSubscription._id.slice(-8)}</p>
                 </div>
               </div>
               <button
@@ -442,14 +346,16 @@ const AdminSubscriptionsPage = () => {
                   setSelectedSubscription(null);
                   setShowDetailsModal(false);
                 }}
-                className="p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
+                type="button"
+                aria-label="Close subscription details"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-[#647C75] transition-colors hover:bg-[#F0F7F4] hover:text-[#013E43]"
               >
                 <FiXCircle className="text-xl text-[#065A57]" />
               </button>
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 space-y-6">
+            <div className="space-y-6 p-5 sm:p-6">
               {/* Landlord Info */}
               <div className="bg-[#F0F7F4] rounded-md p-4">
                 <h3 className="font-semibold text-[#013E43] mb-3">Landlord Information</h3>

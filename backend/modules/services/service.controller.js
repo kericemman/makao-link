@@ -1,6 +1,7 @@
 const PartnerApplication = require("./partnerApplication.model");
 const ServicePartner = require("./servicePartner.model");
 const paystack = require("../../config/paystack");
+const { recordAdminActivity } = require("../admin/adminActivity.service");
 
 const serviceCategories = [
   {
@@ -118,6 +119,16 @@ exports.createPartnerApplication = async (req, res, next) => {
       location,
       website: website || "",
       logo
+    });
+
+    await recordAdminActivity({
+      eventType: "service_application",
+      description: "Service provider application received",
+      details: `${application.companyName} • ${application.category}`,
+      path: `/admin/services/applications/${application._id}`,
+      actorName: application.contactPerson,
+      entityType: "service_application",
+      entityId: String(application._id)
     });
 
     res.status(201).json({

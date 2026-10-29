@@ -25,13 +25,13 @@ import toast from "react-hot-toast";
 
 const statusClasses = {
   draft: "bg-yellow-100 text-yellow-600",
-  published: "bg-[#02BB31]/10 text-[#02BB31]",
+  published: "bg-[#0D915C]/10 text-[#0D915C]",
   archived: "bg-gray-100 text-gray-600"
 };
 
 const statusIcons = {
   draft: <FiClock className="text-yellow-500" />,
-  published: <FiCheckCircle className="text-[#02BB31]" />,
+  published: <FiCheckCircle className="text-[#0D915C]" />,
   archived: <FiArchive className="text-gray-500" />
 };
 
@@ -90,7 +90,6 @@ const AdminBlogsPage = () => {
 
     // Date range filter
     if (dateRange !== "all") {
-      const now = new Date();
       const filterDate = new Date();
       
       switch(dateRange) {
@@ -116,10 +115,10 @@ const AdminBlogsPage = () => {
     try {
       await updateBlogStatus(id, status);
       toast.success(`Blog marked as ${status}`, {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
       fetchBlogs();
-    } catch (err) {
+    } catch {
       toast.error("Failed to update status", {
         style: { background: "#013E43", color: "#fff" }
       });
@@ -131,7 +130,7 @@ const AdminBlogsPage = () => {
       setDeletingId(selectedBlog._id);
       await deleteBlog(selectedBlog._id);
       toast.success("Blog deleted successfully", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
       setShowDeleteModal(false);
       setSelectedBlog(null);
@@ -164,8 +163,8 @@ const AdminBlogsPage = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E4EEE8] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading blog posts...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#DDEAE3] border-t-[#0D915C] mx-auto mb-4"></div>
+          <p className="text-[#41635A]">Loading blog posts...</p>
         </div>
       </div>
     );
@@ -173,14 +172,14 @@ const AdminBlogsPage = () => {
 
   if (error && blogs.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-[#E4EEE8]">
+      <div className="bg-white rounded-lg shadow-none p-8 text-center border border-[#DDEAE3]">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <FiAlertCircle className="text-3xl text-red-500" />
         </div>
         <p className="text-red-600 mb-4">{error}</p>
         <button
           onClick={fetchBlogs}
-          className="px-4 py-2 bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
+          className="px-4 py-2 bg-[#0D915C] text-white rounded-lg hover:bg-[#08764C] transition-colors"
         >
           Try Again
         </button>
@@ -191,7 +190,7 @@ const AdminBlogsPage = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-[#E4EEE8]">
+      <div className="border-b border-[#DDEAE3] pb-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <div className="p-3 bg-[#013E43] rounded-md">
@@ -199,21 +198,21 @@ const AdminBlogsPage = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-[#013E43]">Blog Management</h1>
-              <p className="text-sm text-[#065A57]">Create, publish, and manage blog posts</p>
+              <p className="text-sm text-[#41635A]">Create, publish, and manage blog posts</p>
             </div>
           </div>
           
           <div className="flex items-center space-x-3">
             <button
               onClick={fetchBlogs}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 text-[#41635A] hover:bg-[#F1F7F3] rounded-lg transition-colors"
               title="Refresh"
             >
               <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
             </button>
             <Link
               to="/admin/blog/new"
-              className="px-4 py-2 bg-[#02BB31] text-white rounded-lg font-light hover:shadow-sm transition-all flex items-center"
+              className="px-4 py-2 bg-[#0D915C] text-white rounded-lg font-light  transition-all flex items-center"
             >
               <FiPlus className="mr-2" />
               New Blog Post
@@ -224,36 +223,36 @@ const AdminBlogsPage = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Total Posts</p>
+        <div className="border-b border-[#DDEAE3] py-4 ">
+          <p className="text-sm text-[#41635A]">Total Posts</p>
           <p className="text-2xl font-bold text-[#013E43]">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4">
-          <p className="text-sm text-[#065A57]">Published</p>
-          <p className="text-2xl font-bold text-[#02BB31]">{stats.published}</p>
+        <div className="border-b border-[#DDEAE3] py-4">
+          <p className="text-sm text-[#41635A]">Published</p>
+          <p className="text-2xl font-bold text-[#0D915C]">{stats.published}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4">
-          <p className="text-sm text-[#065A57]">Drafts</p>
+        <div className="border-b border-[#DDEAE3] py-4">
+          <p className="text-sm text-[#41635A]">Drafts</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.draft}</p>
         </div>
-        <div className="bg-white rounded-md shadow-sm p-4 ">
-          <p className="text-sm text-[#065A57]">Archived</p>
+        <div className="border-b border-[#DDEAE3] py-4 ">
+          <p className="text-sm text-[#41635A]">Archived</p>
           <p className="text-2xl font-bold text-gray-600">{stats.archived}</p>
         </div>
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="bg-white rounded-lg shadow-sm p-4 ">
+      <div className="bg-white rounded-lg shadow-none p-4 ">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#065A57]" />
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#41635A]" />
             <input
               type="text"
               placeholder="Search by title, excerpt, or author..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-[#DDEAE3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D915C] focus:border-transparent"
             />
           </div>
 
@@ -262,7 +261,7 @@ const AdminBlogsPage = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              className="px-3 py-2 border border-[#DDEAE3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D915C] text-[#41635A]"
             >
               <option value="all">All Status</option>
               <option value="published">Published</option>
@@ -273,7 +272,7 @@ const AdminBlogsPage = () => {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-3 py-2 border border-[#E4EEE8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#02BB31] text-[#065A57]"
+              className="px-3 py-2 border border-[#DDEAE3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D915C] text-[#41635A]"
             >
               <option value="all">All Time</option>
               <option value="today">Today</option>
@@ -284,26 +283,26 @@ const AdminBlogsPage = () => {
         </div>
 
         {/* Results count */}
-        <div className="mt-4 text-sm text-[#065A57]">
+        <div className="mt-4 text-sm text-[#41635A]">
           Showing {filteredBlogs.length} of {blogs.length} blog posts
         </div>
       </div>
 
       {/* Blogs Grid */}
       {filteredBlogs.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center border border-[#E4EEE8]">
-          <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
-            <FaBlog className="text-3xl text-[#A8D8C1]" />
+        <div className="border-y border-[#DDEAE3] px-6 py-12 text-center">
+          <div className="w-20 h-20 bg-[#F1F7F3] rounded-full flex items-center justify-center mx-auto mb-4">
+            <FaBlog className="text-3xl text-[#BBD2C6]" />
           </div>
           <h3 className="text-lg font-semibold text-[#013E43] mb-2">No blog posts found</h3>
-          <p className="text-sm text-[#065A57] mb-4">
+          <p className="text-sm text-[#41635A] mb-4">
             {searchTerm || statusFilter !== "all" || dateRange !== "all"
               ? "Try adjusting your filters"
               : "You haven't created any blog posts yet"}
           </p>
           <Link
             to="/admin/blog/new"
-            className="inline-flex items-center px-6 py-3 bg-[#02BB31] text-white rounded-lg font-light hover:shadow-sm transition-all"
+            className="inline-flex items-center px-6 py-3 bg-[#0D915C] text-white rounded-lg font-light  transition-all"
           >
             <FiPlus className="mr-2" />
             Create Your First Blog
@@ -314,7 +313,7 @@ const AdminBlogsPage = () => {
           {filteredBlogs.map((blog) => (
             <div
               key={blog._id}
-              className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden transition-all"
+              className="bg-white rounded-lg shadow-none border border-[#DDEAE3] overflow-hidden transition-all"
             >
               <div className="p-5">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -329,22 +328,22 @@ const AdminBlogsPage = () => {
                       </span>
                     </div>
                     
-                    <p className="text-sm text-[#065A57] mb-3 line-clamp-2">
+                    <p className="text-sm text-[#41635A] mb-3 line-clamp-2">
                       {blog.excerpt}
                     </p>
                     
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-[#065A57]">
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-[#41635A]">
                       <span className="flex items-center">
-                        <FiUser className="mr-1 text-[#02BB31]" />
+                        <FiUser className="mr-1 text-[#0D915C]" />
                         {blog.author?.name || 'Admin'}
                       </span>
                       <span className="flex items-center">
-                        <FiCalendar className="mr-1 text-[#02BB31]" />
+                        <FiCalendar className="mr-1 text-[#0D915C]" />
                         {formatDate(blog.createdAt)}
                       </span>
                       {blog.category && (
                         <span className="flex items-center">
-                          <FiTag className="mr-1 text-[#02BB31]" />
+                          <FiTag className="mr-1 text-[#0D915C]" />
                           {blog.category}
                         </span>
                       )}
@@ -355,7 +354,7 @@ const AdminBlogsPage = () => {
                     {blog.status === "draft" && (
                       <button
                         onClick={() => handleStatusChange(blog._id, "published")}
-                        className="px-3 py-2 text-sm bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors flex items-center"
+                        className="px-3 py-2 text-sm bg-[#0D915C] text-white rounded-lg hover:bg-[#08764C] transition-colors flex items-center"
                       >
                         <FiCheckCircle className="mr-1" />
                         Publish
@@ -381,7 +380,7 @@ const AdminBlogsPage = () => {
                     )}
                     <Link
                       to={`/admin/blog/${blog._id}`}
-                      className="px-3 py-2 text-sm border border-[#E4EEE8] text-[#065A57] rounded-lg hover:bg-[#F0F7F4] transition-colors flex items-center"
+                      className="px-3 py-2 text-sm border border-[#DDEAE3] text-[#41635A] rounded-lg hover:bg-[#F1F7F3] transition-colors flex items-center"
                     >
                       <FiEdit2 className="mr-1" />
                       Edit
@@ -401,11 +400,11 @@ const AdminBlogsPage = () => {
 
                 {/* Preview Link */}
                 {blog.status === "published" && (
-                  <div className="mt-4 pt-3 border-t border-[#E4EEE8]">
+                  <div className="mt-4 pt-3 border-t border-[#DDEAE3]">
                     <Link
                       to={`/blog/${blog.slug}`}
                       target="_blank"
-                      className="text-sm text-[#02BB31] hover:text-[#0D915C] flex items-center"
+                      className="text-sm text-[#0D915C] hover:text-[#075B53] flex items-center"
                     >
                       <FiEye className="mr-1" />
                       View Live Post
@@ -421,13 +420,13 @@ const AdminBlogsPage = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedBlog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-sm max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-none max-w-md w-full p-6">
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
                 <FiTrash2 className="text-3xl text-red-500" />
               </div>
               <h3 className="text-xl font-bold text-[#013E43] mb-2">Delete Blog Post</h3>
-              <p className="text-sm text-[#065A57]">
+              <p className="text-sm text-[#41635A]">
                 Are you sure you want to delete "{selectedBlog.title}"? This action cannot be undone.
               </p>
             </div>
@@ -438,7 +437,7 @@ const AdminBlogsPage = () => {
                   setShowDeleteModal(false);
                   setSelectedBlog(null);
                 }}
-                className="flex-1 px-4 py-2 border border-[#E4EEE8] text-[#065A57] rounded-lg hover:bg-[#F0F7F4] transition-colors"
+                className="flex-1 px-4 py-2 border border-[#DDEAE3] text-[#41635A] rounded-lg hover:bg-[#F1F7F3] transition-colors"
               >
                 Cancel
               </button>

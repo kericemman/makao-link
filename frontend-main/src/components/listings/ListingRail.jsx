@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { FiArrowRight, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import PropertyCard from "../PropertyCard";
 
-export default function ListingRail({ title, eyebrow, listings = [], viewAllTo, emptyText = "No listings available yet." }) {
+export default function ListingRail({ title, eyebrow, listings = [], viewAllTo, emptyText = "No listings available yet.", gridOnMobile = false }) {
   const railRef = useRef(null);
 
   const scrollRail = (direction) => {
@@ -19,7 +19,7 @@ export default function ListingRail({ title, eyebrow, listings = [], viewAllTo, 
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
             {eyebrow ? <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#02BB31]">{eyebrow}</p> : null}
-            <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#013E43] sm:text-3xl">{title}</h2>
+            <h2 className="mt-2 text-lg font-extrabold tracking-tight text-[#013E43] sm:text-2xl">{title}</h2>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -39,8 +39,8 @@ export default function ListingRail({ title, eyebrow, listings = [], viewAllTo, 
               <FiChevronRight />
             </button>
             {viewAllTo ? (
-              <Link to={viewAllTo} className="inline-flex items-center gap-2 rounded-full bg-[#013E43] px-4 py-2 text-sm font-extrabold text-white">
-                View
+              <Link to={viewAllTo} className="inline-flex items-center gap-1.5 rounded-full bg-[#013E43] px-3 py-1.5 text-xs font-medium text-white sm:gap-2 sm:px-3.5 sm:py-2 sm:text-sm">
+                View more
                 <FiArrowRight />
               </Link>
             ) : null}
@@ -48,9 +48,12 @@ export default function ListingRail({ title, eyebrow, listings = [], viewAllTo, 
         </div>
 
         {listings.length ? (
-          <div ref={railRef} className="listing-rail flex gap-5 overflow-x-auto scroll-smooth pb-2">
+          <div
+            ref={railRef}
+            className={`listing-rail gap-3 pb-2 sm:gap-5 ${gridOnMobile ? "listing-rail--mobile-grid grid grid-cols-2 sm:flex sm:overflow-x-auto" : "flex overflow-x-auto"}`}
+          >
             {listings.map((listing) => (
-              <div key={listing._id} className="w-[min(86vw,360px)] shrink-0 snap-start">
+              <div key={listing._id} className={gridOnMobile ? "min-w-0 sm:w-[min(86vw,360px)] sm:shrink-0 sm:snap-start" : "w-[min(86vw,360px)] shrink-0 snap-start"}>
                 <PropertyCard listing={listing} />
               </div>
             ))}

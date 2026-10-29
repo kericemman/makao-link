@@ -9,7 +9,9 @@ const {
   getListingById,
   getMyListingById,
   createListing,
+  importListingsCsv,
   getMyListings,
+  groupMyPortfolioListings,
   updateListing,
   deleteListing,
   updateListingAvailability,
@@ -22,7 +24,7 @@ const {
 } = require("./listings.controller");
 
 const { protect } = require("../../middleware/auth.middleware");
-const requireRole = require("../../middleware/role.middleware");
+const landlordWorkspace = require("../../middleware/landlordWorkspace.middleware");
 const upload = require("../../middleware/upload.middleware");
 
 // public
@@ -33,11 +35,18 @@ router.get("/nearby", getNearbyListings);
 router.get("/", getPublicListings);
 
 // landlord
-router.get("/landlord/my/all", protect, requireRole("landlord"), getMyListings);
+router.patch(
+  "/landlord/portfolio/group",
+  protect,
+  landlordWorkspace("listings"),
+  groupMyPortfolioListings
+);
+router.get("/landlord/my/all", protect, landlordWorkspace("listings"), getMyListings);
+router.post("/landlord/import-csv", protect, landlordWorkspace("team"), importListingsCsv);
 router.post(
   "/",
   protect,
-  requireRole("landlord"),
+  landlordWorkspace("listings"),
   upload.array("images", 10),
   createListing
 );
@@ -45,14 +54,14 @@ router.post(
 router.get(
   "/landlord/my",
   protect,
-  requireRole("landlord"),
+  landlordWorkspace("listings"),
   getMyListings
 );
 
 router.get(
   "/landlord/:id",
   protect,
-  requireRole("landlord"),
+  landlordWorkspace("listings"),
   getMyListingById
 );
 
@@ -61,7 +70,7 @@ router.get(
 router.put(
   "/:id",
   protect,
-  requireRole("landlord"),
+  landlordWorkspace("listings"),
   upload.array("images", 10),
   updateListing
 );
@@ -69,19 +78,19 @@ router.put(
 router.patch(
   "/:id/availability",
   protect,
-  requireRole("landlord"),
+  landlordWorkspace("listings"),
   updateListingAvailability
 );
 
 router.delete(
   "/:id",
   protect,
-  requireRole("landlord"),
+  landlordWorkspace("listings"),
   deleteListing
 );
 
-router.patch("/:id/mark-taken", protect, requireRole("landlord"), markListingTaken);
-router.patch("/:id/mark-available", protect, requireRole("landlord"), markListingAvailable);
+router.patch("/:id/mark-taken", protect, landlordWorkspace("listings"), markListingTaken);
+router.patch("/:id/mark-available", protect, landlordWorkspace("listings"), markListingAvailable);
 
 router.get("/:id", getListingById);
 

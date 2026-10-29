@@ -52,7 +52,7 @@ export default function AdminAgentsPage() {
       setLoading(true);
       const data = await getAgents();
       setAgents(data.agents || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load agents");
     } finally {
       setLoading(false);
@@ -89,7 +89,7 @@ export default function AdminAgentsPage() {
         toast.success("Agent suspended");
       }
       fetchAgents();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update agent");
     } finally {
       setSaving(false);
@@ -101,7 +101,7 @@ export default function AdminAgentsPage() {
       setSelectedAgent(agent);
       const data = await getAgentOnboarded(agent._id);
       setSelectedReport(data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load agent report");
     }
   };
@@ -177,25 +177,25 @@ export default function AdminAgentsPage() {
         </form>
       </section>
 
-      <section className="overflow-hidden rounded-lg border border-[#DDEAE3] bg-white">
-        <div className="grid grid-cols-[1.2fr_120px_140px_150px_120px] gap-4 border-b border-[#DDEAE3] bg-[#F4F8F5] px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-[#647C75]">
+      <section className="divide-y divide-[#E7EFEB] border-y border-[#DDEAE3]">
+        <div className="hidden grid-cols-[1.2fr_120px_140px_150px_120px] gap-4 bg-[#F4F8F5] px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-[#647C75] sm:grid">
           <span>Agent</span>
           <span>Status</span>
           <span>Landlords</span>
           <span>Revenue</span>
           <span className="text-right">Action</span>
         </div>
-        <div className="divide-y divide-[#EEF4F0]">
+        <div className="divide-y divide-[#E7EFEB]">
           {agents.map((agent) => (
-            <div key={agent._id} className="grid grid-cols-[1.2fr_120px_140px_150px_120px] gap-4 px-4 py-4 text-sm">
-              <div>
+            <div key={agent._id} className="grid grid-cols-2 gap-3 px-4 py-4 text-sm sm:grid-cols-[1.2fr_120px_140px_150px_120px] sm:items-center sm:gap-4">
+              <div className="col-span-2 min-w-0 sm:col-span-1">
                 <p className="font-semibold text-[#013E43]">{agent.fullName}</p>
-                <p className="text-xs text-[#647C75]">{agent.email} • {agent.agentCode}</p>
+                <p className="truncate text-xs text-[#647C75]">{agent.email} · {agent.agentCode}</p>
               </div>
-              <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${agent.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{agent.status}</span>
-              <span>{agent.stats?.totalOnboardedLandlords || 0}</span>
-              <span>{formatCurrency(agent.stats?.totalRevenueGenerated || 0)}</span>
-              <div className="flex justify-end gap-2">
+              <div><span className="mb-1 block text-[10px] font-semibold uppercase text-[#647C75] sm:hidden">Status</span><span className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${agent.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{agent.status}</span></div>
+              <div><span className="mb-1 block text-[10px] font-semibold uppercase text-[#647C75] sm:hidden">Landlords</span><span>{agent.stats?.totalOnboardedLandlords || 0}</span></div>
+              <div><span className="mb-1 block text-[10px] font-semibold uppercase text-[#647C75] sm:hidden">Revenue</span><span>{formatCurrency(agent.stats?.totalRevenueGenerated || 0)}</span></div>
+              <div className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-2 sm:col-span-1 sm:justify-end">
                 <button onClick={() => openReport(agent)} className="text-sm font-semibold text-[#0D915C]">View</button>
                 <button onClick={() => handleStatus(agent)} className="text-sm font-semibold text-red-600">{agent.status === "active" ? "Suspend" : "Activate"}</button>
               </div>

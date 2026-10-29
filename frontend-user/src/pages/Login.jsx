@@ -1,17 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { getApiErrorMessage } from "../utils/apiError";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, isAuthenticated, booting, user } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (!booting && isAuthenticated) {
+      const nextPath = params.get("next");
+      const fallbackPath = user?.role === "agent" ? "/agent/dashboard" : "/";
+      navigate(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : fallbackPath, { replace: true });
+    }
+  }, [booting, isAuthenticated, navigate, params, user?.role]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -21,11 +29,14 @@ export default function Login() {
     try {
       const data = await login(form);
       const fallbackPath = data.user?.role === "agent" ? "/agent/dashboard" : "/";
-      navigate(params.get("next") || fallbackPath, { replace: true });
+      const nextPath = params.get("next");
+      navigate(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : fallbackPath, { replace: true });
     } catch (err) {
       const data = err?.response?.data;
       if (data?.requiresVerification) {
-        navigate(`/verify-email?email=${encodeURIComponent(data.email || form.email)}`);
+        const next = params.get("next");
+        const nextParam = next ? `&next=${encodeURIComponent(next)}` : "";
+        navigate(`/verify-email?email=${encodeURIComponent(data.email || form.email)}${nextParam}`);
         return;
       }
       setError(getApiErrorMessage(err, "Could not sign in."));
@@ -61,7 +72,7 @@ export default function Login() {
         </button>
       </form>
       <div className="mt-5 flex flex-wrap justify-between gap-3 text-sm font-bold text-[#065A57]">
-        <Link to="/signup" className="hover:text-[#013E43]">Create account</Link>
+        <Link to={params.get("next") ? `/signup?next=${encodeURIComponent(params.get("next"))}` : "/signup"} className="hover:text-[#013E43]">Create account</Link>
         <Link to="/forgot-password" className="hover:text-[#013E43]">Forgot password?</Link>
       </div>
     </section>

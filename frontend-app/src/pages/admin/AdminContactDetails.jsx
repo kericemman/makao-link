@@ -26,14 +26,14 @@ import { FaWhatsapp } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const statusClasses = {
-  new: "bg-[#02BB31]/10 text-[#02BB31] border-[#02BB31]/20",
+  new: "bg-[#0D915C]/10 text-[#0D915C] border-[#0D915C]/20",
   in_progress: "bg-yellow-100 text-yellow-600 border-yellow-200",
   resolved: "bg-blue-100 text-blue-600 border-blue-200",
   closed: "bg-gray-100 text-gray-600 border-gray-200"
 };
 
 const statusIcons = {
-  new: <FiStar className="text-[#02BB31]" />,
+  new: <FiStar className="text-[#0D915C]" />,
   in_progress: <FiClock className="text-yellow-500" />,
   resolved: <FiCheckCircle className="text-blue-500" />,
   closed: <FiCheckCircle className="text-gray-500" />
@@ -49,9 +49,6 @@ const AdminContactMessageDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [showReplyForm, setShowReplyForm] = useState(false);
-  const [replyMessage, setReplyMessage] = useState("");
-  const [sendingReply, setSendingReply] = useState(false);
 
   const fetchMessage = async () => {
     try {
@@ -87,7 +84,7 @@ const AdminContactMessageDetailPage = () => {
 
       setContactMessage(data.contactMessage);
       toast.success("Message updated successfully", {
-        style: { background: "#02BB31", color: "#fff" }
+        style: { background: "#0D915C", color: "#fff" }
       });
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update message");
@@ -96,33 +93,6 @@ const AdminContactMessageDetailPage = () => {
       });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleSendReply = async () => {
-    if (!replyMessage.trim()) {
-      toast.error("Please enter a reply message", {
-        style: { background: "#013E43", color: "#fff" }
-      });
-      return;
-    }
-
-    try {
-      setSendingReply(true);
-      // You'll need to implement this API endpoint
-      await sendReply(id, { message: replyMessage, email: contactMessage.email });
-      
-      toast.success("Reply sent successfully", {
-        style: { background: "#02BB31", color: "#fff" }
-      });
-      setShowReplyForm(false);
-      setReplyMessage("");
-    } catch (err) {
-      toast.error("Failed to send reply", {
-        style: { background: "#013E43", color: "#fff" }
-      });
-    } finally {
-      setSendingReply(false);
     }
   };
 
@@ -151,8 +121,8 @@ const AdminContactMessageDetailPage = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E4EEE8] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading message details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#DDEAE3] border-t-[#0D915C] mx-auto mb-4"></div>
+          <p className="text-[#41635A]">Loading message details...</p>
         </div>
       </div>
     );
@@ -160,14 +130,14 @@ const AdminContactMessageDetailPage = () => {
 
   if (error && !contactMessage) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-[#E4EEE8]">
+      <div className="bg-white rounded-lg shadow-none p-8 text-center border border-[#DDEAE3]">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <FiAlertCircle className="text-3xl text-red-500" />
         </div>
         <p className="text-red-600 mb-4">{error}</p>
         <button
           onClick={() => navigate("/admin/contact")}
-          className="px-4 py-2 bg-[#02BB31] text-white rounded-lg hover:bg-[#0D915C] transition-colors"
+          className="px-4 py-2 bg-[#0D915C] text-white rounded-lg hover:bg-[#08764C] transition-colors"
         >
           Back to Messages
         </button>
@@ -180,26 +150,26 @@ const AdminContactMessageDetailPage = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-[#E4EEE8]">
+      <div className="border-b border-[#DDEAE3] pb-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate("/admin/contact")}
-              className="p-2 hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 hover:bg-[#F1F7F3] rounded-lg transition-colors"
             >
-              <FiArrowLeft className="text-xl text-[#065A57]" />
+              <FiArrowLeft className="text-xl text-[#41635A]" />
             </button>
             
             <div>
               <h1 className="text-xl font-bold text-[#013E43]">Message Details</h1>
-              <p className="text-sm text-[#065A57]">ID: {contactMessage._id.slice(-8)}</p>
+              <p className="text-sm text-[#41635A]">ID: {contactMessage._id.slice(-8)}</p>
             </div>
           </div>
           
           <div className="flex items-center space-x-3">
             <button
               onClick={fetchMessage}
-              className="p-2 text-[#065A57] hover:bg-[#F0F7F4] rounded-lg transition-colors"
+              className="p-2 text-[#41635A] hover:bg-[#F1F7F3] rounded-lg transition-colors"
               title="Refresh"
             >
               <FiRefreshCw className={`text-lg ${loading ? 'animate-spin' : ''}`} />
@@ -212,8 +182,8 @@ const AdminContactMessageDetailPage = () => {
         {/* Main Content */}
         <div className="space-y-6">
           {/* Message Card */}
-          <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden">
-            <div className="p-6 border-b border-[#E4EEE8] bg-[#F8FAF8]">
+          <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] overflow-hidden">
+            <div className="p-6 border-b border-[#DDEAE3] bg-[#F8FAF8]">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex-1">
                   <h2 className="text-xl font-bold text-[#013E43]">{contactMessage.subject}</h2>
@@ -228,48 +198,48 @@ const AdminContactMessageDetailPage = () => {
             </div>
 
             {/* Sender Information */}
-            <div className="p-6 border-b border-[#E4EEE8]">
+            <div className="p-6 border-b border-[#DDEAE3]">
               <h3 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-                <FiUser className="mr-2 text-[#02BB31]" />
+                <FiUser className="mr-2 text-[#0D915C]" />
                 Sender Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-[#F0F7F4] p-4 rounded-lg">
-                  <p className="text-xs text-[#065A57] mb-1">Name</p>
+                <div className="bg-[#F1F7F3] p-4 rounded-lg">
+                  <p className="text-xs text-[#41635A] mb-1">Name</p>
                   <p className="font-medium text-[#013E43]">{contactMessage.name}</p>
                 </div>
-                <div className="bg-[#F0F7F4] p-4 rounded-lg">
-                  <p className="text-xs text-[#065A57] mb-1">Email</p>
-                  <a href={`mailto:${contactMessage.email}`} className="font-medium text-[#02BB31] hover:underline">
+                <div className="bg-[#F1F7F3] p-4 rounded-lg">
+                  <p className="text-xs text-[#41635A] mb-1">Email</p>
+                  <a href={`mailto:${contactMessage.email}`} className="font-medium text-[#0D915C] hover:underline">
                     {contactMessage.email}
                   </a>
                 </div>
                 {contactMessage.phone && (
-                  <div className="bg-[#F0F7F4] p-4 rounded-lg">
-                    <p className="text-xs text-[#065A57] mb-1">Phone</p>
-                    <a href={`tel:${contactMessage.phone}`} className="font-medium text-[#02BB31] hover:underline">
+                  <div className="bg-[#F1F7F3] p-4 rounded-lg">
+                    <p className="text-xs text-[#41635A] mb-1">Phone</p>
+                    <a href={`tel:${contactMessage.phone}`} className="font-medium text-[#0D915C] hover:underline">
                       {contactMessage.phone}
                     </a>
                   </div>
                 )}
-                <div className="bg-[#F0F7F4] p-4 rounded-lg">
-                  <p className="text-xs text-[#065A57] mb-1">Submitted</p>
+                <div className="bg-[#F1F7F3] p-4 rounded-lg">
+                  <p className="text-xs text-[#41635A] mb-1">Submitted</p>
                   <p className="font-medium text-[#013E43]">{formatDate(contactMessage.createdAt)}</p>
                 </div>
               </div>
             </div>
 
             {/* Message Content */}
-            <div className="p-6 border-b border-[#E4EEE8]">
+            <div className="p-6 border-b border-[#DDEAE3]">
               <h3 className="text-lg font-semibold text-[#013E43] mb-3 flex items-center">
-                <FiMessageSquare className="mr-2 text-[#02BB31]" />
+                <FiMessageSquare className="mr-2 text-[#0D915C]" />
                 Message
               </h3>
-              <div className="bg-[#F0F7F4] p-4 rounded-lg">
+              <div className="bg-[#F1F7F3] p-4 rounded-lg">
                 <p className="text-[#013E43] whitespace-pre-wrap leading-relaxed">
                   {contactMessage.message}
                 </p>
-                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#E4EEE8] text-xs text-[#065A57]">
+                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#DDEAE3] text-xs text-[#41635A]">
                   <span className="flex items-center">
                     <FiCalendar className="mr-1" />
                     {formatDate(contactMessage.createdAt)}
@@ -285,7 +255,7 @@ const AdminContactMessageDetailPage = () => {
             {/* Admin Notes */}
             <div className="p-6">
               <h3 className="text-lg font-semibold text-[#013E43] mb-3 flex items-center">
-                <FiInfo className="mr-2 text-[#02BB31]" />
+                <FiInfo className="mr-2 text-[#0D915C]" />
                 Admin Notes
               </h3>
               <textarea
@@ -293,7 +263,7 @@ const AdminContactMessageDetailPage = () => {
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
                 placeholder="Internal notes about this message..."
-                className="w-full px-4 py-3 border-2 border-[#E4EEE8] rounded-lg focus:border-[#02BB31] outline-none transition-colors resize-none"
+                className="w-full px-4 py-3 border-2 border-[#DDEAE3] rounded-lg focus:border-[#0D915C] outline-none transition-colors resize-none"
               />
             </div>
           </div>
@@ -302,16 +272,16 @@ const AdminContactMessageDetailPage = () => {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Status Card */}
-          <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] p-6">
+          <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] p-6">
             <h3 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-              <FiInfo className="mr-2 text-[#02BB31]" />
+              <FiInfo className="mr-2 text-[#0D915C]" />
               Message Status
             </h3>
             <div className="space-y-4">
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-[#E4EEE8] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
+                className="w-full px-4 py-3 border-2 border-[#DDEAE3] rounded-lg focus:border-[#0D915C] outline-none transition-colors"
               >
                 <option value="new">New</option>
                 <option value="in_progress">In Progress</option>
@@ -329,7 +299,7 @@ const AdminContactMessageDetailPage = () => {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full py-3 bg-[#02BB31] text-white rounded-lg font-semibold hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="w-full py-3 bg-[#0D915C] text-white rounded-lg font-semibold  transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {saving ? (
                   <>
@@ -347,15 +317,15 @@ const AdminContactMessageDetailPage = () => {
           </div>
 
           {/* Quick Actions Card */}
-          <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] p-6">
+          <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] p-6">
             <h3 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-              <FiSend className="mr-2 text-[#02BB31]" />
+              <FiSend className="mr-2 text-[#0D915C]" />
               Quick Actions
             </h3>
             <div className="space-y-3">
               <a
                 href={`mailto:${contactMessage.email}`}
-                className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#013E43] text-white rounded-lg hover:bg-[#005C57] transition-colors"
+                className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#013E43] text-white rounded-lg hover:bg-[#075B53] transition-colors"
               >
                 <FiMail />
                 Reply via Email
@@ -364,7 +334,7 @@ const AdminContactMessageDetailPage = () => {
                 <>
                   <a
                     href={`tel:${contactMessage.phone}`}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#013E43] text-white rounded-lg hover:bg-[#005C57] transition-colors"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#013E43] text-white rounded-lg hover:bg-[#075B53] transition-colors"
                   >
                     <FiPhone />
                     Call
@@ -384,22 +354,22 @@ const AdminContactMessageDetailPage = () => {
           </div>
 
           {/* Timestamps Card */}
-          <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] p-6">
+          <div className="bg-white rounded-lg shadow-none border border-[#DDEAE3] p-6">
             <h3 className="text-lg font-semibold text-[#013E43] mb-4 flex items-center">
-              <FiClock className="mr-2 text-[#02BB31]" />
+              <FiClock className="mr-2 text-[#0D915C]" />
               Timeline
             </h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-[#065A57]">Created</span>
+                <span className="text-[#41635A]">Created</span>
                 <span className="font-medium text-[#013E43]">{formatDate(contactMessage.createdAt)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#065A57]">Last Updated</span>
+                <span className="text-[#41635A]">Last Updated</span>
                 <span className="font-medium text-[#013E43]">{formatDate(contactMessage.updatedAt)}</span>
               </div>
-              <div className="flex justify-between pt-2 border-t border-[#E4EEE8]">
-                <span className="text-[#065A57]">Time Ago</span>
+              <div className="flex justify-between pt-2 border-t border-[#DDEAE3]">
+                <span className="text-[#41635A]">Time Ago</span>
                 <span className="font-medium text-[#013E43]">{formatTimeAgo(contactMessage.createdAt)}</span>
               </div>
             </div>

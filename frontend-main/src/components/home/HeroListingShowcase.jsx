@@ -11,6 +11,7 @@ const formatPrice = (price, purpose) => {
     maximumFractionDigits: 0
   }).format(Number(price || 0));
 
+  if (purpose === "short_stay") return `${amount}/night`;
   return purpose === "rent" ? `${amount}/mo` : amount;
 };
 
@@ -21,11 +22,11 @@ const imageFor = (listing) => {
   return first.url || first.path || null;
 };
 
-export default function HeroListingShowcase({ listings = [] }) {
+export default function HeroListingShowcase({ listings = [], selectedListingId, onSelectListing }) {
   const railRef = useRef(null);
   const displayListings = listings.slice(0, 8);
-  const mainListing = displayListings[0];
-  const railListings = displayListings.slice(1);
+  const mainListing = displayListings.find((listing) => listing._id === selectedListingId) || displayListings[0];
+  const railListings = displayListings.filter((listing) => listing._id !== mainListing?._id);
 
   const scrollRail = (direction) => {
     railRef.current?.scrollBy({ left: direction * 300, behavior: "smooth" });
@@ -36,7 +37,7 @@ export default function HeroListingShowcase({ listings = [] }) {
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#02BB31]">Recently listed</p>
-          <p className="mt-1 text-sm font-semibold text-[#065A57]">Fresh homes from the listings API</p>
+
         </div>
         <Link to={mainRoutes.listings} className="inline-flex items-center gap-1 text-sm font-extrabold text-[#013E43]">
           View all <FiArrowRight />
@@ -46,7 +47,7 @@ export default function HeroListingShowcase({ listings = [] }) {
       {mainListing ? <FeaturedHeroCard listing={mainListing} /> : <EmptyFeaturedCard />}
 
       <div className="mt-3 flex items-center justify-between">
-        <p className="text-sm font-extrabold text-[#013E43]">More new listings</p>
+        <p className="text-sm font-extrabold text-[#013E43]">Explore recent homes</p>
         {railListings.length ? (
           <div className="hidden gap-1 sm:flex">
             <button
@@ -71,7 +72,14 @@ export default function HeroListingShowcase({ listings = [] }) {
 
       <div ref={railRef} className="hero-listing-rail mt-2 flex gap-3 overflow-x-auto scroll-smooth pb-1">
         {railListings.length ? (
-          railListings.map((listing) => <MiniHeroCard key={listing._id} listing={listing} />)
+          railListings.map((listing) => (
+            <MiniHeroCard
+              key={listing._id}
+              listing={listing}
+              selected={listing._id === mainListing?._id}
+              onSelect={() => onSelectListing?.(listing._id)}
+            />
+          ))
         ) : (
           <>
             <EmptyMiniCard />
@@ -129,13 +137,16 @@ function FeaturedHeroCard({ listing }) {
   );
 }
 
-function MiniHeroCard({ listing }) {
+function MiniHeroCard({ listing, selected, onSelect }) {
   const image = imageFor(listing);
 
   return (
-    <Link
-      to={mainRoutes.listingDetails(listing._id)}
-      className="group relative h-36 w-[230px] shrink-0 snap-start overflow-hidden rounded-2xl bg-[#F0F7F4]"
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-label={`Preview ${listing.title}`}
+      aria-pressed={selected}
+      className={`group relative h-36 w-[230px] shrink-0 snap-start overflow-hidden rounded-2xl text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#058A46] ${selected ? "ring-2 ring-[#058A46]" : ""}`}
     >
       {image ? (
         <img src={image} alt={listing.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
@@ -150,7 +161,7 @@ function MiniHeroCard({ listing }) {
           {[listing.town, listing.county].filter(Boolean).join(", ") || "Location on request"}
         </p>
       </div>
-    </Link>
+    </button>
   );
 }
 

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { getMe, loginUser, registerUser, verifyEmail as verifyEmailRequest } from "../services/auth.service";
+import { getMe, loginUser, logoutUser, registerUser, syncSharedSession, verifyEmail as verifyEmailRequest } from "../services/auth.service";
 
 const AuthContext = createContext(null);
 
@@ -45,6 +45,7 @@ export function AuthProvider({ children }) {
         const nextUser = data.user;
         localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
         setUser(nextUser);
+        return syncSharedSession().catch(() => {});
       })
       .catch(clearSession)
       .finally(() => setBooting(false));
@@ -72,7 +73,15 @@ export function AuthProvider({ children }) {
         setUser(nextUser);
         notifyAuthChange();
       },
-      logout: clearSession
+      logout: async () => {
+        try {
+          await logoutUser();
+        } catch {
+          // Clear the local session even if the API is temporarily unavailable.
+        } finally {
+          clearSession();
+        }
+      }
     }),
     [booting, token, user]
   );

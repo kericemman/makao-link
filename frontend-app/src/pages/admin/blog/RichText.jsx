@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -14,20 +14,24 @@ import {
   FiAlignLeft,
   FiAlignCenter,
   FiAlignRight,
-  FiAlignJustify
+  FiAlignJustify,
+  FiEdit3,
+  FiEye
 } from "react-icons/fi";
 import { FaHeading, FaQuoteRight, FaListUl, FaListOl } from "react-icons/fa";
 import { MdCode } from "react-icons/md";
+import sanitizeHtml from "../../../utils/sanitizeHtml";
 
 const ToolbarButton = ({ onClick, isActive, children, title }) => (
   <button
     type="button"
     onClick={onClick}
     title={title}
-    className={`p-2 rounded-lg transition-all ${
+    aria-label={title}
+    className={`flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors ${
       isActive
-        ? "bg-[#02BB31] text-white shadow-md"
-        : "text-[#065A57] hover:bg-[#F0F7F4] hover:text-[#013E43]"
+        ? "bg-[#0D915C] text-white"
+        : "text-[#41635A] hover:bg-[#F1F7F3] hover:text-[#013E43]"
     }`}
   >
     {children}
@@ -35,6 +39,7 @@ const ToolbarButton = ({ onClick, isActive, children, title }) => (
 );
 
 const RichText = ({ value, onChange }) => {
+  const [previewMode, setPreviewMode] = useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -47,7 +52,7 @@ const RichText = ({ value, onChange }) => {
         autolink: true,
         linkOnPaste: true,
         HTMLAttributes: {
-          class: "text-[#02BB31] underline"
+          class: "text-[#0D915C] underline"
         }
       }),
       TextAlign.configure({
@@ -86,8 +91,8 @@ const RichText = ({ value, onChange }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-[#E4EEE8] overflow-hidden">
-      <div className="bg-[#F0F7F4] p-3 border-b border-[#E4EEE8]">
+    <div className="bg-white rounded-lg shadow-sm border border-[#DDEAE3] overflow-hidden">
+      <div className="bg-[#F1F7F3] p-3 border-b border-[#DDEAE3]">
         <div className="flex flex-wrap items-center gap-1">
           <ToolbarButton
             onClick={() => editor?.chain().focus().toggleBold().run()}
@@ -103,6 +108,14 @@ const RichText = ({ value, onChange }) => {
             title="Italic"
           >
             <FiItalic />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleStrike().run()}
+            isActive={editor?.isActive("strike")}
+            title="Strikethrough"
+          >
+            <span className="font-semibold line-through">S</span>
           </ToolbarButton>
 
           <ToolbarButton
@@ -232,14 +245,31 @@ const RichText = ({ value, onChange }) => {
           >
             <FiRotateCw />
           </ToolbarButton>
+
+          <button
+            type="button"
+            onClick={() => setPreviewMode((current) => !current)}
+            aria-pressed={previewMode}
+            className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#C9DED3] bg-white px-3 text-sm font-semibold text-[#013E43] transition hover:bg-[#E7F2EC]"
+          >
+            {previewMode ? <FiEdit3 aria-hidden="true" /> : <FiEye aria-hidden="true" />}
+            <span>{previewMode ? "Edit" : "Preview"}</span>
+          </button>
         </div>
       </div>
 
-      <div className="p-6">
-        <EditorContent
-          editor={editor}
-          className="min-h-[400px] prose prose-lg max-w-none focus:outline-none"
-        />
+      <div className="min-w-0 bg-white px-4 py-5 sm:px-7 sm:py-6">
+        {previewMode ? (
+          <div
+            className="rich-content min-h-72"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(value || "<p>Nothing to preview yet.</p>") }}
+          />
+        ) : (
+          <EditorContent
+            editor={editor}
+            className="rich-content min-h-72 [&_.ProseMirror]:min-h-72 [&_.ProseMirror]:outline-none [&_.ProseMirror]:focus:outline-none"
+          />
+        )}
       </div>
     </div>
   );

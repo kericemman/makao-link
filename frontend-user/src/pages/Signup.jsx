@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail, FiPhone, FiUser } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "../utils/apiError";
 export default function Signup() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,9 @@ export default function Signup() {
     try {
       const data = await register(form);
       if (data.requiresVerification) {
-        navigate(`/verify-email?email=${encodeURIComponent(data.email || form.email)}`);
+        const next = params.get("next");
+        const nextParam = next ? `&next=${encodeURIComponent(next)}` : "";
+        navigate(`/verify-email?email=${encodeURIComponent(data.email || form.email)}${nextParam}`);
       }
     } catch (err) {
       setError(getApiErrorMessage(err, "Could not create your account."));
@@ -58,7 +61,7 @@ export default function Signup() {
         </button>
       </form>
       <p className="mt-5 text-sm font-bold text-[#065A57]">
-        Already have an account? <Link to="/login" className="text-[#013E43]">Sign in</Link>
+        Already have an account? <Link to={params.get("next") ? `/login?next=${encodeURIComponent(params.get("next"))}` : "/login"} className="text-[#013E43]">Sign in</Link>
       </p>
     </section>
   );

@@ -38,7 +38,7 @@ exports.passwordResetEmail = ({ name, resetUrl }) => {
     intro: "We received a request to reset your password.",
     body: `
       <p>Use the button below to choose a new password.</p>
-      <p>This reset link will expire in 30 minutes.</p>
+      <p>This reset link expires in 30 minutes.</p>
     `,
     ctaText: "Reset Password",
     ctaUrl: resetUrl,
@@ -301,13 +301,21 @@ exports.appSubscriptionConfirmedEmail = () => {
   });
 };
 
-exports.appUpdatePublishedEmail = ({ title, body, category }) => {
+exports.appUpdatePublishedEmail = ({ title, body, category, audience = "mobile_app" }) => {
+  const isWebsite = audience === "website";
+  const isBoth = audience === "all";
+  const updateChannel = isBoth
+    ? "RendaHomes website and mobile app"
+    : isWebsite
+      ? "RendaHomes website"
+      : "RendaHomes mobile app";
+
   return buildEmailLayout({
-    title: "New RendaHomes App Update",
+    title: "New RendaHomes Update",
     greeting: "Hello",
-    intro: `We just posted a new ${category || "app"} update: <strong>${title}</strong>.`,
+    intro: `We just posted a new ${category || "platform"} update for ${updateChannel}: <strong>${title}</strong>.`,
     body: body || "",
-    ctaText: "Open RendaHomes",
+    ctaText: isWebsite ? "Visit RendaHomes" : "Open RendaHomes",
     ctaUrl: clientUrl
   });
 };

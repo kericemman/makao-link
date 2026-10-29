@@ -1,5 +1,12 @@
 export const listingCategories = [
   {
+    slug: "short-stays",
+    title: "Short-term stays",
+    eyebrow: "Stay for a few nights",
+    description: "Furnished places for weekend breaks, work trips, and flexible short stays.",
+    params: { purpose: "short_stay" }
+  },
+  {
     slug: "rentals",
     title: "Homes for rent",
     eyebrow: "Available rentals",

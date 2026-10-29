@@ -3,30 +3,45 @@ const AppTicket = require("../models/appTicket.model");
 const ContactInfo = require("../models/contactInfo.model");
 const AppUpdate = require("../models/appUpdate.model");
 const Subscriber = require("../models/subscriber.model");
+const NewsletterSubscriber = require("../../blog/NewsletterSubscriber.model");
 const PolicyPage = require("../models/policyPage.model");
 const HelpRequest = require("../models/helpRequest.model");
 const sendEmail = require("../../../utils/sendEmail");
 const { appUpdatePublishedEmail } = require("../../../utils/emailTemplates");
+const { recordAdminActivity } = require("../../admin/adminActivity.service");
 
 const sendUpdateNotificationToSubscribers = async (update) => {
-  const subscribers = await Subscriber.find({ isActive: true }).select("email");
+  const audience = update.emailAudience || "mobile_app";
+  const includeWebsite = audience === "website" || audience === "all";
+  const includeMobile = audience === "mobile_app" || audience === "all";
+  const subscriberQueries = [];
 
-  if (!subscribers.length) return;
+  if (includeMobile) {
+    subscriberQueries.push(Subscriber.find({ isActive: true, source: "mobile_app" }).select("email"));
+  }
+  if (includeWebsite) {
+    subscriberQueries.push(Subscriber.find({ isActive: true, source: "website" }).select("email"));
+    subscriberQueries.push(NewsletterSubscriber.find({ isActive: true }).select("email"));
+  }
 
-  for (const subscriber of subscribers) {
+  const subscriberGroups = await Promise.all(subscriberQueries);
+  const uniqueEmails = [...new Set(subscriberGroups.flat().map((subscriber) => subscriber.email?.toLowerCase()).filter(Boolean))];
+
+  for (const email of uniqueEmails) {
     try {
       await sendEmail({
-        to: subscriber.email,
-        subject: `New RendaHomes app update: ${update.title}`,
+        to: email,
+        subject: `New RendaHomes update: ${update.title}`,
         html: appUpdatePublishedEmail({
           title: update.title,
           body: update.body,
-          category: update.category
+          category: update.category,
+          audience
         })
       });
     } catch (error) {
       console.error(
-        `Failed to send app update email to ${subscriber.email}:`,
+        `Failed to send update email to ${email}:`,
         error.message
       );
     }
@@ -164,6 +179,19 @@ exports.createUpdate = async (req, res) => {
     await update.save();
   }
 
+  await recordAdminActivity({
+    eventType: update.isPublished ? "app_update" : "app_update_draft",
+    description: update.isPublished ? "Mobile app update published" : "Mobile app update draft created",
+    details: update.title,
+    path: "/admin/app/updates",
+    actor: req.user._id,
+    actorName: req.user.name,
+    readBy: [req.user._id],
+    entityType: "app_update",
+    entityId: String(update._id),
+    dedupeKey: `${update.isPublished ? "app_update" : "app_update_draft"}:${update._id}:${update.updatedAt.getTime()}`
+  });
+
   res.status(201).json({ update });
 };
 
@@ -195,6 +223,19 @@ exports.updateUpdate = async (req, res) => {
     await update.save();
   }
 
+  await recordAdminActivity({
+    eventType: update.isPublished ? "app_update" : "app_update_draft",
+    description: isPublishingNow ? "Mobile app update published" : "Mobile app update edited",
+    details: update.title,
+    path: "/admin/app/updates",
+    actor: req.user._id,
+    actorName: req.user.name,
+    readBy: [req.user._id],
+    entityType: "app_update",
+    entityId: String(update._id),
+    dedupeKey: `app_update_edit:${update._id}:${update.updatedAt.getTime()}`
+  });
+
   res.json({ update });
 };
 
@@ -208,8 +249,59 @@ exports.deleteUpdate = async (req, res) => {
 
 /* SUBSCRIBERS */
 exports.getSubscribers = async (req, res) => {
-  const subscribers = await Subscriber.find().sort({ createdAt: -1 });
+  const [appSubscribers, websiteNewsletterSubscribers] = await Promise.all([
+    Subscriber.find().sort({ createdAt: -1 }),
+    NewsletterSubscriber.find().sort({ createdAt: -1 })
+  ]);
+  const subscriberMap = new Map();
+
+  const addSubscriber = (subscriber, source) => {
+    const email = subscriber.email?.trim().toLowerCase();
+    if (!email) return;
+
+    const existing = subscriberMap.get(email) || {
+      _id: email,
+      email,
+      sources: [],
+      isActive: false,
+      createdAt: subscriber.subscribedAt || subscriber.createdAt
+    };
+    if (!existing.sources.includes(source)) existing.sources.push(source);
+    existing.isActive = existing.isActive || subscriber.isActive;
+    const createdAt = subscriber.subscribedAt || subscriber.createdAt;
+    if (createdAt && (!existing.createdAt || new Date(createdAt) < new Date(existing.createdAt))) {
+      existing.createdAt = createdAt;
+    }
+    subscriberMap.set(email, existing);
+  };
+
+  appSubscribers.forEach((subscriber) => {
+    addSubscriber(subscriber, subscriber.source === "website" ? "website" : "mobile_app");
+  });
+  websiteNewsletterSubscribers.forEach((subscriber) => addSubscriber(subscriber, "website"));
+
+  const subscribers = [...subscriberMap.values()].sort(
+    (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+  );
   res.json({ subscribers });
+};
+
+exports.updateSubscriberStatus = async (req, res) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+  if (!email || typeof req.body.isActive !== "boolean") {
+    return res.status(400).json({ message: "Email and subscriber status are required" });
+  }
+
+  const [appResult, websiteResult] = await Promise.all([
+    Subscriber.updateMany({ email }, { $set: { isActive: req.body.isActive } }),
+    NewsletterSubscriber.updateMany({ email }, { $set: { isActive: req.body.isActive } })
+  ]);
+
+  if (!appResult.matchedCount && !websiteResult.matchedCount) {
+    return res.status(404).json({ message: "Subscriber not found" });
+  }
+
+  res.json({ success: true, email, isActive: req.body.isActive });
 };
 
 exports.updateSubscriber = async (req, res) => {

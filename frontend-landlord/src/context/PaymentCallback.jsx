@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import { verifyPayment } from "../services/payment.service";
 
 const PaymentCallbackPage = () => {
   const navigate = useNavigate();
@@ -10,10 +11,14 @@ const PaymentCallbackPage = () => {
   useEffect(() => {
     const verifyAndRedirect = async () => {
       try {
+        const params = new URLSearchParams(window.location.search);
+        const reference = params.get("reference") || params.get("trxref");
+        if (!reference) throw new Error("Missing payment reference");
+        await verifyPayment(reference);
         await refreshAuth();
         navigate("/dashboard", { replace: true });
       } catch (err) {
-        setError("Payment callback completed, but we could not refresh your account automatically. Please log in again.");
+        setError("We could not verify this payment. No plan changes were applied. Return to subscriptions or contact support with your payment reference.");
       }
     };
 

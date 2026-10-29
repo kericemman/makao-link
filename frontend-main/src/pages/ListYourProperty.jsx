@@ -1,74 +1,98 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  FiArrowRight,
-  FiCheckCircle,
-  FiClock,
-  FiHelpCircle,
-  FiHome,
-  FiMessageSquare,
-  FiPhone,
-  FiShield,
-  FiUpload,
-  FiUsers
-} from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
+import { FiArrowRight, FiCheck, FiCheckCircle, FiHome, FiLayers, FiShield, FiUsers } from "react-icons/fi";
+import WhatsAppListingWalkthrough from "../components/WhatsAppListingWalkthrough";
 import { landlordListPropertyUrl, portalLinks } from "../config/portals";
 import { useSeo } from "../utils/seo";
 
 const whatsappUrl =
   "https://wa.me/254738388000?text=Hello%20RendaHomes%2C%20I%20want%20help%20listing%20my%20property.";
 
-const benefits = [
+const assurances = [
+  { icon: FiHome, title: "Two active listings free", text: "Start listing without a subscription." },
+  { icon: FiShield, title: "Reviewed before publishing", text: "Listings are checked before they appear publicly." },
+  { icon: FiUsers, title: "Talk to interested tenants", text: "Keep control of calls, inquiries, and viewings." }
+];
+
+const packages = [
   {
-    icon: FiHome,
-    title: "List 2 properties free",
-    text: "Start without paying first. Add your first two active listings and see how tenant inquiries come in."
+    key: "normal",
+    name: "Free",
+    price: 0,
+    limit: 2,
+    detail: "For an individual landlord starting with one or two properties.",
+    benefits: [
+      "Publish up to 2 active listings",
+      "Create and manage listings in your landlord dashboard",
+      "Receive tenant inquiries for your properties",
+      "Update listing details and availability",
+      "Listings reviewed before they go public",
+      "Property pages discoverable on RendaHomes"
+    ],
+    featured: false
   },
   {
-    icon: FiMessageSquare,
-    title: "Receive direct tenant inquiries",
-    text: "Interested tenants can call or send an inquiry so you stay in control of your property conversations."
+    key: "basic",
+    name: "Basic",
+    price: 500,
+    limit: 7,
+    detail: "For growing property owners managing several listings.",
+    benefits: [
+      "Publish up to 7 active listings",
+      "Create and manage listings in your landlord dashboard",
+      "Receive tenant inquiries for your properties",
+      "Update listing details and availability",
+      "Listings reviewed before they go public",
+      "Property pages discoverable on RendaHomes"
+    ],
+    featured: false
   },
   {
-    icon: FiShield,
-    title: "Build trust with verification",
-    text: "Approved listings show trust signals, and paid landlords can complete KYC for stronger credibility."
+    key: "premium",
+    name: "Premium",
+    price: 1500,
+    limit: 15,
+    detail: "For active property owners managing 8 to 15 listings.",
+    benefits: [
+      "Publish up to 15 active listings",
+      "Eligible listings can appear in featured discovery",
+      "Create and manage listings in your landlord dashboard",
+      "Receive and manage tenant inquiries",
+      "Update listing details and availability",
+      "Listings reviewed before they go public",
+      "WhatsApp listing intake for property details, photos, and location (planned)",
+      "WhatsApp updates for review progress and your published listing link (planned)",
+      "Opt-in WhatsApp alerts for inquiries, viewing requests, and follow-ups (planned)"
+    ],
+    featured: true
   },
   {
-    icon: FiHelpCircle,
-    title: "Get assisted onboarding",
-    text: "If you are busy, send property details on WhatsApp and RendaHomes can guide you through setup."
+    key: "pro",
+    name: "Pro",
+    price: 2500,
+    limit: 50,
+    detail: "For real-estate companies and property owners managing larger portfolios.",
+    inherits: "All Premium benefits, plus:",
+    benefits: [
+      "Expanded capacity for up to 50 active listings",
+      "WhatsApp intake for multiple properties and building categories (planned)",
+      "Coordinated onboarding for a company property portfolio",
+      "Guided onboarding for company portfolios"
+    ],
+    note: "A dedicated company/team dashboard and automated WhatChimp workflows are still being developed.",
+    featured: false
   }
 ];
 
-const steps = [
-  "Create your landlord account",
-  "Add property details, location, price, and photos",
-  "RendaHomes reviews the listing before publishing",
-  "Start receiving tenant calls and inquiries"
-];
-
-const trustPoints = [
-  "Admin-reviewed listings before they appear publicly",
-  "Availability and active status shown to users",
-  "KYC review path for paid landlords",
-  "Support tickets when you need help"
-];
-
-const whatsappChecklist = [
-  "Property county, town, estate/area, and nearby landmark",
-  "Rent or sale price, property type, bedrooms, and bathrooms",
-  "Clear photos of rooms, outside, access, and amenities",
-  "The phone number tenants should call"
-];
-
 export default function ListYourProperty() {
+  const [expandedPlans, setExpandedPlans] = useState({});
   const landlordUrl = landlordListPropertyUrl();
 
   useSeo({
     title: "List Your Property Free in Kenya",
     description:
-      "Landlords can list two properties free on RendaHomes, receive direct tenant inquiries, and build trust through reviewed listings and KYC verification.",
+      "List two properties free on RendaHomes. Get WhatsApp guidance, publish through your landlord account, and receive direct tenant inquiries.",
     path: "/list-your-property",
     jsonLd: {
       "@context": "https://schema.org",
@@ -86,186 +110,193 @@ export default function ListYourProperty() {
   });
 
   return (
-    <main className="bg-[#F6FAF8]">
-      <section className="border-b border-[#DDEBE4] bg-[#013E43] text-white">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_420px] lg:px-8 lg:py-18">
-          <div>
-            <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#02BB31]">
+    <main className="bg-white">
+      <section className="relative isolate overflow-hidden bg-[#013E43] text-white">
+        <img
+          src="/assets/hero-home.jpg"
+          alt="Bright furnished apartment living room"
+          className="absolute inset-0 h-full w-full object-cover"
+          fetchPriority="high"
+        />
+        <div aria-hidden="true" className="absolute inset-0 bg-[#012E31]/75" />
+        <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,rgba(1,35,38,0.94)_0%,rgba(1,49,51,0.76)_55%,rgba(1,62,67,0.45)_100%)]" />
+
+        <div className="relative mx-auto grid min-h-[520px] max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_0.62fr] lg:px-8 lg:py-20">
+          <div className="max-w-3xl">
+            <p className="inline-flex items-center gap-2 text-sm font-bold text-[#B6F2C2]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#65D87A]" />
               For Kenyan landlords
             </p>
-            <h1 className="mt-4 max-w-4xl text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-              List your property free and reach serious tenants directly.
+            <h1 className="mt-5 text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+              Your property. Your listing. Your next tenant.
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-[#CFE7DC]">
-              RendaHomes helps landlords publish verified rentals, apartments, bedsitters, houses, and office spaces without handing control to random agents.
+            <p className="mt-5 max-w-2xl text-base leading-7 text-white/85 sm:text-lg">
+              Share your property details with our team on WhatsApp. We will guide you through creating your account and publishing your listing.
             </p>
-
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a
-                href={landlordUrl}
-                title={portalLinks.landlord.purpose}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#02BB31] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-[#0D915C]"
-              >
-                Start listing
-                <FiArrowRight />
-              </a>
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/10 px-6 py-3 text-sm font-extrabold text-white transition hover:bg-white/15"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#078A45] px-6 text-sm font-bold text-white transition hover:bg-[#087341] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
-                <FaWhatsapp />
-                Get WhatsApp help
+                <FaWhatsapp aria-hidden="true" className="text-lg" />
+                Get help on WhatsApp
+              </a>
+              <a
+                href={landlordUrl}
+                title={portalLinks.landlord.purpose}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/60 bg-white/10 px-6 text-sm font-bold text-white transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              >
+                Create landlord account <FiArrowRight aria-hidden="true" />
               </a>
             </div>
-
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              <HeroStat value="2" label="free active listings" />
-              <HeroStat value="Direct" label="tenant inquiries" />
-              <HeroStat value="Reviewed" label="before publishing" />
-            </div>
+            <p className="mt-5 text-sm font-semibold text-white/80">Two active listings are free to start.</p>
           </div>
 
-          <aside className="rounded-2xl border border-white/10 bg-white/10 p-5 shadow-2xl shadow-black/10">
-            <p className="text-sm font-bold text-[#CFE7DC]">What you get</p>
-            <div className="mt-4 space-y-3">
-              {trustPoints.map((point) => (
-                <div key={point} className="flex gap-3 rounded-xl bg-white/10 p-3">
-                  <FiCheckCircle className="mt-0.5 shrink-0 text-[#02BB31]" />
-                  <p className="text-sm font-semibold leading-6 text-white">{point}</p>
-                </div>
-              ))}
+          <div className="hidden justify-self-end lg:block">
+            <p className="max-w-xs border-l-2 border-[#65D87A] pl-5 text-lg font-semibold leading-7 text-white">
+              Reach property seekers online while staying in control of every conversation.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-[#DDEBE4] bg-[#F6FAF8]">
+        <div className="mx-auto grid max-w-7xl divide-y divide-[#DDEBE4] px-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-6 lg:px-8">
+          {assurances.map(({ icon: Icon, title, text }) => (
+            <div key={title} className="flex items-start gap-3 py-5 sm:px-5 lg:py-6">
+              <Icon aria-hidden="true" className="mt-0.5 shrink-0 text-xl text-[#0D915C]" />
+              <div>
+                <h2 className="text-sm font-bold text-[#013E43]">{title}</h2>
+                <p className="mt-1 text-sm leading-5 text-[#536C61]">{text}</p>
+              </div>
             </div>
-          </aside>
+          ))}
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {benefits.map((benefit) => {
-            const Icon = benefit.icon;
-            return (
-              <article key={benefit.title} className="rounded-2xl border border-[#DDEBE4] bg-white p-5 shadow-sm">
-                <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#F0F7F4] text-[#0D915C]">
-                  <Icon />
-                </div>
-                <h2 className="mt-4 text-lg font-extrabold text-[#013E43]">{benefit.title}</h2>
-                <p className="mt-2 text-sm font-medium leading-6 text-[#065A57]">{benefit.text}</p>
-              </article>
-            );
-          })}
+      <section className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:gap-14 lg:px-8 lg:py-20">
+        <div>
+          <p className="text-sm font-bold text-[#0D915C]">WhatsApp-assisted listing</p>
+          <h2 className="mt-3 text-3xl font-extrabold leading-tight tracking-tight text-[#013E43] sm:text-4xl">
+            Start with a message. Finish when you are ready.
+          </h2>
+          <p className="mt-4 text-base leading-7 text-[#536C61]">
+            WhatsApp is the easy first step. Our team helps you prepare, then you add and manage the property in your landlord account. Once reviewed and approved, it can be found on the website and app.
+          </p>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-full bg-[#078A45] px-5 text-sm font-bold text-white transition hover:bg-[#087341] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#078A45]"
+          >
+            <FaWhatsapp aria-hidden="true" className="text-lg" />
+            Message RendaHomes
+          </a>
+          <p className="mt-3 text-xs leading-5 text-[#647C75]">Your account and listing are completed in the landlord portal.</p>
         </div>
+
+        <WhatsAppListingWalkthrough whatsappUrl={whatsappUrl} landlordUrl={landlordUrl} />
       </section>
 
-      <section className="border-y border-[#DDEBE4] bg-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
-          <div>
-            <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#02BB31]">Simple process</p>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#013E43]">
-              Publish faster without losing control.
+      <section className="border-y border-[#DDEBE4] bg-[#F6FAF8]" aria-labelledby="listing-packages-title">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-18">
+          <div className="max-w-2xl">
+            <p className="text-sm font-bold text-[#0D915C]">Simple listing packages</p>
+            <h2 id="listing-packages-title" className="mt-2 text-3xl font-extrabold leading-tight text-[#013E43] sm:text-4xl">
+              Start with the space you have.
             </h2>
-            <p className="mt-4 text-sm font-medium leading-7 text-[#065A57]">
-              The landlord dashboard is built for property owners who want clean listing management, direct inquiries, and a clear upgrade path when the free limit is full.
+            <p className="mt-3 text-base leading-7 text-[#536C61]">
+              Choose a plan for your active property listings. You can change plans later from your landlord dashboard. Planned WhatsApp listing and notification features are for Premium and Pro; the WhatChimp API integration is not live yet.
             </p>
           </div>
 
-          <div className="grid gap-3">
-            {steps.map((step, index) => (
-              <div key={step} className="flex items-center gap-4 rounded-2xl border border-[#DDEBE4] bg-[#F6FAF8] p-4">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#013E43] text-sm font-extrabold text-white">
-                  {index + 1}
-                </span>
-                <p className="text-sm font-extrabold text-[#013E43]">{step}</p>
-              </div>
+          <div className="mt-8 grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {packages.map((plan) => (
+              <article
+                key={plan.key}
+                className={`flex h-full min-h-[430px] flex-col border p-5 ${plan.featured ? "border-[#0D915C] bg-[#EAF6EF] shadow-md" : "border-[#DDEBE4] bg-white"}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-[#013E43]">{plan.name}</h3>
+                    <p className="mt-2 min-h-10 text-sm leading-5 text-[#647C75]">{plan.detail}</p>
+                  </div>
+                  {plan.featured && <span className="shrink-0 text-xs font-bold text-[#0D915C]">POPULAR</span>}
+                </div>
+                <p className="mt-4 text-3xl font-extrabold text-[#013E43]">
+                  {plan.price === 0 ? "Free" : `KES ${plan.price.toLocaleString()}`}
+                  {plan.price > 0 && <span className="ml-1 text-sm font-medium text-[#647C75]">/ month</span>}
+                </p>
+                {plan.inherits && <p className="mt-4 border-t border-[#E6EFEA] pt-4 text-sm font-semibold text-[#24443A]">{plan.inherits}</p>}
+                <ul className={`${plan.inherits ? "mt-2" : "mt-4 border-t border-[#E6EFEA] pt-4"} space-y-2 text-sm leading-5 text-[#24443A]`}>
+                  {plan.benefits.slice(0, expandedPlans[plan.key] ? plan.benefits.length : 5).map((benefit) => (
+                    <li key={benefit} className="flex items-start gap-2">
+                      <FiCheck aria-hidden="true" className="mt-0.5 shrink-0 text-[#0D915C]" />
+                      <span>{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+                {plan.benefits.length > 5 && (
+                  <button
+                    type="button"
+                    aria-expanded={Boolean(expandedPlans[plan.key])}
+                    onClick={() => setExpandedPlans((current) => ({ ...current, [plan.key]: !current[plan.key] }))}
+                    className="mt-3 self-start text-sm font-semibold text-[#0D915C] underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0D915C]"
+                  >
+                    {expandedPlans[plan.key] ? "View less" : "View more"}
+                  </button>
+                )}
+                {plan.note && <p className="mt-3 text-xs leading-5 text-[#647C75]">{plan.note}</p>}
+                <a
+                  href={`${portalLinks.landlord.href.replace(/\/$/, "")}/register?plan=${plan.key}`}
+                  className={`mt-auto inline-flex min-h-10 items-center justify-center gap-2 pt-5 text-sm font-semibold ${plan.featured ? "text-[#0D915C]" : "text-[#013E43]"}`}
+                >
+                  {plan.price === 0 ? "Start for free" : "Choose plan"}
+                  <FiArrowRight aria-hidden="true" />
+                </a>
+              </article>
             ))}
           </div>
-        </div>
-      </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-5 lg:grid-cols-3">
-          <MiniCard icon={FiUpload} title="Photos matter" text="Upload clear photos of the actual rooms, exterior, and access points to earn more serious inquiries." />
-          <MiniCard icon={FiClock} title="Keep availability fresh" text="Mark listings taken or available from your dashboard so tenants do not chase stale homes." />
-          <MiniCard icon={FiUsers} title="Agents can refer landlords" text="RendaHomes agents can onboard landlords through referral links and track performance from the user portal." />
-        </div>
-      </section>
-
-      <section className="border-y border-[#DDEBE4] bg-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_420px] lg:px-8">
-          <div>
-            <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#02BB31]">WhatsApp-assisted onboarding</p>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-[#013E43]">
-              Busy landlord? Send the details and we guide you.
-            </h2>
-            <p className="mt-4 text-sm font-medium leading-7 text-[#065A57]">
-              You do not have to figure out everything alone. RendaHomes can help you prepare the right listing details before publishing.
-            </p>
+          <div className="mt-5 flex flex-col gap-4 border border-[#CFE2D8] bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex items-start gap-3">
+              <FiLayers aria-hidden="true" className="mt-1 shrink-0 text-xl text-[#0D915C]" />
+              <div>
+                <h3 className="font-bold text-[#013E43]">Managing an apartment block or many properties?</h3>
+                <p className="mt-1 max-w-3xl text-sm leading-6 text-[#536C61]">
+                  Talk to us about portfolio onboarding and grouped unit types. Multi-unit inventory tools are not part of the self-service plans yet; we’ll help you find the right way to present your property.
+                </p>
+              </div>
+            </div>
             <a
-              href={whatsappUrl}
+              href={`${whatsappUrl}%20I%20manage%20an%20apartment%20block%20or%20property%20portfolio.`}
               target="_blank"
               rel="noreferrer"
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#02BB31] px-6 py-3 text-sm font-extrabold text-white"
+              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 text-sm font-semibold text-[#078A45]"
             >
-              <FaWhatsapp />
-              Send property details
+              <FaWhatsapp aria-hidden="true" className="text-lg" />
+              Discuss your portfolio <FiArrowRight aria-hidden="true" />
             </a>
           </div>
-
-          <div className="rounded-2xl border border-[#DDEBE4] bg-[#F6FAF8] p-5">
-            <p className="text-sm font-bold text-[#013E43]">What to send</p>
-            <div className="mt-4 space-y-3">
-              {whatsappChecklist.map((item) => (
-                <div key={item} className="flex gap-3">
-                  <FiCheckCircle className="mt-0.5 shrink-0 text-[#02BB31]" />
-                  <p className="text-sm font-semibold leading-6 text-[#065A57]">{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          <p className="mt-4 text-xs leading-5 text-[#647C75]">Paid plans are billed monthly. Your package limit applies to active listings. Automated WhatChimp listing and notification workflows are planned for Premium and Pro, but are not live yet; current listing submission is completed in the landlord portal.</p>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
-        <div className="rounded-3xl bg-[#013E43] p-6 text-white sm:p-8 lg:flex lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#02BB31]">Ready to start?</p>
-            <h2 className="mt-2 text-3xl font-extrabold tracking-tight">List your first property today.</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#CFE7DC]">
-              Start with two free active listings. Upgrade later only when your portfolio needs more room.
+      <section className="border-t border-[#DDEBE4] bg-[#F6FAF8]">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <div className="flex items-start gap-3">
+            <FiCheckCircle aria-hidden="true" className="mt-1 shrink-0 text-xl text-[#0D915C]" />
+            <p className="max-w-2xl text-sm leading-6 text-[#24443A]">
+              You decide when a listing is ready. RendaHomes reviews it before it goes public, and tenant inquiries come directly to you.
             </p>
           </div>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:mt-0">
-            <a href={landlordUrl} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#02BB31] px-6 py-3 text-sm font-extrabold text-white">
-              Create landlord account
-              <FiArrowRight />
-            </a>
-            <a href="tel:+254738388000" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-extrabold text-[#013E43]">
-              <FiPhone />
-              Call RendaHomes
-            </a>
-          </div>
+          <Link to="/listings" className="inline-flex shrink-0 items-center gap-2 text-sm font-bold text-[#013E43] hover:text-[#0D915C]">
+            See homes on RendaHomes <FiArrowRight aria-hidden="true" />
+          </Link>
         </div>
       </section>
     </main>
-  );
-}
-
-function HeroStat({ value, label }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-      <p className="text-xl font-extrabold text-white">{value}</p>
-      <p className="mt-1 text-xs font-bold uppercase tracking-[0.12em] text-[#A8D8C1]">{label}</p>
-    </div>
-  );
-}
-
-function MiniCard({ icon: Icon, title, text }) {
-  return (
-    <article className="rounded-2xl border border-[#DDEBE4] bg-white p-5 shadow-sm">
-      <Icon className="text-xl text-[#0D915C]" />
-      <h3 className="mt-3 text-base font-extrabold text-[#013E43]">{title}</h3>
-      <p className="mt-2 text-sm font-medium leading-6 text-[#065A57]">{text}</p>
-    </article>
   );
 }
