@@ -29,11 +29,11 @@ const getCurrentConversation = async (req, res, next) => {
   try {
     const conversation = await findWebConversation({ token: cookieToken(req) });
     if (!conversation || conversation.consentPolicyVersion !== getConsentInfo().policyVersion) {
-      return res.json({ success: true, active: false });
+      return res.json({ success: true, consent: getConsentInfo(), active: false });
     }
     const messages = await Message.find({ conversation: conversation._id, channel: "web" })
       .sort({ sequence: 1 }).limit(40).select("direction text createdAt").lean();
-    return res.json({ success: true, active: true, messages: messages.map(({ direction, text, createdAt }) => ({ direction, text, createdAt })) });
+    return res.json({ success: true, consent: getConsentInfo(), active: true, messages: messages.map(({ direction, text, createdAt }) => ({ direction, text, createdAt })) });
   } catch (error) { return next(error); }
 };
 

@@ -120,6 +120,12 @@ test("mobile search rejects non-verified listing IDs and unsupported response fi
   await assert.rejects(runAssistantTurn({ conversationId: "507f1f77bcf86cd799439011", userText: "Find a home", mode: "mobile_search", client }), /Mobile assistant response/);
 });
 
+test("public assistant replies use conversational labels and no hyphens", () => {
+  const { validateMobileAnswer } = require("./orchestrator.service");
+  const answer = validateMobileAnswer({ reply: "A short_stay home with a two-bedroom layout for 2-3 people.", listingIds: [] }, new Set());
+  assert.equal(answer.reply, "A short stay home with a two bedroom layout for 2 to 3 people.");
+});
+
 test("model tool calls are capped, executed from the allowlist, and results are replayed without response storage", async (t) => {
   configure();
   stubContext(t);

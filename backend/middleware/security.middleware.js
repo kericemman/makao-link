@@ -1,14 +1,33 @@
-const createRateLimiter = ({ windowMs, max, message }) => {
+const MAX_TRACKED_CLIENTS = 20000;
+const CLEANUP_INTERVAL_MS = 60 * 1000;
+
+const createRateLimiter = ({ windowMs, max, message, maxEntries = MAX_TRACKED_CLIENTS, cleanupIntervalMs = CLEANUP_INTERVAL_MS }) => {
   const hits = new Map();
+  let nextCleanupAt = 0;
 
   return (req, res, next) => {
     const now = Date.now();
-    const key = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
-    const record = hits.get(key) || { count: 0, resetAt: now + windowMs };
+    if (now >= nextCleanupAt) {
+      for (const [client, entry] of hits) {
+        if (entry.resetAt <= now) hits.delete(client);
+      }
+      nextCleanupAt = now + cleanupIntervalMs;
+    }
 
-    if (record.resetAt <= now) {
-      record.count = 0;
-      record.resetAt = now + windowMs;
+    const key = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+    let record = hits.get(key);
+
+    if (record?.resetAt <= now) {
+      hits.delete(key);
+      record = undefined;
+    }
+
+    if (!record) {
+      if (hits.size >= maxEntries) {
+        const oldestClient = hits.keys().next().value;
+        if (oldestClient !== undefined) hits.delete(oldestClient);
+      }
+      record = { count: 0, resetAt: now + windowMs };
     }
 
     record.count += 1;
@@ -85,6 +104,7 @@ module.exports = {
   authLimiter,
   assistantMessageLimiter,
   assistantSessionLimiter,
+  createRateLimiter,
   generalApiLimiter,
   otpLimiter,
   rejectUnsafeKeys

@@ -137,6 +137,7 @@ HOSTINGER_HOST=46.202.135.17
 HOSTINGER_USER=root
 HOSTINGER_SSH_PORT=22
 HOSTINGER_APP_DIR=/var/www/rendahomes
+HOSTINGER_SSH_KNOWN_HOSTS=<verified known_hosts entry for this host and port>
 VITE_API_URL=https://updates.rendahomes.com/api
 VITE_LANDLORD_URL=https://landlord.rendahomes.com
 VITE_USER_URL=https://user.rendahomes.com
@@ -155,6 +156,20 @@ HOSTINGER_SSH_KEY_B64
 ```
 
 Use the private key file, not the `.pub` file.
+
+Add the VPS host key as `HOSTINGER_SSH_KNOWN_HOSTS`. On your Mac, get the candidate entry with:
+
+```bash
+ssh-keyscan -p 22 46.202.135.17
+```
+
+Before saving it, verify its SHA256 fingerprint against Hostinger's VPS console or another trusted channel:
+
+```bash
+ssh-keygen -lf <(ssh-keyscan -p 22 46.202.135.17 2>/dev/null)
+```
+
+Save the verified full `known_hosts` line, not only the fingerprint. The deploy workflow will reject an unpinned or mismatched host.
 
 ## 6. Deploy
 

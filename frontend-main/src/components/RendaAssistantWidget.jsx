@@ -3,13 +3,27 @@ import { Link } from "react-router-dom";
 import { FiArrowUpRight, FiHome, FiMessageCircle, FiRefreshCw, FiSend, FiX } from "react-icons/fi";
 import {
   createRendaWebConversation,
-  getRendaWebConsent,
   getRendaWebConversation,
   resetRendaWebConversation,
   sendRendaWebMessage
 } from "../services/rendaAssistant.service";
 
 const errorMessage = (error) => error?.response?.data?.message || "Ask Renda is temporarily unavailable. You can still browse all listings.";
+const formatAssistantText = (text) => String(text || "")
+  .replace(/\bshort_stay\b/gi, "short stay")
+  .replace(/\bshort_term\b/gi, "short stay")
+  .replace(/\b(\d+)\s*-\s*(\d+)\b/g, "$1 to $2")
+  .replace(/[_‐‑‒–—-]+/g, " ")
+  .replace(/\s{2,}/g, " ")
+  .trim();
+const getWelcomeMessage = () => {
+  const hour = Number(new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    hourCycle: "h23"
+  }).format(new Date()));
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  return `${greeting}, I’m Renda, your RendaHomes home-finding assistant. I can help you discover homes and short stays that fit your location, budget, and needs. What are you looking for today?`;
+};
 const getImage = (listing) => {
   const image = Array.isArray(listing.images) ? listing.images[0] : listing.images;
   return typeof image === "string" ? image : image?.url || image?.secure_url || "";
@@ -43,23 +57,30 @@ export default function RendaAssistantWidget() {
   const [consent, setConsent] = useState(null);
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState("");
+  const [pendingMessage, setPendingMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [started, setStarted] = useState(false);
+  const [activeRequest, setActiveRequest] = useState("");
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const sendingPendingRef = useRef(false);
 
   useEffect(() => {
     if (!open || started) return;
     let cancelled = false;
     setStarted(true);
     setPhase("loading");
-    Promise.all([getRendaWebConsent(), getRendaWebConversation()])
-      .then(([consentResponse, conversation]) => {
+    getRendaWebConversation()
+      .then((conversation) => {
         if (cancelled) return;
-        setConsent(consentResponse.consent);
+        setConsent(conversation.consent);
         if (conversation.active) {
-          setMessages(conversation.messages.map((message) => ({ ...message, listings: [] })));
+          setMessages(conversation.messages.map((message) => ({
+            ...message,
+            text: message.direction === "outbound" ? formatAssistantText(message.text) : message.text,
+            listings: []
+          })));
           setPhase("chat");
         } else setPhase("consent");
       })
@@ -70,16 +91,34 @@ export default function RendaAssistantWidget() {
   }, [open, started]);
 
   useEffect(() => {
-    if (open && phase === "chat") inputRef.current?.focus();
+    if (open && (phase === "loading" || phase === "chat")) inputRef.current?.focus();
     if (open && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [open, phase, messages, busy]);
+
+  useEffect(() => {
+    if (phase !== "chat" || !pendingMessage || busy || sendingPendingRef.current) return;
+    const message = pendingMessage;
+    sendingPendingRef.current = true;
+    setPendingMessage("");
+    setNotice("");
+    setActiveRequest(message);
+    setMessages((current) => [...current, { direction: "inbound", text: message, listings: [] }]);
+    setBusy(true);
+    sendRendaWebMessage(message)
+      .then((result) => setMessages((current) => [...current, { direction: "outbound", text: result.reply, listings: result.listings || [] }]))
+      .catch((error) => {
+        setNotice(errorMessage(error));
+        if (error?.response?.status === 401) setPhase("consent");
+      })
+      .finally(() => { sendingPendingRef.current = false; setBusy(false); setActiveRequest(""); });
+  }, [phase, pendingMessage, busy]);
 
   const startChat = async () => {
     setBusy(true);
     setNotice("");
     try {
       await createRendaWebConversation();
-      setMessages([{ direction: "outbound", text: "Hi, I’m Renda. Tell me what kind of place you’re looking for and where.", listings: [] }]);
+      setMessages([{ direction: "outbound", text: getWelcomeMessage(), listings: [] }]);
       setPhase("chat");
     } catch (error) { setNotice(errorMessage(error)); }
     finally { setBusy(false); }
@@ -88,18 +127,10 @@ export default function RendaAssistantWidget() {
   const submit = async (event) => {
     event.preventDefault();
     const message = draft.trim();
-    if (!message || busy || phase !== "chat") return;
+    if (!message || busy || pendingMessage || !["loading", "chat"].includes(phase)) return;
     setDraft("");
     setNotice("");
-    setMessages((current) => [...current, { direction: "inbound", text: message, listings: [] }]);
-    setBusy(true);
-    try {
-      const result = await sendRendaWebMessage(message);
-      setMessages((current) => [...current, { direction: "outbound", text: result.reply, listings: result.listings || [] }]);
-    } catch (error) {
-      setNotice(errorMessage(error));
-      if (error?.response?.status === 401) setPhase("consent");
-    } finally { setBusy(false); }
+    setPendingMessage(message);
   };
 
   const resetChat = async () => {
@@ -107,6 +138,7 @@ export default function RendaAssistantWidget() {
     try { await resetRendaWebConversation(); }
     catch { /* A missing or expired session is already reset from the user's perspective. */ }
     setMessages([]);
+    setPendingMessage("");
     setNotice("");
     setStarted(false);
     setPhase("idle");
@@ -130,12 +162,29 @@ export default function RendaAssistantWidget() {
             </div>
           </header>
 
-          {phase === "loading" && <div className="flex flex-1 items-center justify-center text-sm text-[#56716a]">Getting Ask Renda ready…</div>}
+          {phase === "loading" && (
+            <div className="flex min-h-0 flex-1 flex-col bg-[#f8fbf9]">
+              <div className="flex flex-1 flex-col justify-end gap-3 overflow-y-auto px-3 py-4">
+                {pendingMessage && <p className="ml-auto max-w-[88%] rounded-2xl rounded-br-md bg-[#0d915c] px-3.5 py-2.5 text-[13px] leading-5 text-white">{pendingMessage}</p>}
+                <span role="status" aria-live="polite" className="ml-1 flex min-w-0 items-center gap-2 text-[11px] text-[#718780]">
+                  <i className="h-1 w-1 animate-bounce rounded-full bg-[#0d915c] [animation-delay:-0.2s]" />
+                  <i className="h-1 w-1 animate-bounce rounded-full bg-[#0d915c] [animation-delay:-0.1s]" />
+                  <i className="h-1 w-1 animate-bounce rounded-full bg-[#0d915c]" />
+                  {pendingMessage && <span className="line-clamp-2 min-w-0 break-words">Loading your request: {pendingMessage}</span>}
+                </span>
+              </div>
+              <form onSubmit={submit} className="flex shrink-0 items-end gap-2 border-t border-[#e4eee8] bg-white p-3">
+                <textarea ref={inputRef} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} rows={1} maxLength={2000} placeholder="Type your request…" aria-label="Message Ask Renda" className="max-h-24 min-h-11 flex-1 resize-none rounded-lg border border-[#dce9e2] bg-[#fbfdfc] px-3 py-2.5 text-sm text-[#013e43] outline-none placeholder:text-[#7d928b] focus:border-[#0d915c]" />
+                <button type="submit" aria-label="Send message" title="Send message" disabled={!draft.trim() || !!pendingMessage} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#0d915c] text-white transition hover:bg-[#08794b] disabled:cursor-not-allowed disabled:opacity-45"><FiSend size={17} /></button>
+              </form>
+            </div>
+          )}
           {phase === "consent" && (
             <div className="flex flex-1 flex-col justify-center px-5 py-6">
               <h3 className="text-base font-semibold text-[#013e43]">Search with Renda</h3>
               <p className="mt-2 text-sm leading-6 text-[#56716a]">Ask in your own words. Renda searches public, available listings and can suggest nearby alternatives.</p>
               <p className="mt-4 rounded-xl bg-[#f0f7f4] p-3 text-xs leading-5 text-[#45645b]">{consent?.text || "Your messages are used to search public listings and retained for a limited period."} {consent?.privacyUrl && <a className="font-semibold text-[#0d7952] underline underline-offset-2" href={consent.privacyUrl} target="_blank" rel="noreferrer">Privacy policy</a>}</p>
+              {pendingMessage && <p className="mt-3 rounded-xl bg-[#f8fbf9] p-3 text-xs leading-5 text-[#45645b]">Your message is ready. Agree to send it to Renda: <span className="font-medium text-[#013e43]">{pendingMessage}</span></p>}
               <button type="button" disabled={busy} onClick={startChat} className="mt-5 flex min-h-11 items-center justify-center rounded-lg bg-[#0d915c] px-4 text-sm font-semibold text-white transition hover:bg-[#08794b] disabled:opacity-60">{busy ? "Starting…" : "Agree and start"}</button>
               <p className="mt-3 text-center text-[11px] text-[#718780]">Please don’t share passwords, payment details, or identity documents.</p>
               {notice && <p role="alert" className="mt-3 text-center text-xs text-red-700">{notice}</p>}
@@ -157,21 +206,24 @@ export default function RendaAssistantWidget() {
                     {!!message.listings?.length && <div className="mt-2 space-y-2">{message.listings.map((listing) => <ListingResult key={listing._id} listing={listing} />)}</div>}
                   </div>
                 ))}
-                {busy && <div className="w-fit rounded-2xl rounded-bl-md border border-[#e2ece6] bg-white px-3.5 py-2.5 text-xs text-[#718780]">Renda is searching…</div>}
+                {busy && <div role="status" aria-live="polite" className="flex w-fit max-w-[94%] items-start gap-2 rounded-2xl rounded-bl-md border border-[#e2ece6] bg-white px-3.5 py-2.5 text-xs text-[#56716a]">
+                  <span className="mt-1 flex shrink-0 items-center gap-0.5" aria-hidden="true"><i className="h-1 w-1 animate-bounce rounded-full bg-[#0d915c] [animation-delay:-0.2s]" /><i className="h-1 w-1 animate-bounce rounded-full bg-[#0d915c] [animation-delay:-0.1s]" /><i className="h-1 w-1 animate-bounce rounded-full bg-[#0d915c]" /></span>
+                  <span className="min-w-0"><span className="block font-semibold">Loading your request</span><span className="mt-0.5 block line-clamp-2 break-words text-[11px] text-[#718780]">{activeRequest}</span></span>
+                </div>}
               </div>
               {notice && <div role="alert" className="border-t border-[#f0d6d3] bg-[#fff8f7] px-3 py-2 text-xs text-[#9c3e35]">{notice}</div>}
               <form onSubmit={submit} className="flex shrink-0 items-end gap-2 border-t border-[#e4eee8] bg-white p-3">
                 <textarea ref={inputRef} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} rows={1} maxLength={2000} placeholder="Tell Renda what you’re looking for…" aria-label="Message Ask Renda" className="max-h-24 min-h-11 flex-1 resize-none rounded-lg border border-[#dce9e2] bg-[#fbfdfc] px-3 py-2.5 text-sm text-[#013e43] outline-none placeholder:text-[#7d928b] focus:border-[#0d915c]" />
-                <button type="submit" aria-label="Send message" title="Send message" disabled={busy || !draft.trim()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#0d915c] text-white transition hover:bg-[#08794b] disabled:cursor-not-allowed disabled:opacity-45"><FiSend size={17} /></button>
+                <button type="submit" aria-label="Send message" title="Send message" disabled={busy || !!pendingMessage || !draft.trim()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#0d915c] text-white transition hover:bg-[#08794b] disabled:cursor-not-allowed disabled:opacity-45"><FiSend size={17} /></button>
               </form>
             </>
           )}
         </section>
       )}
-      <button type="button" aria-expanded={open} aria-label={open ? "Close Ask Renda" : "Ask Renda"} onClick={() => setOpen((value) => !value)} className="ml-auto flex h-14 items-center gap-2.5 rounded-full bg-[#013e43] px-5 text-white shadow-lg transition hover:bg-[#075a55] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0d915c]">
-        {open ? <FiX size={19} /> : <FiMessageCircle size={20} />}
+      {!open && <button type="button" aria-label="Ask Renda" onClick={() => setOpen(true)} className="ml-auto flex h-14 items-center gap-2.5 rounded-full bg-[#013e43] px-5 text-white shadow-lg transition hover:bg-[#075a55] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0d915c]">
+        <FiMessageCircle size={20} />
         <span className="text-sm font-semibold">Ask Renda</span>
-      </button>
+      </button>}
     </div>
   );
 }

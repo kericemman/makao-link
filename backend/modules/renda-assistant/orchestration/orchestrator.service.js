@@ -80,6 +80,14 @@ const normalizeUserText = (text) => {
   return normalized;
 };
 
+const normalizePublicReply = (text) => String(text || "")
+  .replace(/\bshort_stay\b/gi, "short stay")
+  .replace(/\bshort_term\b/gi, "short stay")
+  .replace(/\b(\d+)\s*-\s*(\d+)\b/g, "$1 to $2")
+  .replace(/[_‐‑‒–—-]+/g, " ")
+  .replace(/\s{2,}/g, " ")
+  .trim();
+
 const validateFinalAnswer = (value, allowedListingIds, allowedPlanKeys = new Set(), allowedDraftIds = new Set()) => {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Assistant response did not match the required schema");
   const keys = Object.keys(value);
@@ -101,7 +109,7 @@ const validateFinalAnswer = (value, allowedListingIds, allowedPlanKeys = new Set
   }
   if (value.draftId !== null && !allowedDraftIds.has(value.draftId)) throw new Error("Assistant response referenced an unverified listing draft");
   if (/https?:\/\//i.test(value.reply)) throw new Error("Assistant response must return verified URLs as structured data");
-  return { reply: value.reply.trim(), listingIds, planKeys, draftId: value.draftId, needsHumanSupport: value.needsHumanSupport };
+  return { reply: normalizePublicReply(value.reply), listingIds, planKeys, draftId: value.draftId, needsHumanSupport: value.needsHumanSupport };
 };
 
 const requireCompleted = (response) => {
@@ -120,7 +128,7 @@ const validateMobileAnswer = (value, allowedListingIds) => {
   if (listingIds.some((id) => typeof id !== "string" || !allowedListingIds.has(id))) {
     throw new Error("Assistant response referenced an unverified listing");
   }
-  return { reply: value.reply.trim(), listingIds };
+  return { reply: normalizePublicReply(value.reply), listingIds };
 };
 
 const runAssistantTurn = async ({ conversationId, userText, client: injectedClient, mode = "full" } = {}) => {
