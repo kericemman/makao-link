@@ -108,14 +108,6 @@ export default function Navbar() {
                 }
               />
             ))}
-            <Link
-              to="/list-your-property"
-              title={portalLinks.landlord.purpose}
-              className="block rounded-xl px-4 py-3 text-sm font-extrabold text-[#065A57] transition hover:bg-[#F0F7F4] hover:text-[#013E43]"
-              onClick={closeMenu}
-            >
-              List property
-            </Link>
             <a
               href={accountLink.href}
               title={portalLinks.user.purpose}
@@ -125,6 +117,25 @@ export default function Navbar() {
             >
               {accountUser ? `Dashboard · ${accountUser.name}` : accountLink.label}
             </a>
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <Link
+                to="/list-your-property"
+                title={portalLinks.landlord.purpose}
+                onClick={closeMenu}
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-[#02BB31] bg-white px-2.5 py-2 text-xs font-extrabold text-[#013E43] shadow-sm transition hover:border-[#013E43] sm:text-sm"
+              >
+                List property
+                <FiArrowUpRight className="shrink-0" />
+              </Link>
+              <Link
+                to="/listings"
+                onClick={closeMenu}
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-[#013E43] px-2.5 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#005C57] sm:text-sm"
+              >
+                <FiSearch className="shrink-0" />
+                Find a home
+              </Link>
+            </div>
           </div>
         </div>
       ) : null}

@@ -4,9 +4,10 @@ const bedroomOptions = ["1", "2", "3", "4", "5"];
 const bathroomOptions = ["1", "2", "3", "4"];
 
 export default function FilterPanel({ filters, meta, activeFilterCount, onUpdate, onUpdateCounty, onClear }) {
-  const townOptions = filters.county
-    ? meta.countyTowns?.[filters.county] || []
-    : Object.values(meta.countyTowns || {}).flat();
+  const townOptions = [...new Map(
+    (filters.county ? meta.countyTowns?.[filters.county] || [] : Object.values(meta.countyTowns || {}).flat())
+      .map((town) => [String(town).trim().toLocaleLowerCase(), town])
+  ).values()];
 
   return (
     <aside className="h-fit rounded-[1.5rem] border border-[#A8D8C1] bg-white p-5 shadow-[0_18px_45px_rgba(22,33,31,0.05)] lg:sticky lg:top-28">
