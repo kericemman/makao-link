@@ -25,6 +25,7 @@ const AppSubscriber = require("../app/models/subscriber.model");
 const AppUpdate = require("../app/models/appUpdate.model");
 const AdminActivity = require("./adminActivity.model");
 const { recordAdminActivity } = require("./adminActivity.service");
+const { queueStatusNotificationSafely } = require("../renda-assistant/notifications.service");
 
 const LISTING_TRASH_RETENTION_DAYS = 30;
 
@@ -69,6 +70,7 @@ exports.approveListing = async (req, res, next) => {
     listing.reviewedAt = new Date();
     listing.availabilityCheckedAt = listing.availabilityCheckedAt || new Date();
     await listing.save();
+    await queueStatusNotificationSafely({ userId: listing.landlord?._id, eventType: "listing_approved", entityId: listing._id, eventVersion: listing.reviewedAt.getTime() });
     await recordAdminActivity({
       eventType: "listing_approved",
       description: "Listing approved",
@@ -115,6 +117,7 @@ exports.rejectListing = async (req, res, next) => {
     listing.reviewedByAdmin = req.user._id;
     listing.reviewedAt = new Date();
     await listing.save();
+    await queueStatusNotificationSafely({ userId: listing.landlord?._id, eventType: "listing_rejected", entityId: listing._id, eventVersion: listing.reviewedAt.getTime() });
     await recordAdminActivity({
       eventType: "listing_rejected",
       description: "Listing rejected",

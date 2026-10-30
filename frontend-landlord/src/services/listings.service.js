@@ -19,6 +19,16 @@ export const createListing = async (formData) => {
   return response.data;
 };
 
+export const getAssistantListingDraft = async (draftId) => {
+  const response = await api.get(`/renda-assistant/listing-drafts/${encodeURIComponent(draftId)}`);
+  return response.data;
+};
+
+export const markAssistantListingDraftSubmitted = async (draftId, listingId) => {
+  const response = await api.patch(`/renda-assistant/listing-drafts/${encodeURIComponent(draftId)}/submitted`, { listingId });
+  return response.data;
+};
+
 export const getMyListings = async () => {
   const response = await api.get("/listings/landlord/my/all");
   return response.data;

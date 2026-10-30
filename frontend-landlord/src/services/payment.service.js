@@ -1,5 +1,10 @@
 import api from "../api/api";
 
+export const getPublicPlans = async () => {
+  const response = await api.get("/payments/plans");
+  return response.data;
+};
+
 export const changeSubscriptionPlan = async (payload) => {
   const response = await api.patch("/payments/change-plan", payload);
   return response.data;

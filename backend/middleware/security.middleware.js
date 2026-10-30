@@ -69,8 +69,22 @@ const otpLimiter = createRateLimiter({
   message: "Too many verification attempts. Please request a new code later."
 });
 
+const assistantSessionLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: "Too many assistant sessions created. Please try again later."
+});
+
+const assistantMessageLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: "Too many assistant messages. Please try again shortly."
+});
+
 module.exports = {
   authLimiter,
+  assistantMessageLimiter,
+  assistantSessionLimiter,
   generalApiLimiter,
   otpLimiter,
   rejectUnsafeKeys

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { registerLandlord } from "../../services/auth.service";
-import { initializeSubscriptionPayment } from "../../services/payment.service";
+import { getPublicPlans, initializeSubscriptionPayment } from "../../services/payment.service";
 import { useAuth } from "../../context/AuthContext";
 import { 
   FiUser, 
@@ -27,6 +27,7 @@ const RegisterLandlordPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { login } = useAuth();
+  const mainSiteUrl = import.meta.env.VITE_MAIN_URL || "https://rendahomes.com";
 
   const selectedPlan = useMemo(() => searchParams.get("plan") || "normal", [searchParams]);
   const nextPath = useMemo(() => getSafeNext(searchParams.get("next") || "/dashboard"), [searchParams]);
@@ -48,18 +49,39 @@ const RegisterLandlordPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [planCatalog, setPlanCatalog] = useState([]);
+  const [planCatalogLoading, setPlanCatalogLoading] = useState(true);
+  const [planCatalogError, setPlanCatalogError] = useState("");
 
-  const getPlanDetails = (plan) => {
-    const plans = {
-      normal: { name: "Free", price: "Free", limit: "2 active listings", color: "text-gray-600", bgColor: "bg-gray-100" },
-      basic: { name: "Basic", price: "KES 500", limit: "7 active listings", color: "text-[#02BB31]", bgColor: "bg-[#02BB31]/10" },
-      premium: { name: "Premium", price: "KES 1,500", limit: "15 properties", color: "text-purple-600", bgColor: "bg-purple-100" },
-      pro: { name: "Pro", price: "KES 2,500", limit: "50 active listings", color: "text-[#013E43]", bgColor: "bg-[#013E43]/10" }
-    };
-    return plans[plan] || plans.normal;
+  useEffect(() => {
+    let active = true;
+    getPublicPlans()
+      .then((response) => {
+        if (active) setPlanCatalog(response.plans || []);
+      })
+      .catch(() => {
+        if (active) setPlanCatalogError("We could not load current plans. Please refresh and try again.");
+      })
+      .finally(() => {
+        if (active) setPlanCatalogLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
+  const selectedPlanConfig = planCatalog.find((plan) => plan.key === selectedPlan);
+  const planDetails = selectedPlanConfig ? {
+    name: selectedPlanConfig.name,
+    price: selectedPlanConfig.price === 0 ? "Free" : `KES ${selectedPlanConfig.price.toLocaleString()} / month`,
+    limit: `${selectedPlanConfig.listingLimit} active listings`,
+    color: "text-[#0D915C]",
+    bgColor: "bg-[#02BB31]/10"
+  } : {
+    name: planCatalogLoading ? "Loading plan..." : "Plan unavailable",
+    price: "",
+    limit: "",
+    color: "text-[#0D915C]",
+    bgColor: "bg-[#02BB31]/10"
   };
-
-  const planDetails = getPlanDetails(selectedPlan);
 
   const checkPasswordStrength = (password) => {
     let strength = 0;
@@ -117,6 +139,11 @@ const RegisterLandlordPage = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
 
+    if (!selectedPlanConfig) {
+      setError(planCatalogError || "This plan is unavailable. Please return to pricing and choose an available plan.");
+      return;
+    }
+
     if (!validateForm()) {
       toast.error("Please fix the errors in the form", {
         style: { background: "#013E43", color: "#fff" }
@@ -134,7 +161,8 @@ const RegisterLandlordPage = () => {
         phone: formData.phone,
         password: formData.password,
         plan: selectedPlan,
-        agentCode
+        agentCode,
+        acceptedLegalPolicies: formData.agreeTerms
       });
 
       login(data);
@@ -266,20 +294,16 @@ const RegisterLandlordPage = () => {
               <ul className="space-y-2">
                 <li className="flex items-center space-x-2">
                   <FiCheckCircle className="text-[#02BB31]" />
-                  <span className="text-sm text-[#065A57]">List {planDetails.limit.toLowerCase()}</span>
+                  <span className="text-sm text-[#065A57]">Up to {planDetails.limit}</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <FiCheckCircle className="text-[#02BB31]" />
-                  <span className="text-sm text-[#065A57]">Direct tenant contact</span>
+                  <span className="text-sm text-[#065A57]">Manage properties and inquiries in your dashboard</span>
                 </li>
-                <li className="flex items-center space-x-2">
+                {selectedPlanConfig?.billingInterval && <li className="flex items-center space-x-2">
                   <FiCheckCircle className="text-[#02BB31]" />
-                  <span className="text-sm text-[#065A57]">Property analytics dashboard</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <FiCheckCircle className="text-[#02BB31]" />
-                  <span className="text-sm text-[#065A57]">24/7 support</span>
-                </li>
+                  <span className="text-sm text-[#065A57]">Monthly hosted checkout through Paystack</span>
+                </li>}
               </ul>
             </div>
           </div>
@@ -457,13 +481,13 @@ const RegisterLandlordPage = () => {
                   />
                   <span className="text-sm text-[#065A57]">
                     I agree to the{' '}
-                    <Link to="/terms" className="font-semibold text-[#02BB31] hover:text-[#0D915C]">
+                    <a href={`${mainSiteUrl}/terms-of-service`} target="_blank" rel="noreferrer" className="font-semibold text-[#02BB31] hover:text-[#0D915C]">
                       Terms of Service
-                    </Link>{' '}
+                    </a>{' '}
                     and{' '}
-                    <Link to="/privacy" className="font-semibold text-[#02BB31] hover:text-[#0D915C]">
+                    <a href={`${mainSiteUrl}/privacy-policy`} target="_blank" rel="noreferrer" className="font-semibold text-[#02BB31] hover:text-[#0D915C]">
                       Privacy Policy
-                    </Link>
+                    </a>
                   </span>
                 </label>
                 {errors.agreeTerms && <p className="text-xs text-red-500">{errors.agreeTerms}</p>}
@@ -478,7 +502,7 @@ const RegisterLandlordPage = () => {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || planCatalogLoading || !selectedPlanConfig}
                 className="w-full py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {loading ? (
@@ -493,6 +517,7 @@ const RegisterLandlordPage = () => {
                   </>
                 )}
               </button>
+              {planCatalogError && <p className="text-center text-sm text-red-600" role="alert">{planCatalogError}</p>}
             </form>
 
             {/* Login Link */}

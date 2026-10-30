@@ -12,6 +12,8 @@ const {
 const plans = require("../payments/plan.config");
 const { createInitialSubscription } = require("../subscriptions/subscription.service");
 const { syncWebsiteInquiriesToAppAlertsForUser } = require("../inquiries/inquiryBridge.service");
+const verifySocialIdentity = require("./socialIdentity.service");
+const { buildLegalAcceptance } = require("./legalAcceptance.service");
 const {
   clearSharedSessionCookie,
   getSharedSessionToken,
@@ -68,8 +70,9 @@ const sendEmailOtp = async (user, otp) => {
 
 exports.registerLandlord = async (req, res, next) => {
   try {
-    const { name, email, password, phone, plan, agentCode } = req.body;
+    const { name, email, password, phone, plan, agentCode, acceptedLegalPolicies } = req.body;
     const normalizedEmail = String(email || "").toLowerCase().trim();
+    const legalAcceptance = buildLegalAcceptance({ acceptedLegalPolicies });
 
     if (!name || !email || !password || !phone || !plan) {
       return res.status(400).json({ message: "All fields are required" });
@@ -103,6 +106,7 @@ exports.registerLandlord = async (req, res, next) => {
       password,
       phone,
       role: "landlord",
+      legalAcceptance,
       onboardedByAgent: agent?._id || null,
       onboardingSource: agent ? "agent" : "direct",
       agentCodeUsed: agent?.agentCode || ""
@@ -593,33 +597,33 @@ exports.resendEmailOtp = async (req, res) => {
 
 exports.socialLogin = async (req, res) => {
   try {
-    const { provider, providerId, name, email, avatar, role } = req.body;
-    const allowedProviders = ["google", "apple", "facebook"];
+    const { provider, providerId: requestedProviderId, idToken, identityToken, credential } = req.body;
+    const allowedProviders = ["google"];
 
-    if (!provider || !providerId || !email) {
+    if (!provider || !allowedProviders.includes(provider)) {
       return res.status(400).json({
-        message: "Provider, providerId and email are required"
+        message: "A supported provider is required"
       });
     }
 
-    if (!allowedProviders.includes(provider)) {
-      return res.status(400).json({
-        message: "Unsupported social login provider"
-      });
+    const identity = await verifySocialIdentity({
+      provider,
+      idToken: idToken || identityToken || credential
+    });
+    if (requestedProviderId && String(requestedProviderId) !== identity.providerId) {
+      return res.status(401).json({ message: "Provider identity did not match the verified token" });
     }
 
+    const { providerId, name, email, avatar } = identity;
     let user = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (!user) {
-      const allowedRoles = ["user", "landlord"];
-      const safeRole = allowedRoles.includes(role) ? role : "user";
-
       user = await User.create({
         name: name || "RendaHomes User",
         email: email.toLowerCase().trim(),
         phone: "N/A",
         password: `${provider}-${providerId}-${Date.now()}`,
-        role: safeRole,
+        role: "user",
         avatar: avatar || "",
         socialProvider: provider,
         socialProviderId: String(providerId),
@@ -676,6 +680,12 @@ exports.socialLogin = async (req, res) => {
       message: "We sent a verification code to your email."
     });
   } catch (error) {
+    if (error.statusCode && error.statusCode < 500) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    if (error.statusCode === 503) {
+      return res.status(503).json({ message: error.message });
+    }
     return res.status(500).json({
       message: "Social login failed"
     });

@@ -194,6 +194,18 @@ export default function DashboardHome() {
   }, [fetchDashboardData]);
 
   useEffect(() => {
+    if (whatsappData?.addon?.status !== "pending_payment") return undefined;
+
+    const intervalId = window.setInterval(() => {
+      getWhatsAppListingAddon()
+        .then(setWhatsappData)
+        .catch(() => {});
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [whatsappData?.addon?.status]);
+
+  useEffect(() => {
     if (user?.role === "landlord_staff") {
       setLoadingWhatsAppPreference(false);
       return;
@@ -521,6 +533,8 @@ export default function DashboardHome() {
                 </>
               ) : whatsappIncluded ? (
                 <button type="button" onClick={handleStartWhatsappListing} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-[#128C4A] px-4 text-sm font-semibold text-white hover:bg-[#0C713A]"><FaWhatsapp /> List on WhatsApp</button>
+              ) : whatsappData?.addon?.status === "pending_payment" ? (
+                <div className="text-right"><p className="text-sm font-semibold text-amber-800">Confirming payment...</p><p className="mt-1 text-xs text-slate-600">This updates automatically once Paystack confirms your subscription.</p></div>
               ) : whatsappData?.configured ? (
                 <button type="button" onClick={handleBuyAddon} disabled={busyAction === "addon"} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-60">{busyAction === "addon" ? "Opening checkout..." : "Add WhatsApp listing"}<FiArrowRight /></button>
               ) : (

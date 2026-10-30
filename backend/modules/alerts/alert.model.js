@@ -46,6 +46,13 @@ const alertSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    source: {
+      type: String,
+      enum: ["user_portal", "mobile_app", "whatsapp_assistant"],
+      default: "user_portal",
+      index: true
+    },
+    sourceKey: { type: String, select: false, default: undefined },
     replies: {
       type: [alertReplySchema],
       default: []
@@ -60,6 +67,11 @@ const alertSchema = new mongoose.Schema(
     }
   },
   { timestamps: true }
+);
+
+alertSchema.index(
+  { source: 1, sourceKey: 1 },
+  { unique: true, partialFilterExpression: { sourceKey: { $type: "string" } } }
 );
 
 module.exports = mongoose.model("AppAlert", alertSchema);

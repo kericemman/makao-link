@@ -29,6 +29,12 @@ const userSchema = new mongoose.Schema(
       trim: true
     },
 
+    legalAcceptance: {
+      termsUrl: { type: String, trim: true, default: "" },
+      privacyUrl: { type: String, trim: true, default: "" },
+      acceptedAt: { type: Date, default: null }
+    },
+
     whatsappUpdatesOptIn: {
       type: Boolean,
       default: false

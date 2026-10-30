@@ -3,6 +3,7 @@ const paystack = require("../../config/paystack");
 
 const User = require("../users/user.model");
 const Payment = require("./payment.model");
+const PaystackWebhookEvent = require("./paystackWebhookEvent.model");
 const Subscription = require("../subscriptions/subscription.model");
 const Listing = require("../listings/listings.model");
 const WhatsAppListingAddon = require("./whatsappListingAddon.model");
@@ -17,12 +18,15 @@ const {
 } = require("../../utils/emailTemplates");
 
 const plans = require("./plan.config");
+const { publicPlanCatalog } = require("../renda-assistant/landlordOnboarding.service");
 
 const {
   restoreListingsAfterRenewal,
   markExpiredAndUnlist,
   processScheduledFreeDowngrades
 } = require("../subscriptions/subscription.service");
+const { createEventKey, runIdempotentWebhookEvent } = require("./paystackWebhook.service");
+const { queueStatusNotificationSafely } = require("../renda-assistant/notifications.service");
 
 const addOneMonth = () => {
   const date = new Date();
@@ -38,6 +42,14 @@ const expectedPlanPayment = (data, planKey) => {
       Number(data?.amount) === plan.price * 100 &&
       data?.currency === "KES"
   );
+};
+
+exports.getPublicPlans = async (req, res, next) => {
+  try {
+    return res.json({ success: true, plans: publicPlanCatalog(plans) });
+  } catch (error) {
+    next(error);
+  }
 };
 
 const verifyConfiguredPlan = async (plan) => {
@@ -316,7 +328,15 @@ const activateSubscription = async ({
     throw new Error("Payment reference is already associated with another account");
   }
 
-  if (payment?.status === "success") {
+  if (
+    payment?.status === "success" &&
+    subscription.status === "active" &&
+    subscription.plan === plan &&
+    subscription.pendingPaymentReference !== reference &&
+    payment.createdAt &&
+    subscription.lastPaymentDate &&
+    payment.createdAt <= subscription.lastPaymentDate
+  ) {
     return { payment, subscription, alreadyProcessed: true };
   }
 
@@ -331,6 +351,14 @@ const activateSubscription = async ({
       status: "success",
       paidAt: new Date()
     });
+  } else if (payment.status !== "success") {
+    payment.subscription = subscription._id;
+    payment.amount = amount;
+    payment.currency = currency || "KES";
+    payment.plan = plan;
+    payment.status = "success";
+    payment.paidAt = new Date();
+    await payment.save();
   }
 
   const previousSubscriptionCode = subscription.paystackSubscriptionCode;
@@ -354,6 +382,10 @@ const activateSubscription = async ({
   subscription.paystackEmailToken = emailToken || subscription.paystackEmailToken;
 
   await subscription.save();
+
+  if (shouldSendActivationEmail) {
+    await queueStatusNotificationSafely({ userId, eventType: "subscription_active", entityId: payment._id });
+  }
 
   if (
     previousSubscriptionCode &&
@@ -619,7 +651,11 @@ exports.verifyPaymentByReference = async (req, res, next) => {
       });
 
       if (!activatedAddon) {
-        return res.status(409).json({ message: "WhatsApp add-on payment is still being processed." });
+        return res.status(202).json({
+          success: true,
+          pending: true,
+          message: "Payment received. Your WhatsApp listing subscription is being confirmed."
+        });
       }
 
       return res.json({
@@ -771,122 +807,133 @@ exports.paystackWebhook = async (req, res, next) => {
     }
 
     const event = JSON.parse(req.body.toString());
-
-    console.log("WEBHOOK EVENT:", event.event);
-
-    if (event.event === "charge.success") {
-      const data = event.data;
-      const metadata = data.metadata || {};
-
-      if (metadata.paymentType === "whatsapp_listing_addon") {
-        if (metadata.userId && Number(data.amount) === WHATSAPP_ADDON_PRICE * 100 && data.currency === "KES") {
-          const activated = await activateWhatsAppAddon({
-            userId: metadata.userId,
-            reference: data.reference,
-            data
-          });
-          if (!activated) await updateRecurringWhatsAppAddon(data);
-        }
-      } else if (metadata.paymentType === "subscription") {
-        const sub = await Subscription.findOne({ user: metadata.userId });
-        const incomingPlan = metadata.appPlan;
-        const matchesInitialCheckout = sub?.pendingPaymentReference === data.reference;
-        const matchesRecurringPlan =
-          sub?.paystackSubscriptionCode &&
-          sub.paystackSubscriptionCode === data.subscription?.subscription_code &&
-          sub.plan === incomingPlan;
-
-        if (
-          sub &&
-          plans[incomingPlan] &&
-          data.reference &&
-          expectedPlanPayment(data, incomingPlan) &&
-          (matchesInitialCheckout || matchesRecurringPlan)
-        ) {
-          await activateSubscription({
-            userId: metadata.userId,
-            plan: incomingPlan,
-            reference: data.reference,
-            amount: data.amount / 100,
-            currency: data.currency,
-            customerCode: data.customer?.customer_code,
-            subscriptionCode: data.subscription?.subscription_code,
-            emailToken: data.subscription?.email_token
-          });
-        }
-      } else {
-        const recurringSubscription = await Subscription.findOne({
-          paystackSubscriptionCode: getAddonSubscriptionCode(data)
-        });
-
-        if (recurringSubscription && expectedPlanPayment(data, recurringSubscription.plan)) {
-          await activateSubscription({
-            userId: recurringSubscription.user,
-            plan: recurringSubscription.plan,
-            reference: data.reference,
-            amount: data.amount / 100,
-            currency: data.currency,
-            customerCode: data.customer?.customer_code,
-            subscriptionCode: data.subscription?.subscription_code,
-            emailToken: data.subscription?.email_token
-          });
-        } else if (Number(data.amount) === WHATSAPP_ADDON_PRICE * 100 && data.currency === "KES") {
-          await updateRecurringWhatsAppAddon(data);
-        }
-      }
+    if (!event || typeof event.event !== "string" || !event.data || typeof event.data !== "object") {
+      return res.status(400).send("Invalid event payload");
     }
 
-    if (event.event === "invoice.payment_failed") {
-      const subscriptionCode = getAddonSubscriptionCode(event.data);
+    const result = await runIdempotentWebhookEvent({
+      EventModel: PaystackWebhookEvent,
+      eventKey: createEventKey(event, req.body),
+      eventType: event.event,
+      execute: async () => {
+        console.log("WEBHOOK EVENT:", event.event);
 
-      if (subscriptionCode) {
-        const subscription = await Subscription.findOne({
-          paystackSubscriptionCode: subscriptionCode
-        });
+        if (event.event === "charge.success") {
+          const data = event.data;
+          const metadata = data.metadata || {};
 
-        if (subscription) {
-          const graceEnd = new Date();
-          graceEnd.setDate(graceEnd.getDate() + 7);
+          if (metadata.paymentType === "whatsapp_listing_addon") {
+            if (metadata.userId && Number(data.amount) === WHATSAPP_ADDON_PRICE * 100 && data.currency === "KES") {
+              const activated = await activateWhatsAppAddon({
+                userId: metadata.userId,
+                reference: data.reference,
+                data
+              });
+              if (!activated) await updateRecurringWhatsAppAddon(data);
+            }
+          } else if (metadata.paymentType === "subscription") {
+            const sub = await Subscription.findOne({ user: metadata.userId });
+            const incomingPlan = metadata.appPlan;
+            const matchesInitialCheckout = sub?.pendingPaymentReference === data.reference;
+            const matchesRecurringPlan =
+              sub?.paystackSubscriptionCode &&
+              sub.paystackSubscriptionCode === data.subscription?.subscription_code &&
+              sub.plan === incomingPlan;
 
-          subscription.status = "grace";
-          subscription.gracePeriodEnd = graceEnd;
-
-          await subscription.save();
-
-          const user = await User.findById(subscription.user);
-
-            if (user?.email) {
-              await sendEmail({
-                to: user.email,
-                subject: "Payment Failed — Grace Period Started",
-                html: gracePeriodEmail({
-                  name: user.name || "Landlord",
-                  graceEndDate: graceEnd.toDateString()
-                })
+            if (
+              sub &&
+              plans[incomingPlan] &&
+              data.reference &&
+              expectedPlanPayment(data, incomingPlan) &&
+              (matchesInitialCheckout || matchesRecurringPlan)
+            ) {
+              await activateSubscription({
+                userId: metadata.userId,
+                plan: incomingPlan,
+                reference: data.reference,
+                amount: data.amount / 100,
+                currency: data.currency,
+                customerCode: data.customer?.customer_code,
+                subscriptionCode: data.subscription?.subscription_code,
+                emailToken: data.subscription?.email_token
               });
             }
+          } else {
+            const recurringSubscription = await Subscription.findOne({
+              paystackSubscriptionCode: getAddonSubscriptionCode(data)
+            });
+
+            if (recurringSubscription && expectedPlanPayment(data, recurringSubscription.plan)) {
+              await activateSubscription({
+                userId: recurringSubscription.user,
+                plan: recurringSubscription.plan,
+                reference: data.reference,
+                amount: data.amount / 100,
+                currency: data.currency,
+                customerCode: data.customer?.customer_code,
+                subscriptionCode: data.subscription?.subscription_code,
+                emailToken: data.subscription?.email_token
+              });
+            } else if (Number(data.amount) === WHATSAPP_ADDON_PRICE * 100 && data.currency === "KES") {
+              await updateRecurringWhatsAppAddon(data);
+            }
+          }
         }
 
-        const addon = await WhatsAppListingAddon.findOne({
-          paystackSubscriptionCode: subscriptionCode
-        });
-        if (addon) {
-          addon.status = "past_due";
-          await addon.save();
+        if (event.event === "invoice.payment_failed") {
+          const subscriptionCode = getAddonSubscriptionCode(event.data);
+
+          if (subscriptionCode) {
+            const subscription = await Subscription.findOne({
+              paystackSubscriptionCode: subscriptionCode
+            });
+
+            if (subscription && subscription.status !== "grace") {
+              const graceEnd = new Date();
+              graceEnd.setDate(graceEnd.getDate() + 7);
+
+              subscription.status = "grace";
+              subscription.gracePeriodEnd = graceEnd;
+
+              await subscription.save();
+
+              const user = await User.findById(subscription.user);
+
+              if (user?.email) {
+                await sendEmail({
+                  to: user.email,
+                  subject: "Payment Failed — Grace Period Started",
+                  html: gracePeriodEmail({
+                    name: user.name || "Landlord",
+                    graceEndDate: graceEnd.toDateString()
+                  })
+                });
+              }
+            }
+
+            const addon = await WhatsAppListingAddon.findOne({
+              paystackSubscriptionCode: subscriptionCode
+            });
+            if (addon && addon.status !== "past_due") {
+              addon.status = "past_due";
+              await addon.save();
+            }
+          }
+        }
+
+        if (["subscription.disable", "subscription.not_renew"].includes(event.event)) {
+          const subscriptionCode = getAddonSubscriptionCode(event.data);
+          if (subscriptionCode) {
+            await WhatsAppListingAddon.findOneAndUpdate(
+              { paystackSubscriptionCode: subscriptionCode },
+              { $set: { status: "non_renewing" } }
+            );
+          }
         }
       }
-    }
+    });
 
-    if (["subscription.disable", "subscription.not_renew"].includes(event.event)) {
-      const subscriptionCode = getAddonSubscriptionCode(event.data);
-      if (subscriptionCode) {
-        await WhatsAppListingAddon.findOneAndUpdate(
-          { paystackSubscriptionCode: subscriptionCode },
-          { $set: { status: "non_renewing" } }
-        );
-      }
-    }
-
+    if (result.status === "busy") return res.sendStatus(503);
     return res.sendStatus(200);
   } catch (error) {
     console.error("WEBHOOK ERROR:", error.message);

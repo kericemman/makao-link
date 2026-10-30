@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
+import GoogleSignInButton from "../components/GoogleSignInButton";
+import { socialLoginUser } from "../services/auth.service";
 import { getApiErrorMessage } from "../utils/apiError";
 
 export default function Login() {
@@ -45,11 +47,30 @@ export default function Login() {
     }
   };
 
+  const continueWithGoogle = async (idToken) => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await socialLoginUser(idToken);
+      if (data.requiresVerification) {
+        const next = params.get("next");
+        const nextParam = next ? `&next=${encodeURIComponent(next)}` : "";
+        navigate(`/verify-email?email=${encodeURIComponent(data.email)}${nextParam}`);
+      }
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Could not continue with Google."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className="rounded-[2rem] border border-[#A8D8C1] bg-white/95 p-6 shadow-[0_24px_70px_rgba(22,33,31,0.08)] backdrop-blur sm:p-8">
       <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#02BB31]">Welcome back</p>
       <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-[#013E43]">Sign in to manage your home search.</h1>
       <p className="mt-3 text-sm font-semibold leading-6 text-[#065A57]">Continue to your inquiries, saved homes, support tickets, and viewing plans.</p>
+      <GoogleSignInButton onCredential={continueWithGoogle} disabled={loading} />
+      {import.meta.env.VITE_GOOGLE_CLIENT_ID ? <p className="mt-4 text-center text-xs font-bold text-[#065A57]">or sign in with email</p> : null}
       <form onSubmit={submit} className="mt-6 space-y-4">
         <Input icon={FiMail} label="Email" type="email" placeholder="you@example.com" value={form.email} onChange={(email) => setForm((f) => ({ ...f, email }))} />
         <Input

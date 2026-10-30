@@ -179,10 +179,10 @@ export default function AdminKycPage() {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex flex-wrap gap-2">
-                        <FileLink href={item.documentFront} label="ID front" />
-                        <FileLink href={item.documentBack} label="ID back" />
-                        <FileLink href={item.selfiePhoto} label="Selfie" />
-                        <FileLink href={item.proofOfOwnership} label="Ownership" />
+                        <FileLink href={item.documentLinks?.documentFront || item.documentFront} label="ID front" />
+                        <FileLink href={item.documentLinks?.documentBack || item.documentBack} label="ID back" />
+                        <FileLink href={item.documentLinks?.selfiePhoto || item.selfiePhoto} label="Selfie" />
+                        <FileLink href={item.documentLinks?.proofOfOwnership || item.proofOfOwnership} label="Ownership" />
                       </div>
                     </td>
                     <td className="px-4 py-4">

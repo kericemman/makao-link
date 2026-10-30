@@ -1,6 +1,14 @@
 const Kyc = require("./kyc.model");
 const Subscription = require("../subscriptions/subscription.model");
 const { recordAdminActivity } = require("../admin/adminActivity.service");
+const { queueStatusNotificationSafely } = require("../renda-assistant/notifications.service");
+const cloudinary = require("../../config/cloudinary");
+const {
+  FILE_FIELDS,
+  toLandlordKyc,
+  createAdminKycView,
+  assetMetadataFromFile
+} = require("./kycFiles.service");
 
 const paidPlans = ["basic", "premium", "pro"];
 
@@ -11,7 +19,7 @@ const getMyKyc = async (req, res, next) => {
 
     res.json({
       success: true,
-      kyc
+      kyc: toLandlordKyc(kyc)
     });
   } catch (error) {
     next(error);
@@ -41,6 +49,10 @@ const submitKyc = async (req, res, next) => {
     const documentBack = req.files?.documentBack?.[0]?.path || "";
     const selfiePhoto = req.files?.selfiePhoto?.[0]?.path;
     const proofOfOwnership = req.files?.proofOfOwnership?.[0]?.path || "";
+    const documentAssets = Object.fromEntries(
+      FILE_FIELDS.map((field) => [field, assetMetadataFromFile(req.files?.[field]?.[0])])
+        .filter(([, asset]) => asset)
+    );
 
     let existingKyc = await Kyc.findOne({ landlord: req.user._id });
 
@@ -59,6 +71,10 @@ const submitKyc = async (req, res, next) => {
       existingKyc.documentBack = documentBack || existingKyc.documentBack;
       existingKyc.selfiePhoto = selfiePhoto || existingKyc.selfiePhoto;
       existingKyc.proofOfOwnership = proofOfOwnership || existingKyc.proofOfOwnership;
+      existingKyc.documentAssets = {
+        ...(existingKyc.documentAssets?.toObject?.() || existingKyc.documentAssets || {}),
+        ...documentAssets
+      };
       existingKyc.status = "pending";
       existingKyc.rejectionReason = "";
       existingKyc.reviewedBy = undefined;
@@ -80,7 +96,7 @@ const submitKyc = async (req, res, next) => {
       return res.json({
         success: true,
         message: "KYC updated and sent for review",
-        kyc: existingKyc
+        kyc: toLandlordKyc(existingKyc)
       });
     }
 
@@ -93,6 +109,7 @@ const submitKyc = async (req, res, next) => {
       documentBack,
       selfiePhoto,
       proofOfOwnership,
+      documentAssets,
       status: "pending"
     });
 
@@ -110,7 +127,7 @@ const submitKyc = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: "KYC submitted successfully",
-      kyc
+      kyc: toLandlordKyc(kyc)
     });
   } catch (error) {
     next(error);
@@ -143,7 +160,7 @@ const getAdminKycs = async (req, res, next) => {
 
     res.json({
       success: true,
-      kycs,
+      kycs: kycs.map((item) => createAdminKycView(item, cloudinary)),
       pagination: {
         page: safePage,
         limit: safeLimit,
@@ -171,7 +188,7 @@ const getAdminKycById = async (req, res, next) => {
 
     res.json({
       success: true,
-      kyc
+      kyc: createAdminKycView(kyc, cloudinary)
     });
   } catch (error) {
     next(error);
@@ -211,6 +228,8 @@ const reviewKyc = async (req, res, next) => {
     kyc.reviewedAt = new Date();
 
     await kyc.save();
+    await kyc.populate("landlord", "_id");
+    await queueStatusNotificationSafely({ userId: kyc.landlord?._id, eventType: `kyc_${status}`, entityId: kyc._id, eventVersion: kyc.reviewedAt.getTime() });
     await recordAdminActivity({
       eventType: `kyc_${status}`,
       description: `Landlord KYC ${status}`,
@@ -228,7 +247,7 @@ const reviewKyc = async (req, res, next) => {
     res.json({
       success: true,
       message: `KYC ${status}`,
-      kyc
+      kyc: createAdminKycView(kyc, cloudinary)
     });
   } catch (error) {
     next(error);

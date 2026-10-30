@@ -1,5 +1,11 @@
 const mongoose = require("mongoose");
 
+const assetSchema = new mongoose.Schema({
+  publicId: { type: String, trim: true },
+  resourceType: { type: String, enum: ["image", "raw"] },
+  format: { type: String, trim: true }
+}, { _id: false });
+
 const kycSchema = new mongoose.Schema(
   {
     landlord: {
@@ -43,6 +49,13 @@ const kycSchema = new mongoose.Schema(
 
     proofOfOwnership: {
       type: String
+    },
+
+    documentAssets: {
+      documentFront: assetSchema,
+      documentBack: assetSchema,
+      selfiePhoto: assetSchema,
+      proofOfOwnership: assetSchema
     },
 
     status: {

@@ -6,6 +6,7 @@ const {
   initializeSubscriptionPayment,
   verifyPaymentByReference,
   getMySubscription,
+  getPublicPlans,
   getWhatsAppListingAddon,
   initializeWhatsAppListingAddon,
   cancelWhatsAppListingAddon,
@@ -16,6 +17,8 @@ const {
 const { protect } = require("../../middleware/auth.middleware");
 const requireRole = require("../../middleware/role.middleware");
 const landlordWorkspace = require("../../middleware/landlordWorkspace.middleware");
+
+router.get("/plans", getPublicPlans);
 
 router.patch(
   "/change-plan",

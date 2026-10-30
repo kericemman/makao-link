@@ -10,6 +10,11 @@ export const loginUser = async (payload) => {
   return response.data;
 };
 
+export const socialLoginUser = async (idToken) => {
+  const response = await api.post("/auth/social-login", { provider: "google", idToken });
+  return response.data;
+};
+
 export const verifyEmail = async (payload) => {
   const response = await api.post("/auth/verify-email", payload, { withCredentials: true });
   return response.data;

@@ -20,6 +20,7 @@ const storage = new CloudinaryStorage({
           ? "rendahomes/avatars"
           : "rendahomes/listings",
       resource_type: isWordDocument ? "raw" : "image",
+      ...(kycFields.has(file.fieldname) ? { type: "authenticated" } : {}),
       allowed_formats: isWordDocument
         ? ["docx"]
         : ["jpg", "jpeg", "jfif", "png", "webp", "avif", ...(kycDocumentFields.has(file.fieldname) ? ["pdf"] : [])],

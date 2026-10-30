@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const Listing = require("../listings/listings.model");
 const StayBooking = require("./stayBooking.model");
 const { recordAdminActivity } = require("../admin/adminActivity.service");
+const { queueStatusNotificationSafely, queueContactStatusNotificationSafely } = require("../renda-assistant/notifications.service");
 
 const overlapFilter = (listingId, checkIn, checkOut, excludeId) => ({
   listing: listingId,
@@ -65,6 +66,7 @@ exports.createStayRequest = async (req, res, next) => {
       guests: guestCount,
       message: String(message || "").trim()
     });
+    await queueStatusNotificationSafely({ userId: listing.landlord, eventType: "stay_requested", entityId: request._id, eventVersion: request.createdAt.getTime() });
     await recordAdminActivity({
       eventType: "stay_request",
       description: "Short-stay request received",
@@ -106,6 +108,7 @@ exports.updateStayRequestStatus = async (req, res, next) => {
     if (!listing || (req.user.role === "landlord_staff" && req.user.teamRole === "agent" && String(listing.assignedAgent) !== String(req.user._id))) {
       return res.status(404).json({ message: "Stay request not found." });
     }
+    const previousStatus = request.status;
     if (status === "confirmed") {
       if (request.status === "declined" || request.status === "cancelled") {
         return res.status(409).json({ message: "This request is closed and cannot be confirmed." });
@@ -131,6 +134,9 @@ exports.updateStayRequestStatus = async (req, res, next) => {
         }
         request.status = status;
         await request.save();
+        if (previousStatus !== status) {
+          await queueContactStatusNotificationSafely({ phone: request.guestPhone, eventType: `stay_${status}`, entityId: request._id, eventVersion: request.updatedAt.getTime() });
+        }
         return res.json({ success: true, request });
       } finally {
         await Listing.updateOne({ _id: listing._id, bookingLockToken: lockToken }, { $set: { bookingLockToken: null, bookingLockExpiresAt: null } });
@@ -138,6 +144,9 @@ exports.updateStayRequestStatus = async (req, res, next) => {
     }
     request.status = status;
     await request.save();
+    if (previousStatus !== status) {
+      await queueContactStatusNotificationSafely({ phone: request.guestPhone, eventType: `stay_${status}`, entityId: request._id, eventVersion: request.updatedAt.getTime() });
+    }
     res.json({ success: true, request });
   } catch (error) { next(error); }
 };

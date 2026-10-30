@@ -19,6 +19,7 @@ const {
 } = require("../../utils/emailTemplates");
 
 const buildListingFilter = require("./listing.filters");
+const { parseRecentListingQuery } = buildListingFilter;
 
 const { canCreateListing } = require("../subscriptions/subscription.service");
 
@@ -125,9 +126,7 @@ exports.getListingMeta = async (req, res, next) => {
 // Public - get approved/active listings
 exports.getPublicListings = async (req, res, next) => {
   try {
-    const { page = 1, limit = 12, sort = "latest" } = req.query;
-
-    const filter = buildListingFilter(req.query);
+    const { filter, page, limit, sort, appliedFilters } = buildListingFilter(req.query);
 
     let sortOption = { createdAt: -1 };
 
@@ -135,16 +134,14 @@ exports.getPublicListings = async (req, res, next) => {
     if (sort === "price-high") sortOption = { price: -1 };
     if (sort === "popular") sortOption = { views: -1 };
 
-    const currentPage = Math.max(Number(page) || 1, 1);
-    const perPage = Math.max(Number(limit) || 12, 1);
-    const skip = (currentPage - 1) * perPage;
+    const skip = (page - 1) * limit;
 
     const [listings, total] = await Promise.all([
       Listing.find(filter)
         .populate("landlord", "name businessName role")
         .sort(sortOption)
         .skip(skip)
-        .limit(perPage)
+        .limit(limit)
         .lean(),
       Listing.countDocuments(filter)
     ]);
@@ -154,11 +151,11 @@ exports.getPublicListings = async (req, res, next) => {
       listings: await attachTrustSignals(listings),
       pagination: {
         total,
-        page: currentPage,
-        limit: perPage,
-        pages: Math.ceil(total / perPage)
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
       },
-      appliedFilters: req.query
+      appliedFilters
     });
   } catch (error) {
     next(error);
@@ -167,13 +164,12 @@ exports.getPublicListings = async (req, res, next) => {
 
 exports.getNearbyListings = async (req, res, next) => {
   try {
-    const { limit = 12 } = req.query;
-    const filter = buildListingFilter(req.query);
+    const { filter, limit } = buildListingFilter(req.query);
 
     const listings = await Listing.find(filter)
       .populate("landlord", "name businessName phone role")
       .sort({ createdAt: -1 })
-      .limit(Math.max(Number(limit) || 12, 1))
+      .limit(limit)
       .lean();
 
     res.json({
@@ -188,8 +184,7 @@ exports.getNearbyListings = async (req, res, next) => {
 // Public - recently viewed listings
 exports.getRecentListings = async (req, res, next) => {
   try {
-    const ids = req.query.ids ? req.query.ids.split(",") : [];
-    const limit = Math.max(Number(req.query.limit) || 6, 1);
+    const { ids, limit } = parseRecentListingQuery(req.query);
 
     if (!ids.length) {
       const listings = await Listing.find({

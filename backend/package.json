@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test modules/**/*.test.js modules/**/**/*.test.js",
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
@@ -27,6 +27,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "node-cron": "^4.2.1",
     "nodemon": "^3.1.14",
+    "openai": "^7.45.1",
     "resend": "^6.9.3",
     "slugify": "^1.6.6",
     "streamifier": "^0.1.1",

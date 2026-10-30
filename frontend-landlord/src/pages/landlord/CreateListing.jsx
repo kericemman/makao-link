@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { createListing, getListingMeta } from "../../services/listings.service";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { createListing, getAssistantListingDraft, getListingMeta, markAssistantListingDraftSubmitted } from "../../services/listings.service";
 import { getMySubscription, getWhatsAppListingAddon } from "../../services/payment.service";
 import { useAuth } from "../../context/AuthContext";
 import imageCompression from "browser-image-compression";
@@ -51,6 +51,8 @@ const IMAGE_COMPRESSION_OPTIONS = {
 
 const CreateListingPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const assistantDraftId = searchParams.get("draftId") || "";
 
   const { user, subscription: authSubscription, usage: authUsage } = useAuth();
 
@@ -73,6 +75,8 @@ const CreateListingPage = () => {
   const [inventoryMode, setInventoryMode] = useState(false);
   const [inventory, setInventory] = useState({ building: "", category: "", totalUnits: "", availableUnits: "", assignedAgent: "" });
   const [setupComplete, setSetupComplete] = useState(false);
+  const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
+  const [assistantDraftLoading, setAssistantDraftLoading] = useState(Boolean(assistantDraftId));
 
   const [listingMeta, setListingMeta] = useState({
     counties: [],
@@ -173,9 +177,9 @@ const CreateListingPage = () => {
 
         setFormData((prev) => ({
           ...prev,
-          type: meta.listingTypes?.[0] || "apartment",
-          purpose: meta.listingPurposes?.[0] || "rent",
-          sizeUnit: meta.officeSizeUnits?.[0] || "sqft"
+          type: prev.type || meta.listingTypes?.[0] || "apartment",
+          purpose: prev.purpose || meta.listingPurposes?.[0] || "rent",
+          sizeUnit: prev.sizeUnit || meta.officeSizeUnits?.[0] || "sqft"
         }));
       } catch (error) {
         toast.error("Failed to load listing options", {
@@ -188,6 +192,40 @@ const CreateListingPage = () => {
 
     fetchMeta();
   }, []);
+
+  useEffect(() => {
+    if (!assistantDraftId) return undefined;
+    let active = true;
+    getAssistantListingDraft(assistantDraftId)
+      .then(({ draft }) => {
+        if (!active || !draft?.fields) return;
+        const draftFields = draft.fields;
+        const suppliedFields = Object.fromEntries(Object.entries(draftFields).filter(([, value]) => value !== null && value !== undefined && value !== ""));
+        setFormData((current) => ({
+          ...current,
+          ...suppliedFields,
+          amenities: { ...current.amenities, ...(draftFields.amenities || {}) }
+        }));
+        if (draftFields.portfolioName || draftFields.portfolioCategory || Number(draftFields.totalUnits) > 1) {
+          setInventoryMode(true);
+          setInventory((current) => ({
+            ...current,
+            building: draftFields.portfolioName || "",
+            category: draftFields.portfolioCategory || "",
+            totalUnits: draftFields.totalUnits || "",
+            availableUnits: draftFields.availableUnits ?? ""
+          }));
+        }
+        setSetupComplete(true);
+      })
+      .catch(() => {
+        if (active) toast.error("We could not load this property draft. You can continue with a new listing.");
+      })
+      .finally(() => {
+        if (active) setAssistantDraftLoading(false);
+      });
+    return () => { active = false; };
+  }, [assistantDraftId]);
 
   const activeSubscription = freshSubscription || authSubscription || null;
 
@@ -217,7 +255,7 @@ const CreateListingPage = () => {
     ["premium", "pro"].includes(activeSubscription?.plan) && activeStatus === "active";
   const advancedWorkspace = ["premium", "pro"].includes(activeSubscription?.plan) && activeStatus === "active";
   const whatsappAssistanceEnabled = planHasWhatsAppAssistance || Boolean(whatsappAddon?.active);
-  const isPageLoading = metaLoading || subscriptionLoading || whatsappAddonLoading;
+  const isPageLoading = metaLoading || subscriptionLoading || whatsappAddonLoading || assistantDraftLoading;
   const draftWhatsAppUrl = buildWhatsAppUrl(listingDraftMessage(user, formData));
 
   useEffect(() => {
@@ -474,7 +512,7 @@ const CreateListingPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (blocked) {
@@ -488,6 +526,12 @@ const CreateListingPage = () => {
       });
       return;
     }
+
+    setConfirmSubmitOpen(true);
+  };
+
+  const confirmListingSubmission = async () => {
+    setConfirmSubmitOpen(false);
 
     try {
       setLoading(true);
@@ -539,7 +583,14 @@ const CreateListingPage = () => {
         payload.append("images", image);
       });
 
-      await createListing(payload);
+      const created = await createListing(payload);
+      if (assistantDraftId && created.listing?._id) {
+        try {
+          await markAssistantListingDraftSubmitted(assistantDraftId, created.listing._id);
+        } catch {
+          toast.error("Your listing was submitted, but the saved draft could not be closed. Contact support before resubmitting it.");
+        }
+      }
 
       toast.success("Property listed successfully! Pending approval.", {
         style: {
@@ -1307,6 +1358,43 @@ const CreateListingPage = () => {
           </button>
         </div>
       </form>
+      {confirmSubmitOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6" role="presentation">
+          <section className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="listing-confirm-title">
+            <h2 id="listing-confirm-title" className="text-xl font-bold text-[#0F172A]">Review before submission</h2>
+            <p className="mt-1 text-sm text-[#475569]">Your listing will be sent for admin review. It will not be public until approved.</p>
+            {preview[0] && <img src={preview[0]} alt="Property preview" className="mt-4 h-48 w-full rounded-md object-cover" />}
+            <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              <div><dt className="text-[#64748B]">Property</dt><dd className="font-semibold text-[#0F172A]">{formData.title}</dd></div>
+              <div><dt className="text-[#64748B]">Purpose</dt><dd className="font-semibold text-[#0F172A]">{formData.purpose === "short_stay" ? "Short-term stay" : formData.purpose}</dd></div>
+              <div><dt className="text-[#64748B]">Price</dt><dd className="font-semibold text-[#0F172A]">KES {Number(formData.price || 0).toLocaleString()}{formData.purpose === "short_stay" ? " / night" : formData.purpose === "rent" ? " / month" : ""}</dd></div>
+              <div><dt className="text-[#64748B]">Location</dt><dd className="font-semibold text-[#0F172A]">{formData.town}, {formData.county}</dd></div>
+              <div><dt className="text-[#64748B]">Type</dt><dd className="font-semibold text-[#0F172A]">{prettifyLabel(formData.type)}</dd></div>
+              {isResidential && <div><dt className="text-[#64748B]">Bedrooms / bathrooms</dt><dd className="font-semibold text-[#0F172A]">{formData.bedrooms} / {formData.bathrooms}</dd></div>}
+              {formData.purpose === "short_stay" && <div><dt className="text-[#64748B]">Stay details</dt><dd className="font-semibold text-[#0F172A]">Up to {formData.maxGuests} guests, minimum {formData.minNights} night(s)</dd></div>}
+              {inventoryMode && <div><dt className="text-[#64748B]">Unit inventory</dt><dd className="font-semibold text-[#0F172A]">{inventory.availableUnits || inventory.totalUnits} available of {inventory.totalUnits}</dd></div>}
+              <div><dt className="text-[#64748B]">Photos</dt><dd className="font-semibold text-[#0F172A]">{images.length} attached</dd></div>
+            </dl>
+            <div className="mt-4 border-t border-[#E2E8F0] pt-4">
+              <h3 className="text-sm font-semibold text-[#0F172A]">Description</h3>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-[#475569]">{formData.description}</p>
+              <h3 className="mt-4 text-sm font-semibold text-[#0F172A]">Features</h3>
+              <p className="mt-1 text-sm text-[#475569]">
+                {[
+                  formData.kitchen ? "Kitchen" : null,
+                  ...amenitiesList.filter(({ key }) => formData.amenities[key]).map(({ label }) => label)
+                ].filter(Boolean).join(", ") || "No optional features selected"}
+              </p>
+              <p className="mt-3 text-sm text-[#475569]">Contact: {formData.contactPhone}</p>
+              {(formData.latitude || formData.longitude) && <p className="mt-1 text-sm text-[#475569]">Map coordinates: {formData.latitude || "-"}, {formData.longitude || "-"}</p>}
+            </div>
+            <div className="mt-5 flex flex-col-reverse justify-end gap-2 sm:flex-row">
+              <button type="button" onClick={() => setConfirmSubmitOpen(false)} className="rounded-md border border-[#CBD5E1] px-4 py-2.5 text-sm font-semibold text-[#334155]">Continue editing</button>
+              <button type="button" onClick={confirmListingSubmission} disabled={loading} className="rounded-md bg-[#126542] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{loading ? "Submitting..." : "Confirm and submit for review"}</button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 };

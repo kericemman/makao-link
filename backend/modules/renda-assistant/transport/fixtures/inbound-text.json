@@ -1,0 +1,9 @@
+{
+  "eventId": "fixture-event-001",
+  "messageId": "fixture-message-001",
+  "contactId": "fixture-contact-001",
+  "direction": "inbound",
+  "contentType": "text",
+  "text": "I am looking for a two-bedroom home in Nakuru.",
+  "occurredAt": "2026-01-15T10:30:00.000Z"
+}

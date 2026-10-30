@@ -32,6 +32,7 @@ const settingRoutes = require("./modules/settings/setting.route");
 const listingReportRoutes = require("./modules/listingReports/listingReport.routes");
 const landlordTeamRoutes = require("./modules/team/team.routes");
 const stayBookingRoutes = require("./modules/stays/stayBooking.routes");
+const rendaAssistantRoutes = require("./modules/renda-assistant/rendaAssistant.routes");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -122,6 +123,7 @@ app.use("/api/kyc", kycRoutes);
 app.use("/api/settings", settingRoutes);
 app.use("/api/listing-reports", listingReportRoutes);
 app.use("/api/landlord/team", landlordTeamRoutes);
+app.use("/api/renda-assistant", rendaAssistantRoutes);
 app.use("/", seoRoutes);
 
 app.use(errorHandler);
