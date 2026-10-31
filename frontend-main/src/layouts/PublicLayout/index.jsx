@@ -4,6 +4,8 @@ import Navbar from "./Navbar";
 import { SavedHomesProvider } from "../../context/SavedHomesContext";
 import RendaAssistantWidget from "../../components/RendaAssistantWidget";
 
+const isWebAssistantEnabled = import.meta.env.VITE_RENDA_ASSISTANT_WEB_ENABLED === "true";
+
 export default function PublicLayout() {
   const location = useLocation();
 
@@ -15,7 +17,7 @@ export default function PublicLayout() {
           <Outlet />
         </main>
         <Footer />
-        <RendaAssistantWidget />
+        {isWebAssistantEnabled && <RendaAssistantWidget />}
       </div>
     </SavedHomesProvider>
   );
