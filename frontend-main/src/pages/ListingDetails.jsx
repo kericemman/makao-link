@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { FiAlertTriangle, FiArrowLeft, FiCalendar, FiMail, FiMapPin, FiPhone, FiShare2, FiUsers, FiX } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
@@ -6,7 +6,7 @@ import { FaBath, FaBed, FaRulerCombined } from "react-icons/fa";
 import LoadingScreen from "../components/common/LoadingScreen";
 import ListingInquiryCard from "../components/listings/ListingInquiryCard";
 import ListingRail from "../components/listings/ListingRail";
-import TrustBadges, { TrustPromise } from "../components/listings/TrustBadges";
+import { TrustPromise } from "../components/listings/TrustBadges";
 import { getPublicListings, getSingleListing, reportListing } from "../services/listings.service";
 import { mainRoutes, portalLinks } from "../config/portals";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -49,6 +49,19 @@ const normalizeAmenities = (amenities) => {
     .map(([key]) => amenityLabels[key] || key);
 };
 
+const formatDateInput = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const addDateDays = (value, days) => {
+  const date = value ? new Date(`${value}T12:00:00`) : new Date();
+  date.setDate(date.getDate() + days);
+  return formatDateInput(date);
+};
+
 export default function ListingDetails() {
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -57,6 +70,7 @@ export default function ListingDetails() {
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
+  const thumbnailRefs = useRef([]);
   const [error, setError] = useState("");
   const [related, setRelated] = useState([]);
   const [inquiryOpen, setInquiryOpen] = useState(false);
@@ -99,6 +113,7 @@ export default function ListingDetails() {
     getSingleListing(id)
       .then((data) => {
         setError("");
+        setSelectedImage(0);
         setListing(data.listing || data);
       })
       .catch((err) => {
@@ -146,13 +161,18 @@ export default function ListingDetails() {
   const amenities = normalizeAmenities(listing.amenities);
   const landlordPhone = listing.contactPhone || listing.landlord?.phone || "";
   const isShortStay = listing.purpose === "short_stay";
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = formatDateInput(new Date());
+  const minimumCheckOut = addDateDays(stayForm.checkIn || today, 1);
   const stayWhatsappHref = stayRequest && landlordPhone
     ? `https://wa.me/${landlordPhone.replace(/\D/g, "").replace(/^0/, "254")}?text=${encodeURIComponent(`Hi, I'd like to book ${listing.title}. Stay request ${stayRequest.requestCode}; ${stayRequest.guests} guest(s), ${new Date(stayRequest.checkIn).toLocaleDateString("en-KE")} to ${new Date(stayRequest.checkOut).toLocaleDateString("en-KE")}. My name is ${stayRequest.guestName}, phone ${stayRequest.guestPhone}. Please confirm availability and next steps.`)}`
     : "";
 
   const submitStayRequest = async (event) => {
     event.preventDefault();
+    if (!stayForm.checkIn || stayForm.checkOut <= stayForm.checkIn) {
+      setStayError("Choose check-out at least one night after check-in.");
+      return;
+    }
     setStaySending(true);
     setStayError("");
     try {
@@ -192,52 +212,65 @@ export default function ListingDetails() {
 
   return (
     <div className="bg-[#F0F7F4]">
-      <section className="border-b border-[#A8D8C1] bg-[#FFFFFF]">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <Link to={mainRoutes.listings} className="mb-6 inline-flex items-center gap-2 text-sm font-extrabold text-[#065A57] hover:text-[#013E43]">
+      <section className="border-b border-[#A8D8C1] bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+          <Link to={mainRoutes.listings} className="mb-4 inline-flex items-center gap-2 text-sm font-extrabold text-[#065A57] hover:text-[#013E43] sm:mb-5">
             <FiArrowLeft />
             Back to listings
           </Link>
 
-          <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
-            <div>
-              <div className="overflow-hidden rounded-[2rem] bg-[#F0F7F4] shadow-[0_24px_70px_rgba(22,33,31,0.12)]">
+          <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-7">
+            <div className="min-w-0">
+              <div className="overflow-hidden rounded-xl bg-slate-100">
                 {hero ? (
-                  <img src={hero} alt={listing.title} className="aspect-[16/10] w-full object-cover" />
+                  <img src={hero} alt={listing.title} fetchPriority="high" className="aspect-[16/10] w-full object-cover sm:aspect-[16/9]" />
                 ) : (
-                  <div className="flex aspect-[16/10] items-center justify-center text-sm font-bold text-[#065A57]">Image coming soon</div>
+                  <div className="flex aspect-[16/10] items-center justify-center text-sm font-bold text-[#065A57] sm:aspect-[16/9]">Image coming soon</div>
                 )}
               </div>
 
               {images.length > 1 ? (
-                <div className="mt-4 grid grid-cols-4 gap-3 sm:grid-cols-6">
-                  {images.slice(0, 6).map((image, index) => (
-                    <button
-                      key={image}
-                      onClick={() => setSelectedImage(index)}
-                      className={`overflow-hidden rounded-2xl border-2 bg-white transition ${
-                        selectedImage === index ? "border-[#013E43]" : "border-transparent hover:border-[#02BB31]"
-                      }`}
-                    >
-                      <img src={image} alt="" className="aspect-square w-full object-cover" />
-                    </button>
-                  ))}
+                <div className="mt-3 overflow-hidden">
+                  <div className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto scroll-smooth px-0.5 pb-2" aria-label="Listing photos">
+                    {images.map((image, index) => (
+                      <button
+                        key={`${image}-${index}`}
+                        ref={(element) => { thumbnailRefs.current[index] = element; }}
+                        onClick={() => {
+                          setSelectedImage(index);
+                          thumbnailRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                        }}
+                        aria-label={`Show photo ${index + 1} of ${images.length}`}
+                        aria-pressed={selectedImage === index}
+                        className={`w-20 shrink-0 snap-start overflow-hidden rounded-lg border-2 bg-white transition sm:w-24 ${
+                          selectedImage === index ? "border-[#013E43]" : "border-transparent hover:border-[#02BB31]"
+                        }`}
+                      >
+                        <img src={image} alt="" className="aspect-square w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ) : null}
+
+              <article className="mt-3 rounded-xl border border-[#DCEBE3] bg-white p-4 sm:mt-4 sm:p-6">
+                <p className="text-sm font-extrabold uppercase text-[#02BB31]">Description</p>
+                <div className="mt-3 whitespace-pre-line text-sm leading-7 text-[#065A57]">
+                  {listing.description || "No description has been added for this listing yet."}
+                </div>
+              </article>
             </div>
 
-            <aside className="h-fit rounded-[1.5rem] border border-[#A8D8C1] bg-[#FFFFFF] p-6 shadow-[0_18px_45px_rgba(22,33,31,0.07)] lg:sticky lg:top-28">
+            <aside className="h-fit rounded-xl border border-[#A8D8C1] bg-white p-4 sm:p-6 lg:sticky lg:top-28">
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full bg-[#F0F7F4] px-3 py-1 text-xs font-extrabold uppercase tracking-[0.12em] text-[#013E43]">
-                  {isShortStay ? "Short-term stay" : listing.purpose || "rent"}
+                  {isShortStay ? "BnB" : listing.purpose || "rent"}
                 </span>
                 <span className="rounded-full bg-[#F0F7F4] px-3 py-1 text-xs font-bold capitalize text-[#02BB31]">
                   {listing.availability || "available"}
                 </span>
               </div>
-              <TrustBadges trust={listing.trust} className="mt-4" />
-
-              <p className="mt-5 text-3xl font-extrabold tracking-tight text-[#013E43]">
+              <p className="mt-4 text-3xl font-extrabold text-[#013E43] sm:mt-5">
                 {formatPrice(listing.price, listing.purpose)}
               </p>
               <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-[#013E43]">{listing.title}</h1>
@@ -268,9 +301,9 @@ export default function ListingDetails() {
                     </div>
                   ) : (
                     <form onSubmit={submitStayRequest} className="mt-4 space-y-3">
-                      <div className="grid grid-cols-2 gap-2">
-                        <label className="text-xs font-semibold text-[#36564D]">Check-in<input required type="date" min={today} value={stayForm.checkIn} onChange={(e) => setStayForm({ ...stayForm, checkIn: e.target.value })} className="mt-1 w-full rounded-lg border border-[#C6D9CE] px-2.5 py-2 text-sm text-[#173F37]" /></label>
-                        <label className="text-xs font-semibold text-[#36564D]">Check-out<input required type="date" min={stayForm.checkIn || today} value={stayForm.checkOut} onChange={(e) => setStayForm({ ...stayForm, checkOut: e.target.value })} className="mt-1 w-full rounded-lg border border-[#C6D9CE] px-2.5 py-2 text-sm text-[#173F37]" /></label>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="block min-w-0 text-xs font-semibold text-[#36564D]">Check-in date<input required type="date" min={today} value={stayForm.checkIn} onChange={(e) => setStayForm((current) => ({ ...current, checkIn: e.target.value, checkOut: current.checkOut <= e.target.value ? "" : current.checkOut }))} className="mt-1.5 h-11 w-full min-w-0 rounded-lg border border-[#C6D9CE] bg-white px-2 text-sm text-[#173F37]" /></label>
+                        <label className="block min-w-0 text-xs font-semibold text-[#36564D]">Check-out date<input required type="date" min={minimumCheckOut} value={stayForm.checkOut} onChange={(e) => setStayForm((current) => ({ ...current, checkOut: e.target.value }))} className="mt-1.5 h-11 w-full min-w-0 rounded-lg border border-[#C6D9CE] bg-white px-2 text-sm text-[#173F37]" /></label>
                       </div>
                       <label className="block text-xs font-semibold text-[#36564D]">Guests<input required type="number" min="1" max={listing.maxGuests || undefined} value={stayForm.guests} onChange={(e) => setStayForm({ ...stayForm, guests: e.target.value })} className="mt-1 w-full rounded-lg border border-[#C6D9CE] px-3 py-2 text-sm text-[#173F37]" /></label>
                       <input required placeholder="Your name" value={stayForm.guestName} onChange={(e) => setStayForm({ ...stayForm, guestName: e.target.value })} className="w-full rounded-lg border border-[#C6D9CE] px-3 py-2.5 text-sm text-[#173F37]" />
@@ -337,21 +370,13 @@ export default function ListingDetails() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
-        <article className="rounded-[1.5rem] border border-[#A8D8C1] bg-[#FFFFFF] p-6">
-          <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#02BB31]">Description</p>
-          <div className="mt-4 whitespace-pre-line text-sm leading-7 text-[#065A57]">
-            {listing.description || "No description has been added for this listing yet."}
-          </div>
-        </article>
+      <section className="mx-auto grid max-w-7xl gap-4 px-4 pb-7 pt-5 sm:px-6 sm:pb-9 sm:pt-7 lg:grid-cols-2 lg:gap-6 lg:px-8">
+        <TrustPromise trust={listing.trust} lastCheckedAt={listing.updatedAt} />
 
-        <div className="space-y-6">
-          <TrustPromise trust={listing.trust} lastCheckedAt={listing.updatedAt} />
-
-          <aside className="rounded-[1.5rem] border border-[#A8D8C1] bg-[#FFFFFF] p-6">
-            <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#02BB31]">Amenities</p>
+        <aside className="rounded-xl border border-[#DDEBE4] bg-white p-4 sm:p-5">
+            <p className="text-sm font-extrabold uppercase text-[#02BB31]">Amenities</p>
             {amenities.length ? (
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {amenities.map((amenity) => (
                   <span key={amenity} className="rounded-full bg-[#F0F7F4] px-3 py-2 text-xs font-bold text-[#065A57]">
                     {amenity}
@@ -359,10 +384,9 @@ export default function ListingDetails() {
                 ))}
               </div>
             ) : (
-              <p className="mt-4 text-sm leading-6 text-[#065A57]">Amenities have not been listed yet.</p>
+              <p className="mt-3 text-sm leading-6 text-[#065A57]">Amenities have not been listed yet.</p>
             )}
-          </aside>
-        </div>
+        </aside>
       </section>
 
       {inquiryOpen && !isShortStay ? (

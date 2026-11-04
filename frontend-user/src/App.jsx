@@ -17,11 +17,16 @@ const Inquiries = lazy(() => import("./pages/Inquiries"));
 const SavedHomes = lazy(() => import("./pages/SavedHomes"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Support = lazy(() => import("./pages/Support"));
+const PropertyRequests = lazy(() => import("./pages/PropertyRequests"));
+const Viewings = lazy(() => import("./pages/Viewings"));
 const AgentDashboard = lazy(() => import("./pages/agent/AgentDashboard"));
 const AgentReferralLinks = lazy(() => import("./pages/agent/AgentReferralLinks"));
 const AgentLandlords = lazy(() => import("./pages/agent/AgentLandlords"));
 const AgentInstructions = lazy(() => import("./pages/agent/AgentInstructions"));
 const AgentProfile = lazy(() => import("./pages/agent/AgentProfile"));
+const AgentMarketplace = lazy(() => import("./pages/agent/AgentMarketplace"));
+const AgentViewings = lazy(() => import("./pages/agent/AgentViewings"));
+const AgentApplication = lazy(() => import("./pages/agent/AgentApplication"));
 
 const load = (node, label) => <Suspense fallback={<LoadingScreen label={label} />}>{node}</Suspense>;
 
@@ -29,6 +34,7 @@ export default function App() {
   return (
     <Routes>
       <Route element={<AuthLayout />}>
+        <Route path="/agent/apply" element={load(<AgentApplication />, "Loading agent application")} />
         <Route path="/login" element={load(<Login />, "Loading login")} />
         <Route path="/signup" element={load(<Signup />, "Loading signup")} />
         <Route path="/verify-email" element={load(<VerifyEmail />, "Loading verification")} />
@@ -46,6 +52,8 @@ export default function App() {
         <Route path="/" element={load(<Dashboard />, "Loading dashboard")} />
         <Route path="/inquiries" element={load(<Inquiries />, "Loading inquiries")} />
         <Route path="/saved" element={load(<SavedHomes />, "Loading saved homes")} />
+        <Route path="/property-requests" element={load(<PropertyRequests />, "Loading property requests")} />
+        <Route path="/viewings" element={load(<Viewings />, "Loading viewings")} />
         <Route path="/profile" element={load(<Profile />, "Loading profile")} />
         <Route path="/support" element={load(<Support />, "Loading support")} />
       </Route>
@@ -60,6 +68,8 @@ export default function App() {
         <Route path="/agent/dashboard" element={load(<AgentDashboard />, "Loading agent dashboard")} />
         <Route path="/agent/referrals" element={load(<AgentReferralLinks />, "Loading referral links")} />
         <Route path="/agent/landlords" element={load(<AgentLandlords />, "Loading landlords")} />
+        <Route path="/agent/marketplace" element={load(<AgentMarketplace />, "Loading property opportunities")} />
+        <Route path="/agent/viewings" element={load(<AgentViewings />, "Loading agent viewings")} />
         <Route path="/agent/instructions" element={load(<AgentInstructions />, "Loading instructions")} />
         <Route path="/agent/profile" element={load(<AgentProfile />, "Loading profile")} />
       </Route>

@@ -88,7 +88,7 @@ export default function HeroSearch({ listings = [] }) {
                 >
                   <option value="rent">Rent</option>
                   <option value="sale">Buy</option>
-                  <option value="short_stay">BnB / Short stay</option>
+                  <option value="short_stay">BnB</option>
                 </select>
                 {purpose === "short_stay" && (
                   <select

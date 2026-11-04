@@ -34,7 +34,7 @@ export default function SubscribersPage() {
       setFetching(true);
       const { data } = await getSubscribers();
       setSubscribers(data.subscribers || []);
-    } catch (err) {
+    } catch {
       toast.error("Failed to load subscribers", {
         style: { background: "#013E43", color: "#fff" }
       });
@@ -87,8 +87,8 @@ export default function SubscribersPage() {
       );
 
       loadSubscribers();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update subscriber", {
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update subscriber", {
         style: { background: "#013E43", color: "#fff" }
       });
     } finally {

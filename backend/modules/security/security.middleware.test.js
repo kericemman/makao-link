@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { createRateLimiter } = require("../../middleware/security.middleware");
+const { assistantSessionLimiter, createRateLimiter } = require("../../middleware/security.middleware");
 
 const request = (ip) => ({ ip, headers: {}, socket: { remoteAddress: ip } });
 
@@ -49,4 +49,25 @@ test("rate limiter evicts the oldest key when its state cap is reached", () => {
   run(limiter, "192.0.2.2");
   assert.equal(run(limiter, "192.0.2.3").passed, true);
   assert.equal(run(limiter, "192.0.2.1").passed, true);
+});
+
+test("assistant session limiter is open outside production and capped in production", () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+  try {
+    process.env.NODE_ENV = "development";
+    for (let index = 0; index < 12; index += 1) {
+      assert.equal(run(assistantSessionLimiter, "192.0.2.10").passed, true);
+    }
+
+    process.env.NODE_ENV = "production";
+    for (let index = 0; index < 10; index += 1) {
+      assert.equal(run(assistantSessionLimiter, "192.0.2.11").passed, true);
+    }
+    const limited = run(assistantSessionLimiter, "192.0.2.11");
+    assert.equal(limited.passed, false);
+    assert.equal(limited.res.statusCode, 429);
+  } finally {
+    if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = originalNodeEnv;
+  }
 });

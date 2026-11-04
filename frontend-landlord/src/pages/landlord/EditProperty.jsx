@@ -6,6 +6,8 @@ import {
   updateListing
 } from "../../services/listings.service";
 import imageCompression from "browser-image-compression";
+import { compressListingImage } from "../../utils/listingImages";
+import { useAuth } from "../../context/AuthContext";
 import {
   FiMapPin,
   FiDollarSign,
@@ -38,7 +40,6 @@ const prettifyLabel = (value) =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 
-const MAX_LISTING_IMAGES = 10;
 const IMAGE_COMPRESSION_OPTIONS = {
   maxSizeMB: 1,
   maxWidthOrHeight: 1600,
@@ -46,8 +47,10 @@ const IMAGE_COMPRESSION_OPTIONS = {
 };
 
 const EditListingPage = () => {
+  const { subscription } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
+  const imageLimit = subscription?.plan !== "normal" && subscription?.status === "active" ? 30 : 15;
 
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -282,24 +285,16 @@ const EditListingPage = () => {
     const compressedFiles = [];
 
     for (const file of files) {
-      if (!file.type.startsWith("image/")) {
-        toast.error(`${file.name} is not an image file`);
-        continue;
-      }
-
       try {
-        const compressed = await imageCompression(file, {
-          ...IMAGE_COMPRESSION_OPTIONS
-        });
-
+        const compressed = await compressListingImage(imageCompression, file, IMAGE_COMPRESSION_OPTIONS);
         compressedFiles.push(compressed);
       } catch (error) {
-        toast.error(`Failed to process ${file.name}`);
+        toast.error(`${file.name}: ${error.message || "Could not process this image."}`);
       }
     }
 
-    if (compressedFiles.length > MAX_LISTING_IMAGES) {
-      toast.error(`Maximum ${MAX_LISTING_IMAGES} images allowed`);
+    if (compressedFiles.length > imageLimit) {
+      toast.error(`Your plan allows up to ${imageLimit} images per listing.`);
       return;
     }
 
@@ -927,7 +922,7 @@ const EditListingPage = () => {
               <input
                 type="file"
                 multiple
-                accept="image/*"
+                accept="image/*,.heic,.heif,.tif,.tiff"
                 onChange={handleImages}
                 className="hidden"
                 id="image-upload"
@@ -937,11 +932,11 @@ const EditListingPage = () => {
                 <FiUpload className="text-3xl text-[#475569] mb-2" />
                 <span className="text-sm text-[#475569]">Click to upload replacement images</span>
                 <span className="text-xs text-[#475569] mt-1">
-                  Select multiple images. Large files are compressed before upload. Max {MAX_LISTING_IMAGES} images.
+                  Select multiple images. Large files are compressed before upload. Max {imageLimit} images.
                 </span>
               </label>
             </div>
-            <p className="text-xs text-[#475569] mt-2">{images.length}/{MAX_LISTING_IMAGES} new image(s) selected</p>
+            <p className="text-xs text-[#475569] mt-2">{images.length}/{imageLimit} new image(s) selected</p>
           </div>
 
           {preview.length > 0 && (

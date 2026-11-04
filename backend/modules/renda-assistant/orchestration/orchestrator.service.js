@@ -39,6 +39,18 @@ class AssistantConsentRequiredError extends Error {
   }
 }
 
+class AssistantIncompleteResponseError extends Error {
+  constructor(stage, response) {
+    super("Renda couldn’t finish that reply. Please try again.");
+    this.name = "AssistantIncompleteResponseError";
+    this.statusCode = 502;
+    this.code = "ASSISTANT_RESPONSE_INCOMPLETE";
+    this.stage = stage;
+    const reason = response?.incomplete_details?.reason;
+    this.reason = ["max_output_tokens", "content_filter"].includes(reason) ? reason : "other";
+  }
+}
+
 const getConfiguration = () => {
   const model = String(process.env.RENDA_ASSISTANT_MODEL || "").trim();
   const timeoutMs = Number(process.env.RENDA_ASSISTANT_TIMEOUT_MS || DEFAULT_TIMEOUT_MS);
@@ -112,8 +124,8 @@ const validateFinalAnswer = (value, allowedListingIds, allowedPlanKeys = new Set
   return { reply: normalizePublicReply(value.reply), listingIds, planKeys, draftId: value.draftId, needsHumanSupport: value.needsHumanSupport };
 };
 
-const requireCompleted = (response) => {
-  if (response?.status !== "completed") throw new Error("Assistant response was incomplete");
+const requireCompleted = (response, stage) => {
+  if (response?.status !== "completed") throw new AssistantIncompleteResponseError(stage, response);
 };
 
 const validateMobileAnswer = (value, allowedListingIds) => {
@@ -161,7 +173,7 @@ const runAssistantTurn = async ({ conversationId, userText, client: injectedClie
     store: false
   };
   const first = await client.responses.create(requestOptions, { timeout: configuration.timeoutMs, maxRetries: 1 });
-  requireCompleted(first);
+  requireCompleted(first, "tool_selection");
 
   const calls = (first.output || []).filter((item) => item.type === "function_call");
   if (calls.length > MAX_TOOL_CALLS) throw new Error("Assistant requested too many tools");
@@ -214,7 +226,7 @@ const runAssistantTurn = async ({ conversationId, userText, client: injectedClie
     store: false,
     text: { format: { type: "json_schema", name: mobileSearchMode ? "ask_renda_reply" : "renda_assistant_reply", strict: true, schema: mobileSearchMode ? mobileResponseSchema : responseSchema } }
   }, { timeout: configuration.timeoutMs, maxRetries: 1 });
-  requireCompleted(finalResponse);
+  requireCompleted(finalResponse, "final_answer");
 
   let parsed;
   try {
@@ -265,6 +277,7 @@ const runAssistantTurn = async ({ conversationId, userText, client: injectedClie
 module.exports = {
   AssistantConfigurationError,
   AssistantConsentRequiredError,
+  AssistantIncompleteResponseError,
   MAX_TOOL_CALLS,
   assistantTools,
   getConfiguration,

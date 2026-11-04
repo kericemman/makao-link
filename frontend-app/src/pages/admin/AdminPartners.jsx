@@ -32,7 +32,7 @@ function AdminPartners() {
   const [searchTerm, setSearchTerm] = useState("")
   const [serviceFilter, setServiceFilter] = useState("all")
   const [selectedPartner, setSelectedPartner] = useState(null)
-  const [showDetailsModal, setShowDetailsModal] = useState(false)
+  const [, setShowDetailsModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectReason, setRejectReason] = useState("")
   const [selectedImage, setSelectedImage] = useState(null)
@@ -43,7 +43,7 @@ function AdminPartners() {
       setLoading(true)
       const res = await getPartnerApplications()
       setPartners(res.data || [])
-    } catch (error) {
+    } catch {
       toast.error("Failed to load partner applications", {
         style: { background: "#013E43", color: "#fff" }
       })
@@ -92,7 +92,7 @@ function AdminPartners() {
         setSelectedPartner(null)
         setShowDetailsModal(false)
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to approve partner", {
         style: { background: "#013E43", color: "#fff" }
       })
@@ -117,23 +117,10 @@ function AdminPartners() {
       setSelectedPartner(null)
       setShowDetailsModal(false)
       fetchApplications()
-    } catch (error) {
+    } catch {
       toast.error("Failed to reject partner", {
         style: { background: "#013E43", color: "#fff" }
       })
-    }
-  }
-
-  const getServiceIcon = (type) => {
-    switch(type) {
-      case "moving":
-        return <FiTruck className="text-[#02BB31]" />
-      case "cleaning":
-        return <MdCleaningServices className="text-[#013E43]" />
-      case "packing":
-        return <FiPackage className="text-blue-500" />
-      default:
-        return <FiBriefcase className="text-[#065A57]" />
     }
   }
 

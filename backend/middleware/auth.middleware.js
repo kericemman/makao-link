@@ -28,6 +28,7 @@
 
 const jwt = require("jsonwebtoken");
 const User = require("../modules/users/user.model");
+const { effectiveRoles, hasRole } = require("../modules/authorization/authorization.service");
 
 exports.protect = async (req, res, next) => {
   try {
@@ -57,6 +58,7 @@ exports.protect = async (req, res, next) => {
     }
 
     req.user = user;
+    req.user.effectiveRoles = effectiveRoles(user);
     next();
   } catch (error) {
     return res.status(401).json({
@@ -67,7 +69,7 @@ exports.protect = async (req, res, next) => {
 
 exports.requireRole = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    if (!hasRole(req.user, ...roles)) {
       return res.status(403).json({
         message: "You do not have permission to access this resource"
       });

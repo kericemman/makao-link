@@ -4,6 +4,7 @@ import { createListing, getAssistantListingDraft, getListingMeta, markAssistantL
 import { getMySubscription, getWhatsAppListingAddon } from "../../services/payment.service";
 import { useAuth } from "../../context/AuthContext";
 import imageCompression from "browser-image-compression";
+import { compressListingImage } from "../../utils/listingImages";
 import { FaWhatsapp } from "react-icons/fa";
 import { buildWhatsAppUrl, listingDraftMessage } from "../../utils/whatsapp";
 import { getTeamMembers } from "../../services/team.service";
@@ -42,7 +43,6 @@ const prettifyLabel = (value = "") =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 
-const MAX_LISTING_IMAGES = 10;
 const IMAGE_COMPRESSION_OPTIONS = {
   maxSizeMB: 1,
   maxWidthOrHeight: 1600,
@@ -228,6 +228,7 @@ const CreateListingPage = () => {
   }, [assistantDraftId]);
 
   const activeSubscription = freshSubscription || authSubscription || null;
+  const imageLimit = activeSubscription?.plan !== "normal" && activeSubscription?.status === "active" ? 30 : 15;
 
   const activeUsage = freshSubscription
     ? freshUsage
@@ -412,24 +413,16 @@ const CreateListingPage = () => {
     const compressedFiles = [];
 
     for (const file of files) {
-      if (!file.type.startsWith("image/")) {
-        toast.error(`${file.name} is not an image file`);
-        continue;
-      }
-
       try {
-        const compressed = await imageCompression(file, {
-          ...IMAGE_COMPRESSION_OPTIONS
-        });
-
+        const compressed = await compressListingImage(imageCompression, file, IMAGE_COMPRESSION_OPTIONS);
         compressedFiles.push(compressed);
       } catch (error) {
-        toast.error(`Failed to process ${file.name}`);
+        toast.error(`${file.name}: ${error.message || "Could not process this image."}`);
       }
     }
 
-    if (compressedFiles.length + images.length > MAX_LISTING_IMAGES) {
-      toast.error(`Maximum ${MAX_LISTING_IMAGES} images allowed`);
+    if (compressedFiles.length + images.length > imageLimit) {
+      toast.error(`Your plan allows up to ${imageLimit} images per listing.`);
       return;
     }
 
@@ -1278,7 +1271,7 @@ const CreateListingPage = () => {
               <input
                 type="file"
                 multiple
-                accept="image/*"
+                accept="image/*,.heic,.heif,.tif,.tiff"
                 onChange={handleImages}
                 className="hidden"
                 id="image-upload"
@@ -1288,12 +1281,12 @@ const CreateListingPage = () => {
                 <FiUpload className="text-3xl text-[#475569] mb-2" />
                 <span className="text-sm text-[#475569]">Click to upload or drag and drop</span>
                 <span className="text-xs text-[#475569] mt-1">
-                  Select multiple images. Large files are compressed before upload. Max {MAX_LISTING_IMAGES} images.
+                  Select multiple images. Large files are compressed before upload. Max {imageLimit} images.
                 </span>
               </label>
             </div>
             {errors.images && <p className="text-sm text-red-500 mt-1">{errors.images}</p>}
-            <p className="text-xs text-[#475569] mt-2">{images.length}/{MAX_LISTING_IMAGES} image(s) selected</p>
+            <p className="text-xs text-[#475569] mt-2">{images.length}/{imageLimit} image(s) selected</p>
           </div>
 
           {preview.length > 0 && (

@@ -132,6 +132,7 @@ export default function CategoryListings() {
         />
         <ListingResults
           listings={listings}
+          filters={filters}
           pagination={pagination}
           loading={loading}
           error={error}

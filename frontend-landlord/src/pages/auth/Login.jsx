@@ -112,6 +112,12 @@ const LoginPage = () => {
 
       navigate(nextPath);
     } catch (err) {
+      const response = err.response?.data;
+      if (response?.requiresVerification) {
+        const params = new URLSearchParams({ email: response.email || formData.email, next: nextPath });
+        navigate(`/verify-email?${params.toString()}`);
+        return;
+      }
       setError(err.response?.data?.message || "Login failed");
       toast.error(err.response?.data?.message || "Login failed", {
         style: {

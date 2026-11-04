@@ -1,7 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import AuthContext from "./auth-context";
 import api from "../api/api";
-
-const AuthContext = createContext(null);
 
 const defaultUsage = { used: 0, limit: 0, remaining: 0 };
 
@@ -11,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [usage, setUsage] = useState(defaultUsage);
   const [loading, setLoading] = useState(true);
 
-  const fetchMe = async () => {
+  const fetchMe = useCallback(async () => {
     try {
       const { data } = await api.get("/auth/me");
 
@@ -31,7 +30,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("makao_token");
@@ -41,31 +40,27 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [fetchMe]);
 
-  const login = ({ token, user, subscription, usage }) => {
+  const login = useCallback(({ token, user, subscription, usage }) => {
     localStorage.setItem("makao_token", token);
 
     setUser(user || null);
     setSubscription(subscription || null);
     setUsage(usage || defaultUsage);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("makao_token");
 
     setUser(null);
     setSubscription(null);
     setUsage(defaultUsage);
-  };
+  }, []);
 
-  const refreshAuth = async () => {
-    return fetchMe();
-  };
+  const refreshAuth = useCallback(() => fetchMe(), [fetchMe]);
 
-  const refreshSubscription = async () => {
-    return fetchMe();
-  };
+  const refreshSubscription = useCallback(() => fetchMe(), [fetchMe]);
 
   const value = useMemo(
     () => ({
@@ -78,10 +73,8 @@ export const AuthProvider = ({ children }) => {
       refreshAuth,
       refreshSubscription
     }),
-    [user, subscription, usage, loading]
+    [user, subscription, usage, loading, login, logout, refreshAuth, refreshSubscription]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
-export const useAuth = () => useContext(AuthContext);

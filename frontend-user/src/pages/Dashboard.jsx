@@ -4,6 +4,7 @@ import {
   FiAlertCircle,
   FiArrowUpRight,
   FiCalendar,
+  FiTarget,
   FiHeart,
   FiHelpCircle,
   FiHome,
@@ -88,6 +89,14 @@ export default function Dashboard() {
           <Link to="/saved" className="rounded bg-gray-50 p-4 text-center transition hover:bg-green-500 hover:text-white">
             <FiHeart className="mx-auto mb-1 text-xl" />
             Saved Homes
+          </Link>
+          <Link to="/property-requests" className="rounded bg-gray-50 p-4 text-center transition hover:bg-green-500 hover:text-white">
+            <FiTarget className="mx-auto mb-1 text-xl" />
+            Property requests
+          </Link>
+          <Link to="/viewings" className="rounded bg-gray-50 p-4 text-center transition hover:bg-green-500 hover:text-white">
+            <FiCalendar className="mx-auto mb-1 text-xl" />
+            Viewings
           </Link>
           <Link to="/support" className="rounded bg-gray-50 p-4 text-center transition hover:bg-green-500 hover:text-white">
             <FiHelpCircle className="mx-auto mb-1 text-xl" />

@@ -47,7 +47,11 @@ export function AuthProvider({ children }) {
         setUser(nextUser);
         return syncSharedSession().catch(() => {});
       })
-      .catch(clearSession)
+      .catch((error) => {
+        // A temporary outage must not sign the user out. Clear only a session
+        // that the API has explicitly rejected as unauthorized.
+        if (error.response?.status === 401) clearSession();
+      })
       .finally(() => setBooting(false));
   }, [token]);
 

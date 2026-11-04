@@ -26,6 +26,8 @@ const imageFor = (listing) => {
 export default function PropertyCard({ listing }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const { user, savedIds, loading, toggleSaved } = useSavedHomes();
   const saved = savedIds.has(String(listing._id));
   const image = imageFor(listing);
@@ -73,11 +75,13 @@ export default function PropertyCard({ listing }) {
     >
       <div className="relative aspect-[1.1] bg-[#F0F7F4] sm:aspect-[1.35]">
         <Link to={detailsUrl} className="absolute inset-0">
-        {image ? (
+        {image && !imageFailed ? (
           <img
             src={image}
             alt={listing.title}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageFailed(true)}
+            className={`h-full w-full object-cover transition duration-500 group-hover:scale-105 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
           />
         ) : (
           <div className="flex h-full items-center justify-center gap-2 text-sm font-semibold text-[#065A57]">
@@ -85,10 +89,13 @@ export default function PropertyCard({ listing }) {
             Image coming soon
           </div>
         )}
+        {image && !imageLoaded && !imageFailed ? (
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 animate-pulse bg-[#DCEBE3]" />
+        ) : null}
         </Link>
         <div className="absolute left-2 top-2 flex max-w-[calc(100%-3rem)] flex-wrap gap-1 sm:left-4 sm:top-4 sm:gap-2">
           <span className="rounded-full bg-[#FFFFFF]/95 px-2 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#013E43] sm:px-3 sm:text-xs sm:tracking-[0.12em]">
-            {listing.purpose === "short_stay" ? "Short-term stay" : listing.purpose || "rent"}
+            {listing.purpose === "short_stay" ? "BnB" : listing.purpose || "rent"}
           </span>
           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[9px] font-bold sm:px-3 sm:text-xs ${isAvailable ? "bg-[#E4F4E7] text-[#1F7A31]" : "bg-[#F8E5DE] text-[#B42318]"}`}>
             <AvailabilityIcon aria-hidden="true" className="text-[11px]" />
@@ -114,16 +121,16 @@ export default function PropertyCard({ listing }) {
       </div>
 
       <div className="flex min-h-[112px] flex-1 flex-col p-3 sm:min-h-[144px] sm:p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="truncate whitespace-nowrap text-xs font-extrabold tracking-tight text-[#013E43] sm:text-xl">
+        <div className="flex min-w-0 items-start gap-2 sm:gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate whitespace-nowrap text-xs font-extrabold text-[#013E43] sm:text-xl">
               {formatPrice(listing.price, listing.purpose)}
             </p>
-            <Link to={detailsUrl} title={listing.title} className="mt-1 block h-4 truncate text-xs font-bold leading-4 text-[#013E43] hover:text-[#0D915C] sm:h-6 sm:text-base sm:leading-6">
+            <Link to={detailsUrl} title={listing.title} className="mt-1 block h-4 w-full truncate text-xs font-bold leading-4 text-[#013E43] hover:text-[#0D915C] sm:h-6 sm:text-base sm:leading-6">
               {listing.title}
             </Link>
           </div>
-          <Link to={detailsUrl} aria-label={`View ${listing.title}`} className="mt-1 hidden h-9 w-9 shrink-0 place-items-center rounded-full border border-[#A8D8C1] text-[#013E43] transition group-hover:border-[#013E43] group-hover:bg-[#013E43] group-hover:text-white sm:grid">
+          <Link to={detailsUrl} aria-label={`View ${listing.title}`} className="mt-1 hidden h-8 w-8 shrink-0 place-items-center rounded-full border border-[#A8D8C1] text-[#013E43] transition group-hover:border-[#013E43] group-hover:bg-[#013E43] group-hover:text-white sm:grid sm:h-9 sm:w-9">
             <FiArrowUpRight />
           </Link>
         </div>

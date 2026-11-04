@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import DashboardAlert from "../context/DashboardAlert";
 import { getMySubscription } from "../services/payment.service";
 import {
@@ -26,8 +26,12 @@ const LandlordLayout = () => {
   const navigate = useNavigate();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [mobileMenuPath, setMobileMenuPath] = useState(null);
+  const [userMenuPath, setUserMenuPath] = useState(null);
+  const isMobileMenuOpen = mobileMenuPath === location.pathname;
+  const showUserMenu = userMenuPath === location.pathname;
+  const setIsMobileMenuOpen = (isOpen) => setMobileMenuPath(isOpen ? location.pathname : null);
+  const setShowUserMenu = (isOpen) => setUserMenuPath(isOpen ? location.pathname : null);
 
   const [freshSubscription, setFreshSubscription] = useState(null);
   const [freshUsage, setFreshUsage] = useState({
@@ -36,32 +40,16 @@ const LandlordLayout = () => {
     remaining: 0
   });
 
-  const fetchFreshSubscription = async () => {
-    try {
-      const data = await getMySubscription();
-
-      setFreshSubscription(data.subscription);
-      setFreshUsage(
-        data.usage || {
-          used: 0,
-          limit: 0,
-          remaining: 0
-        }
-      );
-    } catch (error) {
-      console.error("Failed to refresh subscription:", error);
-    }
-  };
-
   useEffect(() => {
-    fetchFreshSubscription();
-  }, []);
-
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-    setShowUserMenu(false);
-
-    fetchFreshSubscription();
+    let active = true;
+    getMySubscription()
+      .then((data) => {
+        if (!active) return;
+        setFreshSubscription(data.subscription);
+        setFreshUsage(data.usage || { used: 0, limit: 0, remaining: 0 });
+      })
+      .catch((error) => console.error("Failed to refresh subscription:", error));
+    return () => { active = false; };
   }, [location.pathname]);
 
   const subscription = freshSubscription || authSubscription;

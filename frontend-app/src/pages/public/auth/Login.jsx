@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginLandlord } from "../../../services/auth.service";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../../context/useAuth";
 import { 
   FiMail, 
   FiLock, 

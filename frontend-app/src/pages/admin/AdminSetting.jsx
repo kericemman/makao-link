@@ -50,7 +50,7 @@ function AdminSettings() {
       setLoading(true)
       const res = await getSettings()
       setForm(res.data)
-    } catch (error) {
+    } catch {
       toast.error("Failed to load settings", {
         style: { background: "#013E43", color: "#fff" }
       })
@@ -90,7 +90,7 @@ function AdminSettings() {
       toast.success("Settings updated successfully", {
         style: { background: "#02BB31", color: "#fff" }
       })
-    } catch (error) {
+    } catch {
       toast.error("Failed to update settings", {
         style: { background: "#013E43", color: "#fff" }
       })

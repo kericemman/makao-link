@@ -75,25 +75,25 @@ To build Kenya’s most trusted rental discovery and property listing platform.
 
 ## Roadmap
 
-### Phase 1 (MVP)
-- Subscription-based listing
-- Manual admin approval
-- Inquiry system
-- Email notifications
-- Basic dashboard
+### Foundation Release
+- Shared identity, roles, organizations, memberships and property mandates
+- Listing integrity, moderation and secure media workflows
+- Canonical property request and viewing foundations
 
-### Phase 2
-- Saved listings
-- Featured properties
-- Advanced filters
-- Map integration
-- Landlord verification badge
+### Connected Marketplace Release
+- Customer requests matched to eligible, published inventory
+- Inquiry and lead progression across website and mobile app
+- Authorized viewing requests, confirmation and outcomes
+- Landlord and agent workflows using shared backend records
 
-### Phase 3
-- Logistics partnerships
-- Ratings & reviews
-- Mobile app
-- AI pricing insights
+### Renda Assistant Release
+- Safe property search and request workflows through Renda Assistant
+- Conversation persistence, consent and authorized actions
+- WhatChimp notifications and human handoff after provider verification
+
+### Professional and Company Release
+- Advanced organizations, teams, building/unit inventory and lead assignment
+- Portfolio reporting based on verified operational outcomes
 
 ---
 

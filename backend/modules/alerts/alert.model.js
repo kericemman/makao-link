@@ -41,6 +41,7 @@ const alertSchema = new mongoose.Schema(
       required: true,
       index: true
     },
+    websiteInquiry: { type: mongoose.Schema.Types.ObjectId, ref: "Inquiry", default: null },
     message: {
       type: String,
       required: true,
@@ -72,6 +73,14 @@ const alertSchema = new mongoose.Schema(
 alertSchema.index(
   { source: 1, sourceKey: 1 },
   { unique: true, partialFilterExpression: { sourceKey: { $type: "string" } } }
+);
+alertSchema.index(
+  { websiteInquiry: 1 },
+  {
+    name: "websiteInquiry_1_unique_objectId",
+    unique: true,
+    partialFilterExpression: { websiteInquiry: { $type: "objectId" } }
+  }
 );
 
 module.exports = mongoose.model("AppAlert", alertSchema);

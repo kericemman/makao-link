@@ -1,6 +1,20 @@
 
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const { COUNTIES, COUNTY_TOWNS } = require("../listings/listing.constants");
+const { normalizeKenyanPhone } = require("../../utils/kenyanPhone");
+
+const agentServiceAreaSchema = new mongoose.Schema({
+  county: { type: String, enum: COUNTIES, required: true },
+  towns: {
+    type: [String],
+    default: [],
+    validate: {
+      validator(towns) { return towns.every((town) => (COUNTY_TOWNS[this.county] || []).includes(town)); },
+      message: "Service area contains a town outside its county."
+    }
+  }
+}, { _id: false });
 
 const userSchema = new mongoose.Schema(
   {
@@ -25,8 +39,14 @@ const userSchema = new mongoose.Schema(
 
     phone: {
       type: String,
-      required: true,
-      trim: true
+      required: false,
+      trim: true,
+      default: ""
+    },
+
+    phoneCanonical: {
+      type: String,
+      select: false
     },
 
     legalAcceptance: {
@@ -57,6 +77,12 @@ const userSchema = new mongoose.Schema(
       default: "user"
     },
 
+    // `role` remains the legacy primary role; `roles` supports additional, explicitly granted identities.
+    roles: {
+      type: [{ type: String, enum: ["user", "tenant", "landlord", "landlord_staff", "admin", "service_provider", "agent", "app_manager"] }],
+      default: []
+    },
+
     agentCode: {
       type: String,
       unique: true,
@@ -69,6 +95,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["active", "suspended"],
       default: "active"
+    },
+
+    agentMarketplaceStatus: {
+      type: String,
+      enum: ["not_enabled", "pending", "approved", "suspended"],
+      default: "not_enabled",
+      index: true
+    },
+
+    agentServiceAreas: {
+      type: [agentServiceAreaSchema],
+      default: []
     },
 
     commissionRate: {
@@ -184,33 +222,64 @@ const userSchema = new mongoose.Schema(
 
     emailOtpHash: {
       type: String,
-      default: null
+      default: null,
+      select: false
     },
 
     emailOtpExpires: {
       type: Date,
-      default: null
+      default: null,
+      select: false
+    },
+
+    emailOtpAttempts: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+      select: false
     },
 
     passwordResetToken: {
       type: String,
-      default: null
+      default: null,
+      select: false
     },
 
     passwordResetExpires: {
       type: Date,
-      default: null
+      default: null,
+      select: false
     }
   },
   { timestamps: true }
 );
 
 userSchema.pre("save", async function () {
+  if (!Array.isArray(this.roles)) this.roles = [];
+  if (this.role && !this.roles.includes(this.role)) this.roles.push(this.role);
   if (!this.isModified("password")) return;
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
+
+userSchema.pre("validate", function () {
+  if (this.isNew || this.isModified("phone")) {
+    if (!this.phone || this.phone === "N/A") {
+      this.phoneCanonical = undefined;
+      return;
+    }
+    try {
+      this.phone = normalizeKenyanPhone(this.phone);
+      this.phoneCanonical = this.phone;
+    } catch (error) {
+      this.invalidate("phone", error.message);
+    }
+  }
+});
+
+userSchema.index({ phoneCanonical: 1 }, { unique: true, sparse: true });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return bcrypt.compare(enteredPassword, this.password);

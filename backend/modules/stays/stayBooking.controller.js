@@ -1,6 +1,9 @@
 const crypto = require("crypto");
 const Listing = require("../listings/listings.model");
 const StayBooking = require("./stayBooking.model");
+const sendEmail = require("../../utils/sendEmail");
+const { stayRequestReceivedEmail } = require("../../utils/emailTemplates");
+const { hasRole } = require("../authorization/authorization.service");
 const { recordAdminActivity } = require("../admin/adminActivity.service");
 const { queueStatusNotificationSafely, queueContactStatusNotificationSafely } = require("../renda-assistant/notifications.service");
 
@@ -26,7 +29,7 @@ exports.createStayRequest = async (req, res, next) => {
       isActive: true,
       availability: "available",
       isDeleted: { $ne: true }
-    }).select("_id title landlord maxGuests minNights contactPhone");
+    }).select("_id title landlord maxGuests minNights contactPhone").populate("landlord", "name email");
     if (!listing) return res.status(404).json({ message: "This short-term stay is not available." });
 
     const { guestName, guestEmail, guestPhone, guests, message } = req.body;
@@ -57,7 +60,7 @@ exports.createStayRequest = async (req, res, next) => {
     const request = await StayBooking.create({
       requestCode,
       listing: listing._id,
-      landlord: listing.landlord,
+      landlord: listing.landlord?._id || listing.landlord,
       guestName: guestName.trim(),
       guestEmail: guestEmail.trim(),
       guestPhone: guestPhone.trim(),
@@ -66,7 +69,30 @@ exports.createStayRequest = async (req, res, next) => {
       guests: guestCount,
       message: String(message || "").trim()
     });
-    await queueStatusNotificationSafely({ userId: listing.landlord, eventType: "stay_requested", entityId: request._id, eventVersion: request.createdAt.getTime() });
+    if (listing.landlord?.email) {
+      try {
+        const emailResult = await sendEmail({
+          to: listing.landlord.email,
+          subject: `New short-stay request ${requestCode}`,
+          html: stayRequestReceivedEmail({
+            landlordName: listing.landlord.name,
+            listingTitle: listing.title,
+            guestName: request.guestName,
+            guestEmail: request.guestEmail,
+            guestPhone: request.guestPhone,
+            requestCode,
+            checkIn: request.checkIn,
+            checkOut: request.checkOut,
+            guests: request.guests,
+            message: request.message
+          })
+        });
+        if (emailResult?.error) console.error("Stay request landlord email failed:", emailResult.error.message || "Email provider error");
+      } catch (emailError) {
+        console.error("Stay request landlord email failed:", emailError.message);
+      }
+    }
+    await queueStatusNotificationSafely({ userId: listing.landlord?._id || listing.landlord, eventType: "stay_requested", entityId: request._id, eventVersion: request.createdAt.getTime() });
     await recordAdminActivity({
       eventType: "stay_request",
       description: "Short-stay request received",
@@ -87,7 +113,9 @@ exports.createStayRequest = async (req, res, next) => {
 exports.getLandlordStayRequests = async (req, res, next) => {
   try {
     const listingFilter = { landlord: req.landlordOwnerId || req.user._id };
-    if (req.user.role === "landlord_staff" && req.user.teamRole === "agent") listingFilter.assignedAgent = req.user._id;
+    if (req.landlordOrganization) listingFilter.organization = req.landlordOrganization._id;
+    if (req.organizationMembership?.branchIds?.length) listingFilter.branch = { $in: req.organizationMembership.branchIds };
+    if (hasRole(req.user, "landlord_staff") && req.user.teamRole === "agent" || req.organizationMembership?.role === "agent") listingFilter.assignedAgent = req.user._id;
     const listings = await Listing.find(listingFilter).select("_id");
     const requests = await StayBooking.find({ listing: { $in: listings.map((item) => item._id) } })
       .populate("listing", "title images price town county")
@@ -104,8 +132,13 @@ exports.updateStayRequestStatus = async (req, res, next) => {
     }
     const request = await StayBooking.findOne({ _id: req.params.id, landlord: req.landlordOwnerId || req.user._id });
     if (!request) return res.status(404).json({ message: "Stay request not found." });
-    const listing = await Listing.findOne({ _id: request.listing, landlord: req.landlordOwnerId || req.user._id });
-    if (!listing || (req.user.role === "landlord_staff" && req.user.teamRole === "agent" && String(listing.assignedAgent) !== String(req.user._id))) {
+    const listing = await Listing.findOne({
+      _id: request.listing,
+      landlord: req.landlordOwnerId || req.user._id,
+      ...(req.landlordOrganization ? { organization: req.landlordOrganization._id } : {}),
+      ...(req.organizationMembership?.branchIds?.length ? { branch: { $in: req.organizationMembership.branchIds } } : {})
+    });
+    if (!listing || (hasRole(req.user, "landlord_staff") && req.user.teamRole === "agent" || req.organizationMembership?.role === "agent") && String(listing.assignedAgent) !== String(req.user._id)) {
       return res.status(404).json({ message: "Stay request not found." });
     }
     const previousStatus = request.status;

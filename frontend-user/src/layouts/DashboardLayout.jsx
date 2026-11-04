@@ -9,6 +9,8 @@ import {
   FiLogOut,
   FiMenu,
   FiMessageSquare,
+  FiCalendar,
+  FiTarget,
   FiSearch,
   FiUser,
   FiX
@@ -29,6 +31,8 @@ export default function DashboardLayout() {
       { path: "/", name: "Overview", icon: FiHome, description: "User dashboard" },
       { path: "/inquiries", name: "Inquiries", icon: FiMessageSquare, description: "Landlord messages" },
       { path: "/saved", name: "Saved Homes", icon: FiHeart, description: "Your shortlist" },
+      { path: "/property-requests", name: "Property Requests", icon: FiTarget, description: "Your search requirements" },
+      { path: "/viewings", name: "Viewings", icon: FiCalendar, description: "Requested appointments" },
       { path: "/profile", name: "Profile", icon: FiUser, description: "Account details" },
       { path: "/support", name: "Support", icon: FiHelpCircle, description: "Get help" }
     ],

@@ -80,6 +80,29 @@ test("saves only a private draft for consented, linked landlord under existing p
   assert.match(result.mediaInstruction, /photos in the secure landlord portal/);
 });
 
+test("a multi-role organization member can create a draft only through active listing permission and stores its scope", async () => {
+  const DraftModel = createDraftModel();
+  const UserModel = {
+    findById: (id) => ({ select() { return this; }, lean: async () => id === conversation.linkedUser
+      ? { _id: id, role: "tenant", roles: ["tenant", "agent"] }
+      : { _id: "owner-id", role: "landlord" } })
+  };
+  const MembershipModel = { find: () => ({ lean: async () => [{ organization: "org-id", scope: "branches", branchIds: ["branch-id"], permissions: ["listings:create"] }] }) };
+  const OrganizationModel = { findById: () => ({ lean: async () => ({ _id: "org-id", owner: "owner-id", status: "active" }) }) };
+  await saveListingDraft({
+    conversation,
+    patch: { title: "Branch home" },
+    UserModel,
+    MembershipModel,
+    OrganizationModel,
+    DraftModel,
+    canCreate: async () => ({ allowed: true, subscription: { plan: "pro" } })
+  });
+  assert.equal(DraftModel.db.draft.createdBy, conversation.linkedUser);
+  assert.equal(DraftModel.db.draft.organization, "org-id");
+  assert.equal(DraftModel.db.draft.branch, "branch-id");
+});
+
 test("a re-linked WhatsApp conversation cannot inherit or overwrite another landlord's draft", async () => {
   const DraftModel = createDraftModel();
   DraftModel.db.draft = {

@@ -12,14 +12,20 @@ const toLandlordKyc = (record) => {
   return safeRecord;
 };
 
-const createAdminKycView = (record, cloudinary, now = Date.now()) => {
+const createAdminKycView = async (record, cloudinary, now = Date.now(), createPrivateUrl) => {
   const safeRecord = asPlainObject(record);
   const assets = safeRecord.documentAssets || {};
   const documentLinks = {};
 
   for (const field of FILE_FIELDS) {
     const asset = assets[field];
-    if (asset?.publicId && asset?.format && asset?.resourceType) {
+    if (asset?.key && createPrivateUrl) {
+      try {
+        documentLinks[field] = await createPrivateUrl(asset);
+      } catch {
+        documentLinks[field] = "";
+      }
+    } else if (asset?.publicId && asset?.format && asset?.resourceType) {
       try {
         documentLinks[field] = cloudinary.utils.private_download_url(asset.publicId, asset.format, {
           resource_type: asset.resourceType,
@@ -42,6 +48,7 @@ const createAdminKycView = (record, cloudinary, now = Date.now()) => {
 };
 
 const assetMetadataFromFile = (file) => {
+  if (file?.r2Asset) return file.r2Asset;
   if (!file?.filename) return undefined;
   const extension = String(file.originalname || "").split(".").pop().toLowerCase();
   return {

@@ -10,7 +10,7 @@ const {
 } = require("./kyc.controller");
 const { protect } = require("../../middleware/auth.middleware");
 const requireRole = require("../../middleware/role.middleware");
-const upload = require("../../middleware/upload.middleware");
+const upload = require("./kycUpload.middleware");
 
 router.get("/me", protect, requireRole("landlord"), getMyKyc);
 
@@ -18,12 +18,7 @@ router.post(
   "/submit",
   protect,
   requireRole("landlord"),
-  upload.fields([
-    { name: "documentFront", maxCount: 1 },
-    { name: "documentBack", maxCount: 1 },
-    { name: "selfiePhoto", maxCount: 1 },
-    { name: "proofOfOwnership", maxCount: 1 }
-  ]),
+  upload,
   submitKyc
 );
 

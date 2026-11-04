@@ -4,6 +4,7 @@ import { FiCheckCircle } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { resendEmailOtp } from "../services/auth.service";
 import { getApiErrorMessage } from "../utils/apiError";
+import { safeRoleDestination, safeSignupDestination } from "../utils/navigation";
 
 export default function VerifyEmail() {
   const { verifyEmail } = useAuth();
@@ -21,9 +22,8 @@ export default function VerifyEmail() {
     setError("");
 
     try {
-      await verifyEmail({ email, otp });
-      const next = params.get("next");
-      navigate(next?.startsWith("/") && !next.startsWith("//") ? next : "/", { replace: true });
+      const data = await verifyEmail({ email, otp });
+      navigate(safeRoleDestination(params.get("next"), data.user, "/"), { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err, "Could not verify your email."));
     } finally {
@@ -63,7 +63,7 @@ export default function VerifyEmail() {
       </form>
       <button onClick={resend} className="mt-4 text-sm font-extrabold text-[#065A57] hover:text-[#013E43]">Resend code</button>
       <p className="mt-5 text-sm font-bold text-[#065A57]">
-        Wrong email? <Link to={params.get("next") ? `/signup?next=${encodeURIComponent(params.get("next"))}` : "/signup"} className="text-[#013E43]">Create account again</Link>
+        Wrong email? <Link to={safeSignupDestination(params.get("next")) ? `/signup?next=${encodeURIComponent(safeSignupDestination(params.get("next")))}` : "/signup"} className="text-[#013E43]">Create account again</Link>
       </p>
     </section>
   );

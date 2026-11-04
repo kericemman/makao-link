@@ -4,6 +4,9 @@ const Conversation = require("./conversation.model");
 const User = require("../users/user.model");
 const Listing = require("../listings/listings.model");
 const { canCreateListing } = require("../subscriptions/subscription.service");
+const { hasRole } = require("../authorization/authorization.service");
+const OrganizationMembership = require("../organizations/organizationMembership.model");
+const Organization = require("../organizations/organization.model");
 const { COUNTY_TOWNS, COUNTIES, LISTING_PURPOSES, LISTING_TYPES, RESIDENTIAL_TYPES, OFFICE_SIZE_UNITS } = require("../listings/listing.constants");
 const { expiryFrom } = require("./rendaAssistant.service");
 
@@ -136,17 +139,28 @@ const getMissingListingFields = (fields = {}) => {
   return [...new Set(required.filter((key) => fields[key] === null || fields[key] === undefined || fields[key] === ""))];
 };
 
-const resolveDraftOwner = async (conversation, UserModel) => {
+const resolveDraftOwner = async (conversation, UserModel, MembershipModel = OrganizationMembership, OrganizationModel = Organization) => {
   if (!conversation || conversation.accountLinkStatus !== "verified" || !conversation.linkedUser || conversation.serviceConsent !== "granted") {
     throw new ListingDraftAccessError("Link your landlord account and grant assistant consent before saving a property draft.");
   }
-  const actor = await UserModel.findById(conversation.linkedUser).select("_id role landlordOwner teamRole teamStatus teamPermissions").lean();
+  const actor = await UserModel.findById(conversation.linkedUser).select("_id role roles landlordOwner teamRole teamStatus teamPermissions").lean();
   if (!actor) throw new ListingDraftAccessError("The linked landlord account could not be verified.");
-  if (actor.role === "landlord") return { actor, owner: actor };
-  if (actor.role === "landlord_staff" && actor.teamStatus === "active" && actor.landlordOwner && actor.teamRole !== "viewer" &&
+  if (hasRole(actor, "landlord") && !hasRole(actor, "landlord_staff")) return { actor, owner: actor };
+  if (hasRole(actor, "landlord_staff") && actor.teamStatus === "active" && actor.landlordOwner && actor.teamRole !== "viewer" &&
       (!actor.teamPermissions?.length || actor.teamPermissions.includes("listings"))) {
     const owner = await UserModel.findById(actor.landlordOwner).select("_id role").lean();
     if (owner?.role === "landlord") return { actor, owner };
+  }
+  const memberships = await MembershipModel.find({ user: actor._id, status: "active", permissions: "listings:create" }).lean();
+  if (memberships.length > 1) throw new ListingDraftAccessError("Select one organization before starting a listing draft.", 403, "ORGANIZATION_CONTEXT_REQUIRED");
+  const membership = memberships[0];
+  if (membership) {
+    if (membership.scope === "branches" && membership.branchIds?.length !== 1) throw new ListingDraftAccessError("Select a single assigned branch before starting a listing draft.", 403, "BRANCH_CONTEXT_REQUIRED");
+    const organization = await OrganizationModel.findById(membership.organization).lean();
+    if (organization?.status === "active") {
+      const owner = await UserModel.findById(organization.owner).select("_id role roles").lean();
+      if (owner && hasRole(owner, "landlord")) return { actor, owner, organization, branch: membership.branchIds?.[0] || null };
+    }
   }
   throw new ListingDraftAccessError("Use an active landlord account with property-listing permission to save a draft.");
 };
@@ -157,8 +171,8 @@ const toPortalUrl = (draftId) => {
   return `${portal}/login?next=${encodeURIComponent(next)}`;
 };
 
-const saveListingDraft = async ({ conversation, patch, now = new Date(), UserModel = User, DraftModel = Draft, canCreate = canCreateListing } = {}) => {
-  const { actor, owner } = await resolveDraftOwner(conversation, UserModel);
+const saveListingDraft = async ({ conversation, patch, now = new Date(), UserModel = User, DraftModel = Draft, MembershipModel = OrganizationMembership, OrganizationModel = Organization, canCreate = canCreateListing } = {}) => {
+  const { actor, owner, organization = null, branch = null } = await resolveDraftOwner(conversation, UserModel, MembershipModel, OrganizationModel);
   const eligibility = await canCreate(owner);
   if (!eligibility.allowed) throw new ListingDraftAccessError(eligibility.message, 403, eligibility.code || "LISTING_NOT_ALLOWED");
   const plan = eligibility.subscription?.plan || "normal";
@@ -175,7 +189,7 @@ const saveListingDraft = async ({ conversation, patch, now = new Date(), UserMod
     const draft = await DraftModel.findOneAndUpdate(
       { conversation: conversation._id, landlord: owner._id, status: "collecting" },
       {
-        $set: { ...$set, landlord: owner._id, createdBy: actor._id, expiresAt: expiryFrom(now) },
+        $set: { ...$set, landlord: owner._id, createdBy: actor._id, organization: organization?._id || null, branch, expiresAt: expiryFrom(now) },
         $setOnInsert: { conversation: conversation._id, status: "collecting" },
         $inc: { revision: 1 }
       },
@@ -197,9 +211,9 @@ const saveListingDraft = async ({ conversation, patch, now = new Date(), UserMod
   }
 };
 
-const getOwnedListingDraft = async ({ draftId, landlordId, DraftModel = Draft } = {}) => {
+const getOwnedListingDraft = async ({ draftId, landlordId, actorId, DraftModel = Draft } = {}) => {
   if (typeof draftId !== "string" || !/^[a-f\d]{24}$/i.test(draftId)) throw new ListingDraftAccessError("Listing draft not found.", 404);
-  const draft = await DraftModel.findOne({ _id: draftId, landlord: landlordId, status: "collecting", expiresAt: { $gt: new Date() } }).lean();
+  const draft = await DraftModel.findOne({ _id: draftId, landlord: landlordId, ...(actorId ? { createdBy: actorId } : {}), status: "collecting", expiresAt: { $gt: new Date() } }).lean();
   if (!draft) throw new ListingDraftAccessError("Listing draft not found.", 404);
   return { ...draft, missingFields: getMissingListingFields(draft.fields) };
 };

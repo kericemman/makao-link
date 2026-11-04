@@ -61,6 +61,42 @@ test("assistant response uses strict structured output and disables API-side sto
   assert.equal(requests[0].input[0].role, "user");
 });
 
+test("incomplete model responses expose safe stage and reason diagnostics", async (t) => {
+  configure();
+  stubContext(t);
+  const client = { responses: { create: async () => ({
+    status: "incomplete",
+    incomplete_details: { reason: "max_output_tokens" }
+  }) } };
+
+  await assert.rejects(
+    runAssistantTurn({ conversationId: "507f1f77bcf86cd799439011", userText: "Find a home", client }),
+    (error) => error.code === "ASSISTANT_RESPONSE_INCOMPLETE" &&
+      error.statusCode === 502 &&
+      error.stage === "tool_selection" &&
+      error.reason === "max_output_tokens" &&
+      !error.message.includes("max_output_tokens")
+  );
+});
+
+test("incomplete structured final responses are attributed to the final-answer stage", async (t) => {
+  configure();
+  stubContext(t);
+  let calls = 0;
+  const client = { responses: { create: async () => {
+    calls += 1;
+    return calls === 1
+      ? { status: "completed", output: [] }
+      : { status: "incomplete", incomplete_details: { reason: "content_filter" } };
+  } } };
+
+  await assert.rejects(
+    runAssistantTurn({ conversationId: "507f1f77bcf86cd799439011", userText: "Find a home", client }),
+    (error) => error.code === "ASSISTANT_RESPONSE_INCOMPLETE" &&
+      error.stage === "final_answer" && error.reason === "content_filter"
+  );
+});
+
 test("mobile search mode exposes only public search tools and returns backend search metadata", async (t) => {
   configure();
   process.env.CLIENT_URL = "https://public.example";

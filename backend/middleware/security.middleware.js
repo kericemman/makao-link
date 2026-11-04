@@ -88,11 +88,16 @@ const otpLimiter = createRateLimiter({
   message: "Too many verification attempts. Please request a new code later."
 });
 
-const assistantSessionLimiter = createRateLimiter({
+const productionAssistantSessionLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
   max: 10,
   message: "Too many assistant sessions created. Please try again later."
 });
+
+const assistantSessionLimiter = (req, res, next) => {
+  if (process.env.NODE_ENV !== "production") return next();
+  return productionAssistantSessionLimiter(req, res, next);
+};
 
 const assistantMessageLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,

@@ -1,7 +1,10 @@
 const Listing = require("./listings.model");
 const User = require("../users/user.model");
+const OrganizationMembership = require("../organizations/organizationMembership.model");
 const Kyc = require("../kyc/kyc.model");
 const { recordAdminActivity } = require("../admin/adminActivity.service");
+const { recordAuthorizationChange } = require("../authorization/audit.service");
+const { withAuthorizationTransaction } = require("../authorization/transaction.service");
 
 const {
   COUNTY_TOWNS,
@@ -24,10 +27,16 @@ const { parseRecentListingQuery } = buildListingFilter;
 const { canCreateListing } = require("../subscriptions/subscription.service");
 
 const Subscription = require("../subscriptions/subscription.model");
+const { uploadListingImages, serializeListingImages, deletePrivateImages } = require("./listingMedia.storage");
 const workspaceOwnerId = (req) => req.landlordOwnerId || req.user._id;
-const workspaceListingFilter = (req, extra = {}) => ({
+const workspaceListingFilter = (req, extra = {}) => req.authorizedListing ? ({
+  _id: req.authorizedListing._id,
+  ...extra
+}) : ({
   landlord: workspaceOwnerId(req),
-  ...(req.user.role === "landlord_staff" && req.user.teamRole === "agent" ? { assignedAgent: req.user._id } : {}),
+  ...(req.landlordOrganization ? { organization: req.landlordOrganization._id } : {}),
+  ...(req.organizationMembership?.branchIds?.length ? { branch: { $in: req.organizationMembership.branchIds } } : {}),
+  ...(req.user.role === "landlord_staff" && req.user.teamRole === "agent" || req.organizationMembership?.role === "agent" ? { assignedAgent: req.user._id } : {}),
   ...extra
 });
 
@@ -88,6 +97,7 @@ const attachTrustSignals = async (listings) => {
 
   return list.map((listing) => {
     const plainListing = typeof listing.toObject === "function" ? listing.toObject() : listing;
+    delete plainListing.imageAssets;
     const landlordId = String(plainListing.landlord?._id || plainListing.landlord || "");
 
     return {
@@ -262,7 +272,7 @@ exports.getMyListingById = async (req, res, next) => {
       _id: req.params.id,
       ...workspaceListingFilter(req),
       isDeleted: { $ne: true }
-    });
+    }).select("+imageAssets");
 
     if (!listing) {
       return res.status(404).json({
@@ -273,7 +283,7 @@ exports.getMyListingById = async (req, res, next) => {
 
     res.json({
       success: true,
-      listing
+      listing: await serializeListingImages(listing)
     });
   } catch (error) {
     next(error);
@@ -282,6 +292,7 @@ exports.getMyListingById = async (req, res, next) => {
 
 // Landlord - create listing
 exports.createListing = async (req, res, next) => {
+  let stagedKeys = [];
   try {
     if (req.body.purpose && !LISTING_PURPOSES.includes(req.body.purpose)) {
       return res.status(400).json({ message: "Choose a valid listing purpose." });
@@ -299,6 +310,11 @@ exports.createListing = async (req, res, next) => {
       });
     }
 
+    const imageLimit = permission.subscription?.plan !== "normal" && permission.subscription?.status === "active" ? 30 : 15;
+    if ((req.files?.length || 0) > imageLimit) {
+      return res.status(400).json({ message: `Your plan allows up to ${imageLimit} images per listing.` });
+    }
+
     const advancedPlan = ["premium", "pro"].includes(permission.subscription?.plan);
     const totalUnits = Number(req.body.totalUnits || 1);
     const availableUnits = req.body.availableUnits === undefined || req.body.availableUnits === ""
@@ -313,16 +329,37 @@ exports.createListing = async (req, res, next) => {
       return res.status(403).json({ code: "ADVANCED_PLAN_REQUIRED", message: "Building inventory is available on Premium and Pro plans." });
     }
 
+    let listingBranch = null;
+    if (req.landlordOrganization) {
+      if (req.organizationMembership?.scope === "branches") {
+        const requestedBranchId = req.body.branchId || (req.organizationMembership.branchIds.length === 1 ? req.organizationMembership.branchIds[0] : null);
+        if (!requestedBranchId || !req.organizationMembership.branchIds.some((id) => String(id) === String(requestedBranchId))) {
+          return res.status(400).json({ message: "Select a branch assigned to your organization membership." });
+        }
+        listingBranch = requestedBranchId;
+      } else if (req.body.branchId) {
+        listingBranch = req.body.branchId;
+      }
+      if (listingBranch && !req.landlordOrganization.branches.some((branch) => String(branch._id) === String(listingBranch) && branch.isActive)) {
+        return res.status(400).json({ message: "Choose an active branch in this organization." });
+      }
+    }
+
     let assignedAgent = req.user.role === "landlord_staff" && req.user.teamRole === "agent"
       ? req.user._id
       : req.body.assignedAgent || null;
-    if (assignedAgent && !(await User.exists({
-      _id: assignedAgent,
-      role: "landlord_staff",
-      landlordOwner: workspaceOwnerId(req),
-      teamStatus: "active"
-    }))) {
-      return res.status(400).json({ message: "The assigned agent is not an active member of this company." });
+    if (assignedAgent) {
+      const validMember = req.landlordOrganization
+        ? await OrganizationMembership.exists({
+          organization: req.landlordOrganization._id,
+          user: assignedAgent,
+          status: "active",
+          ...(listingBranch
+            ? { $or: [{ scope: "organization" }, { scope: "branches", branchIds: listingBranch }] }
+            : { scope: "organization" })
+        })
+        : await User.exists({ _id: assignedAgent, role: "landlord_staff", landlordOwner: workspaceOwnerId(req), teamStatus: "active" });
+      if (!validMember) return res.status(400).json({ message: "The assigned agent is not an active member of this company." });
     }
 
     let parsedAmenities = {};
@@ -338,8 +375,8 @@ exports.createListing = async (req, res, next) => {
       }
     }
 
-    const imageUrls =
-      req.files?.map((file) => file.path).filter(Boolean) || [];
+    const media = await uploadListingImages(req.user._id, req.files || []);
+    stagedKeys = media.assets.map((asset) => asset.stagingKey);
 
     const listing = await Listing.create({
       title: req.body.title,
@@ -386,13 +423,16 @@ exports.createListing = async (req, res, next) => {
       sizeUnit: req.body.sizeUnit || null,
       video: req.body.video || null,
       amenities: parsedAmenities,
-      images: imageUrls,
+      images: media.images,
+      imageAssets: media.assets,
       contactPhone: req.body.contactPhone,
       portfolioName: advancedPlan ? portfolioName : "",
       portfolioCategory: advancedPlan ? portfolioCategory : "",
       totalUnits: advancedPlan ? totalUnits : 1,
       availableUnits: advancedPlan ? availableUnits : 1,
       landlord: workspaceOwnerId(req),
+      organization: req.landlordOrganization?._id || null,
+      branch: listingBranch,
       createdBy: req.user._id,
       assignedAgent,
       status: "pending",
@@ -400,6 +440,7 @@ exports.createListing = async (req, res, next) => {
       isActive: true,
       unlistReason: null
     });
+    stagedKeys = [];
 
     const notificationUser = req.landlordOwner || req.user;
     await recordAdminActivity({
@@ -426,10 +467,11 @@ exports.createListing = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: "Listing created and submitted for approval",
-      listing,
+      listing: await serializeListingImages(listing),
       usage: permission.usage
     });
   } catch (error) {
+    await deletePrivateImages(stagedKeys);
     next(error);
   }
 };
@@ -533,6 +575,8 @@ exports.importListingsCsv = async (req, res, next) => {
         totalUnits: item.totalUnits,
         availableUnits: item.availableUnits,
         landlord: ownerId,
+        organization: req.landlordOrganization?._id || null,
+        branch: null,
         createdBy: req.user._id,
         assignedAgent,
         status: "pending",
@@ -555,11 +599,11 @@ exports.getMyListings = async (req, res, next) => {
     const listings = await Listing.find({
       ...workspaceListingFilter(req),
       isDeleted: { $ne: true }
-    }).populate("assignedAgent", "name email teamRole").sort({ createdAt: -1 });
+    }).select("+imageAssets").populate("assignedAgent", "name email teamRole").sort({ createdAt: -1 });
 
     res.json({
       success: true,
-      listings
+      listings: await Promise.all(listings.map(serializeListingImages))
     });
   } catch (error) {
     next(error);
@@ -624,18 +668,24 @@ exports.groupMyPortfolioListings = async (req, res, next) => {
 
 // Landlord - update own listing
 exports.updateListing = async (req, res, next) => {
+  let stagedKeys = [];
   try {
     const listing = await Listing.findOne({
       _id: req.params.id,
       ...workspaceListingFilter(req),
       isDeleted: { $ne: true }
-    });
+    }).select("+imageAssets");
 
     if (!listing) {
       return res.status(404).json({
         success: false,
         message: "Listing not found"
       });
+    }
+
+    const imageLimit = req.maxListingImages || 15;
+    if ((req.files?.length || 0) > imageLimit) {
+      return res.status(400).json({ message: `Your plan allows up to ${imageLimit} images per listing.` });
     }
 
     let parsedAmenities = listing.amenities;
@@ -667,19 +717,34 @@ exports.updateListing = async (req, res, next) => {
       listing.portfolioCategory = String(req.body.portfolioCategory ?? listing.portfolioCategory).trim().slice(0, 60);
     }
 
+    let assignmentAudit = null;
     if (req.body.assignedAgent !== undefined) {
+      if (req.authorizedListing && String(req.authorizedListing.landlord) !== String(req.user._id)) {
+        return res.status(403).json({ message: "A delegated property agent cannot change property assignments." });
+      }
       if (req.user.role === "landlord_staff" && req.user.teamRole !== "manager") {
         return res.status(403).json({ message: "Only the company owner or a manager can reassign properties." });
       }
       const agentId = req.body.assignedAgent || null;
-      if (agentId && !(await User.exists({ _id: agentId, role: "landlord_staff", landlordOwner: workspaceOwnerId(req), teamStatus: "active" }))) {
-        return res.status(400).json({ message: "The assigned agent is not an active member of this company." });
+      if (agentId) {
+        const validMember = req.landlordOrganization
+          ? await OrganizationMembership.exists({
+            organization: req.landlordOrganization._id,
+            user: agentId,
+            status: "active",
+            ...(listing.branch
+              ? { $or: [{ scope: "organization" }, { scope: "branches", branchIds: listing.branch }] }
+              : { scope: "organization" })
+          })
+          : await User.exists({ _id: agentId, role: "landlord_staff", landlordOwner: workspaceOwnerId(req), teamStatus: "active" });
+        if (!validMember) return res.status(400).json({ message: "The assigned agent is not an active member of this company." });
       }
+      const previousAgent = listing.assignedAgent;
       listing.assignedAgent = agentId;
+      if (String(previousAgent || "") !== String(agentId || "")) {
+        assignmentAudit = { previousAgent: previousAgent ? String(previousAgent) : null, assignedAgent: agentId ? String(agentId) : null };
+      }
     }
-
-    const imageUrls =
-      req.files?.map((file) => file.path).filter(Boolean) || [];
 
     if (req.body.purpose && !LISTING_PURPOSES.includes(req.body.purpose)) {
       return res.status(400).json({ message: "Choose a valid listing purpose." });
@@ -750,10 +815,6 @@ exports.updateListing = async (req, res, next) => {
     listing.amenities = parsedAmenities;
     listing.contactPhone = req.body.contactPhone ?? listing.contactPhone;
 
-    if (imageUrls.length > 0) {
-      listing.images = imageUrls;
-    }
-
     if (listing.status === "approved") {
       listing.status = "pending";
       listing.isActive = true;
@@ -761,14 +822,31 @@ exports.updateListing = async (req, res, next) => {
       listing.unlistReason = null;
     }
 
-    await listing.save();
+    if (req.files?.length) {
+      const media = await uploadListingImages(req.user._id, req.files);
+      stagedKeys = media.assets.map((asset) => asset.stagingKey);
+      listing.images = media.images;
+      listing.imageAssets = media.assets;
+    }
+
+    if (assignmentAudit) {
+      await withAuthorizationTransaction(async (session) => {
+        listing.$session(session);
+        await listing.save({ session });
+        await recordAuthorizationChange(req, { action: "listing.agent_assigned", resourceType: "listing", resourceId: listing._id, organization: listing.organization, changes: assignmentAudit, session });
+      });
+    } else {
+      await listing.save();
+    }
+    stagedKeys = [];
 
     res.json({
       success: true,
       message: "Listing updated successfully",
-      listing
+      listing: await serializeListingImages(listing)
     });
   } catch (error) {
+    await deletePrivateImages(stagedKeys);
     next(error);
   }
 };
@@ -776,6 +854,11 @@ exports.updateListing = async (req, res, next) => {
 // Landlord - delete listing
 exports.deleteListing = async (req, res, next) => {
   try {
+    if (req.authorizedListing && String(req.authorizedListing.landlord) !== String(req.user._id)) {
+      const isLegacyWorkspaceMember = String(req.user.landlordOwner || "") === String(req.authorizedListing.landlord) && req.user.teamStatus === "active" && (req.user.teamPermissions || []).includes("listings");
+      const isOrgManager = ["owner", "admin", "branch_manager"].includes(req.organizationMembership?.role);
+      if (!isLegacyWorkspaceMember && !isOrgManager) return res.status(403).json({ message: "Only the property owner or organization manager can delete this property." });
+    }
     const listing = await Listing.findOneAndDelete({
       _id: req.params.id,
       ...workspaceListingFilter(req)

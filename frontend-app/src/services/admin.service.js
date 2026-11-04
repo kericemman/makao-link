@@ -161,6 +161,12 @@ export const createAgent = async (payload) => {
   return response.data;
 };
 
+export const getAgentApplications = async () => (await api.get("/admin/agent-applications")).data;
+export const getAgentApplicationDocument = async (id, document) => (await api.get(`/admin/agent-applications/${id}/documents/${document}`)).data;
+export const reviewAgentApplication = async (id, payload) => (await api.patch(`/admin/agent-applications/${id}/review`, payload)).data;
+export const resendAgentApplicationInvite = async (id) => (await api.post(`/admin/agent-applications/${id}/invite`)).data;
+export const resendAgentInvite = async (id) => (await api.post(`/admin/agents/${id}/invite`)).data;
+
 export const updateAgent = async (id, payload) => {
   const response = await api.put(`/admin/agents/${id}`, payload);
   return response.data;

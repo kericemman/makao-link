@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./useAuth";
 
 const PaymentCallbackPage = () => {
   const navigate = useNavigate();
@@ -12,7 +12,7 @@ const PaymentCallbackPage = () => {
       try {
         await refreshAuth();
         navigate("/landlord/dashboard", { replace: true });
-      } catch (err) {
+      } catch {
         setError("Payment callback completed, but we could not refresh your account automatically. Please log in again.");
       }
     };

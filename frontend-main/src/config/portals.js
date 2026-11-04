@@ -21,3 +21,15 @@ export const joinPortalUrl = (base, path = "") => `${base.replace(/\/$/, "")}${p
 
 export const landlordListPropertyUrl = () =>
   `${joinPortalUrl(portalLinks.landlord.href, "/login")}?next=${encodeURIComponent("/listings/new")}`;
+
+const propertyRequestSearchFields = ["purpose", "search", "county", "town", "type", "bedrooms", "bathrooms", "minPrice", "maxPrice", "guests"];
+
+export const userPropertyRequestUrl = (filters = {}) => {
+  const query = new URLSearchParams();
+  for (const field of propertyRequestSearchFields) {
+    const value = String(filters[field] ?? "").trim();
+    if (value) query.set(field, value);
+  }
+  const requestPath = `/property-requests${query.size ? `?${query.toString()}` : ""}`;
+  return `${joinPortalUrl(portalLinks.user.href, "/login")}?next=${encodeURIComponent(requestPath)}`;
+};

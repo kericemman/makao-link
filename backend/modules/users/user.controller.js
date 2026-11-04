@@ -39,6 +39,7 @@
 const User = require("./user.model");
 const Listing = require("../listings/listings.model");
 const mongoose = require("mongoose");
+const { normalizeKenyanPhone, phoneUniquenessFilter } = require("../../utils/kenyanPhone");
 
 const savedListingsForUser = async (userId) => {
   const user = await User.findById(userId).populate({
@@ -127,8 +128,22 @@ exports.updateProfile = async (req, res, next) => {
 
     const { name, phone, businessName, bio, location } = req.body;
 
+    if (phone !== undefined) {
+      let normalizedPhone;
+      try {
+        normalizedPhone = normalizeKenyanPhone(phone);
+      } catch (error) {
+        return res.status(400).json({ message: error.message });
+      }
+      const phoneInUse = await User.exists({
+        ...phoneUniquenessFilter(normalizedPhone),
+        _id: { $ne: user._id }
+      });
+      if (phoneInUse) return res.status(409).json({ message: "This phone number is already linked to an account." });
+      user.phone = normalizedPhone;
+    }
+
     if (name !== undefined) user.name = name;
-    if (phone !== undefined) user.phone = phone;
     if (businessName !== undefined) user.businessName = businessName;
     if (bio !== undefined) user.bio = bio;
     if (location !== undefined) user.location = location;
@@ -147,6 +162,9 @@ exports.updateProfile = async (req, res, next) => {
       user: updatedUser
     });
   } catch (error) {
+    if (error.code === 11000 && error.keyPattern?.phoneCanonical) {
+      return res.status(409).json({ message: "This phone number is already linked to an account." });
+    }
     next(error);
   }
 };

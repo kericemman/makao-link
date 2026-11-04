@@ -33,9 +33,9 @@ const formatPrice = (price) => {
   return Number.isFinite(amount) ? `KES ${amount.toLocaleString("en-KE")}` : "Price on request";
 };
 
-function ListingResult({ listing }) {
+function ListingResult({ listing, onOpenListing }) {
   return (
-    <Link to={`/listings/${listing._id}`} className="group flex min-w-0 overflow-hidden rounded-xl border border-[#dce9e2] bg-white text-[#013e43] transition hover:border-[#0d915c]">
+    <Link to={`/listings/${listing._id}`} onClick={onOpenListing} className="group flex min-w-0 overflow-hidden rounded-xl border border-[#dce9e2] bg-white text-[#013e43] transition hover:border-[#0d915c]">
       {getImage(listing) ? (
         <img src={getImage(listing)} alt="" className="h-[82px] w-[92px] shrink-0 object-cover" />
       ) : (
@@ -60,19 +60,21 @@ export default function RendaAssistantWidget() {
   const [pendingMessage, setPendingMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
-  const [started, setStarted] = useState(false);
-  const [activeRequest, setActiveRequest] = useState("");
+  const [loadRetry, setLoadRetry] = useState(0);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const sendingPendingRef = useRef(false);
+  const conversationLoadStartedRef = useRef(false);
 
   useEffect(() => {
-    if (!open || started) return;
+    if (!open || conversationLoadStartedRef.current) return;
     let cancelled = false;
-    setStarted(true);
+    let settled = false;
+    conversationLoadStartedRef.current = true;
     setPhase("loading");
     getRendaWebConversation()
       .then((conversation) => {
+        settled = true;
         if (cancelled) return;
         setConsent(conversation.consent);
         if (conversation.active) {
@@ -85,10 +87,14 @@ export default function RendaAssistantWidget() {
         } else setPhase("consent");
       })
       .catch((error) => {
+        settled = true;
         if (!cancelled) { setNotice(errorMessage(error)); setPhase("error"); }
       });
-    return () => { cancelled = true; };
-  }, [open, started]);
+    return () => {
+      cancelled = true;
+      if (!settled) conversationLoadStartedRef.current = false;
+    };
+  }, [open, loadRetry]);
 
   useEffect(() => {
     if (open && (phase === "loading" || phase === "chat")) inputRef.current?.focus();
@@ -101,16 +107,16 @@ export default function RendaAssistantWidget() {
     sendingPendingRef.current = true;
     setPendingMessage("");
     setNotice("");
-    setActiveRequest(message);
     setMessages((current) => [...current, { direction: "inbound", text: message, listings: [] }]);
     setBusy(true);
     sendRendaWebMessage(message)
       .then((result) => setMessages((current) => [...current, { direction: "outbound", text: result.reply, listings: result.listings || [] }]))
       .catch((error) => {
+        setDraft(message);
         setNotice(errorMessage(error));
         if (error?.response?.status === 401) setPhase("consent");
       })
-      .finally(() => { sendingPendingRef.current = false; setBusy(false); setActiveRequest(""); });
+      .finally(() => { sendingPendingRef.current = false; setBusy(false); });
   }, [phase, pendingMessage, busy]);
 
   const startChat = async () => {
@@ -140,10 +146,8 @@ export default function RendaAssistantWidget() {
     setMessages([]);
     setPendingMessage("");
     setNotice("");
-    setStarted(false);
     setPhase("idle");
     setBusy(false);
-    queueMicrotask(() => setStarted(true));
     setPhase("consent");
   };
 
@@ -170,7 +174,6 @@ export default function RendaAssistantWidget() {
                   <i className="h-1 w-1 animate-bounce rounded-full bg-[#0d915c] [animation-delay:-0.2s]" />
                   <i className="h-1 w-1 animate-bounce rounded-full bg-[#0d915c] [animation-delay:-0.1s]" />
                   <i className="h-1 w-1 animate-bounce rounded-full bg-[#0d915c]" />
-                  {pendingMessage && <span className="line-clamp-2 min-w-0 break-words">Loading your request: {pendingMessage}</span>}
                 </span>
               </div>
               <form onSubmit={submit} className="flex shrink-0 items-end gap-2 border-t border-[#e4eee8] bg-white p-3">
@@ -194,7 +197,7 @@ export default function RendaAssistantWidget() {
             <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
               <p className="text-sm leading-6 text-[#45645b]">{notice}</p>
               <Link to="/listings" onClick={() => setOpen(false)} className="mt-4 text-sm font-semibold text-[#0d7952] underline underline-offset-4">Browse listings</Link>
-              <button type="button" onClick={() => { setStarted(false); setPhase("idle"); }} className="mt-4 text-xs font-medium text-[#56716a]">Try again</button>
+              <button type="button" onClick={() => { conversationLoadStartedRef.current = false; setPhase("idle"); setLoadRetry((value) => value + 1); }} className="mt-4 text-xs font-medium text-[#56716a]">Try again</button>
             </div>
           )}
           {phase === "chat" && (
@@ -203,12 +206,11 @@ export default function RendaAssistantWidget() {
                 {messages.map((message, index) => (
                   <div key={`${message.createdAt || "local"}-${index}`} className={message.direction === "inbound" ? "ml-auto max-w-[88%]" : "mr-auto max-w-[94%]"}>
                     <p className={`whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-[13px] leading-5 ${message.direction === "inbound" ? "rounded-br-md bg-[#0d915c] text-white" : "rounded-bl-md border border-[#e2ece6] bg-white text-[#234a43]"}`}>{message.text}</p>
-                    {!!message.listings?.length && <div className="mt-2 space-y-2">{message.listings.map((listing) => <ListingResult key={listing._id} listing={listing} />)}</div>}
+                    {!!message.listings?.length && <div className="mt-2 space-y-2">{message.listings.map((listing) => <ListingResult key={listing._id} listing={listing} onOpenListing={() => setOpen(false)} />)}</div>}
                   </div>
                 ))}
                 {busy && <div role="status" aria-live="polite" className="flex w-fit max-w-[94%] items-start gap-2 rounded-2xl rounded-bl-md border border-[#e2ece6] bg-white px-3.5 py-2.5 text-xs text-[#56716a]">
                   <span className="mt-1 flex shrink-0 items-center gap-0.5" aria-hidden="true"><i className="h-1 w-1 animate-bounce rounded-full bg-[#0d915c] [animation-delay:-0.2s]" /><i className="h-1 w-1 animate-bounce rounded-full bg-[#0d915c] [animation-delay:-0.1s]" /><i className="h-1 w-1 animate-bounce rounded-full bg-[#0d915c]" /></span>
-                  <span className="min-w-0"><span className="block font-semibold">Loading your request</span><span className="mt-0.5 block line-clamp-2 break-words text-[11px] text-[#718780]">{activeRequest}</span></span>
                 </div>}
               </div>
               {notice && <div role="alert" className="border-t border-[#f0d6d3] bg-[#fff8f7] px-3 py-2 text-xs text-[#9c3e35]">{notice}</div>}

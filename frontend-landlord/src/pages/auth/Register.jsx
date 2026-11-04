@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { registerLandlord } from "../../services/auth.service";
-import { getPublicPlans, initializeSubscriptionPayment } from "../../services/payment.service";
-import { useAuth } from "../../context/AuthContext";
+import { getPublicPlans } from "../../services/payment.service";
 import { 
   FiUser, 
   FiMail, 
@@ -26,7 +25,6 @@ const RegisterLandlordPage = () => {
   }, []);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login } = useAuth();
   const mainSiteUrl = import.meta.env.VITE_MAIN_URL || "https://rendahomes.com";
 
   const selectedPlan = useMemo(() => searchParams.get("plan") || "normal", [searchParams]);
@@ -36,7 +34,7 @@ const RegisterLandlordPage = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    phone: "",
+    phone: "+254",
     password: "",
     confirmPassword: "",
     plan: selectedPlan,
@@ -119,8 +117,8 @@ const RegisterLandlordPage = () => {
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Please enter a valid email";
 
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
-    else if (!/^(07|01)\d{8}$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid Kenyan phone number";
+    else if (!/^\+254[17]\d{8}$/.test(formData.phone.replace(/[\s().-]/g, ""))) {
+      newErrors.phone = "Enter a Kenyan mobile number starting with +254";
     }
 
     if (!formData.password) newErrors.password = "Password is required";
@@ -158,39 +156,18 @@ const RegisterLandlordPage = () => {
       const data = await registerLandlord({
         name: formData.name,
         email: formData.email,
-        phone: formData.phone,
+        phone: formData.phone.replace(/[\s().-]/g, ""),
         password: formData.password,
         plan: selectedPlan,
         agentCode,
         acceptedLegalPolicies: formData.agreeTerms
       });
 
-      login(data);
-
-     
-
-    // Google Ads landlord signup conversion
-    if (typeof window !== "undefined" && window.gtag) {
-      window.gtag("event", "conversion", {
-        send_to: "AW-18171252157/BjG5CJmRma8cEL2b3dhD",
-      });
-    }
-
-
-      toast.success("Account created successfully!", {
-
-      
-
+      const verifyParams = new URLSearchParams({ email: data.email || formData.email, plan: selectedPlan, next: nextPath });
+      navigate(`/verify-email?${verifyParams.toString()}`);
+      toast.success("Check your email for a verification code.", {
         style: { background: "#02BB31", color: "#fff" }
       });
-
-      if (selectedPlan === "normal") {
-        navigate(nextPath);
-        return;
-      }
-
-      const payment = await initializeSubscriptionPayment();
-      window.location.href = payment.authorization_url;
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
       toast.error(err.response?.data?.message || "Registration failed", {
@@ -374,7 +351,9 @@ const RegisterLandlordPage = () => {
                   <input
                     type="tel"
                     name="phone"
-                    placeholder="0712345678"
+                    placeholder="+254 712 345 678"
+                    autoComplete="tel"
+                    maxLength={16}
                     value={formData.phone}
                     onChange={handleChange}
                     className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg outline-none transition-colors ${

@@ -9,7 +9,7 @@ export default function ProtectedRoute({ children }) {
   if (booting) return <LoadingScreen label="Checking session" />;
 
   if (!isAuthenticated) {
-    return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
+    return <Navigate to={`/login?next=${encodeURIComponent(`${location.pathname}${location.search}`)}`} replace />;
   }
 
   return children;
