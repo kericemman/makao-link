@@ -74,7 +74,7 @@ const allPlans = [
       "Listings reviewed before going public",
       "Portfolio performance view for listing views and inquiries"
     ],
-    planned: ["Automated direct WhatsApp listing and notifications are not live yet"]
+    planned: ["WhatsApp listing and notification automation is coming soon"]
   },
   {
     key: "pro",
@@ -92,7 +92,7 @@ const allPlans = [
       "Group properties by building and unit category in the dashboard"
     ],
     planned: [
-      "Automated WhatsApp intake for multiple properties is not live yet",
+      "WhatsApp automation for multiple properties is coming soon",
       "Combined public building pages and live remaining-unit totals are still in development"
     ]
   }
@@ -378,7 +378,7 @@ const LandlordSubscription = () => {
           <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">WhatsApp listing</p>
           <h2 className="mt-2 text-xl font-bold text-slate-950">List your property directly on WhatsApp</h2>
           <p className="mt-2 text-sm leading-6 text-slate-700">Free and Basic landlords can add WhatsApp listing for KES 300 per month. Premium and Pro include the listing entitlement. Your plan and add-on controls are available here in the signed-in dashboard.</p>
-          <p className="mt-3 text-xs leading-5 text-slate-600">WhatsApp plan eligibility is shown here. Automated WhatChimp intake and notification workflows are not live yet.</p>
+          <p className="mt-3 text-xs leading-5 text-slate-600">WhatsApp plan eligibility is shown here. WhatsApp listing and notification automation is coming soon.</p>
         </aside>
       </section>
 
@@ -414,8 +414,8 @@ const LandlordSubscription = () => {
                   {plan.features.length > 5 && <button type="button" aria-expanded={Boolean(expandedPlans[plan.key])} onClick={() => setExpandedPlans((current) => ({ ...current, [plan.key]: !current[plan.key] }))} className="mt-3 self-start text-xs font-semibold text-emerald-800 underline underline-offset-2">{expandedPlans[plan.key] ? "Show less" : `View all ${plan.features.length} features`}</button>}
 
                   {plan.whatsappAddon && <div className="mt-4 border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-950"><span className="font-bold">Optional:</span> WhatsApp listing is KES 300/month, managed from your signed-in dashboard.</div>}
-                  {plan.key === "premium" && <div className="mt-4 border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">WhatsApp listing is included in the plan. Automated WhatChimp listing and notifications are not live yet.</div>}
-                  {plan.key === "pro" && <div className="mt-4 border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">WhatsApp listing is included. Portfolio grouping is available in this dashboard; automated multi-property intake and combined public building/unit pages are still in development.</div>}
+                  {plan.key === "premium" && <div className="mt-4 border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">WhatsApp listing is included in the plan. WhatsApp listing and notification automation is coming soon.</div>}
+                  {plan.key === "pro" && <div className="mt-4 border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">WhatsApp listing is included. Portfolio grouping is available in this dashboard; WhatsApp automation for multiple properties is coming soon. Combined public building and unit pages are still in development.</div>}
 
                   <div className="mt-auto pt-5">
                     {isCurrent ? <div className="flex min-h-11 items-center justify-center border border-emerald-200 bg-emerald-50 text-sm font-semibold text-emerald-900">You are on this plan</div> : <button type="button" onClick={() => handlePlanChange(plan.key)} disabled={Boolean(upgradeLoadingPlan)} className={`inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60 ${isDowngrade ? "bg-slate-800 hover:bg-slate-900" : "bg-emerald-800 hover:bg-emerald-900"}`}>{upgradeLoadingPlan === plan.key ? "Processing..." : <>{isUpgrade ? "Upgrade" : "Downgrade"}<FiArrowRight /></>}</button>}

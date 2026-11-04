@@ -574,7 +574,7 @@ export default function DashboardHome() {
             </label>
           </div>
           <button type="submit" disabled={loadingWhatsAppPreference || savingWhatsAppPreference} className="inline-flex min-h-11 items-center justify-center gap-2 bg-emerald-800 px-5 text-sm font-semibold text-white hover:bg-emerald-900 disabled:cursor-wait disabled:opacity-60">{savingWhatsAppPreference ? "Saving..." : "Save preference"}</button>
-          <p className="text-xs leading-5 text-slate-500 sm:col-span-2">Your consent preference is saved securely. WhatsApp message delivery is not active yet while RendaHomes connects its messaging provider.</p>
+          <p className="text-xs leading-5 text-slate-500 sm:col-span-2">Your preference is saved securely. WhatsApp update automation is coming soon; messages are not being sent yet.</p>
         </form>
       </section>
       </>}
