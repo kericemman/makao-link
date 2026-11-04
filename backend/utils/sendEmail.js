@@ -1,4 +1,4 @@
-const resend = require("../config/resend");
+const getResend = require("../config/resend");
 
 const htmlToText = (html = "") =>
   String(html)
@@ -25,6 +25,7 @@ const sendEmail = async ({ to, subject, html }) => {
     return;
   }
 
+  const resend = getResend();
   return resend.emails.send({
     from: `RendaHomes <${process.env.EMAIL_FROM || "hello@rendahomes.com"}>`,
     to,
