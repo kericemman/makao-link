@@ -9,8 +9,20 @@ const {
 } = require("./listing.constants");
 
 function arrayLimit(val) {
-  return val.length <= 10;
+  return val.length <= 30;
 }
+
+const imageAssetSchema = new mongoose.Schema({
+  index: { type: Number, min: 0, required: true },
+  stagingKey: { type: String, trim: true },
+  publicKey: { type: String, trim: true },
+  originalName: { type: String, trim: true },
+  contentType: { type: String, trim: true },
+  size: { type: Number, min: 0 },
+  status: { type: String, enum: ["staged", "published"], required: true },
+  uploadedAt: Date,
+  publishedAt: Date
+}, { _id: false });
 
 const listingSchema = new mongoose.Schema(
   {
@@ -38,6 +50,12 @@ const listingSchema = new mongoose.Schema(
     availableUnits: { type: Number, min: 0, default: 1 },
     assignedAgent: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, index: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    organization: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", default: null, index: true },
+    branch: { type: mongoose.Schema.Types.ObjectId, default: null, index: true },
+    advertisingMandate: { type: mongoose.Schema.Types.ObjectId, ref: "PropertyMandate", default: null, index: true },
+    legalOwnerUser: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    legalOwnerOrganization: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", default: null },
+    legalOwnershipStatus: { type: String, enum: ["unverified", "claimed", "verified"], default: "unverified", index: true },
 
     description: {
       type: String,
@@ -139,8 +157,10 @@ const listingSchema = new mongoose.Schema(
     images: {
       type: [String],
       default: [],
-      validate: [arrayLimit, "Maximum 10 images allowed"]
+      validate: [arrayLimit, "Maximum 30 images allowed"]
     },
+
+    imageAssets: { type: [imageAssetSchema], default: [], select: false },
 
     video: {
       type: String,

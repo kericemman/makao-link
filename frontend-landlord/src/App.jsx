@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/auth/Login";
 import RegisterLandlordPage from "./pages/auth/Register";
+import VerifyLandlordEmail from "./pages/auth/VerifyEmail";
 import ForgotPasswordPage from "./pages/auth/ForgetPassword";
 import ResetPasswordPage from "./pages/auth/ResetPassword";
 import PaymentCallbackPage from "./context/PaymentCallback";
@@ -20,6 +21,8 @@ import LandlordProfilePage from "./pages/landlord/LandlordProfile";
 import LandlordKycPage from "./pages/landlord/Kyc";
 import CompanyWorkspace from "./pages/landlord/CompanyWorkspace";
 import StayRequests from "./pages/landlord/StayRequests";
+import Leads from "./pages/landlord/Leads";
+import Viewings from "./pages/landlord/Viewings";
 
 export default function App() {
   return (
@@ -27,6 +30,7 @@ export default function App() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterLandlordPage />} />
+      <Route path="/verify-email" element={<VerifyLandlordEmail />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       <Route path="/payment/callback" element={<PaymentCallbackPage />} />
@@ -38,6 +42,8 @@ export default function App() {
             <Route path="/listings" element={<Listings />} />
             <Route path="/listings/:id/edit" element={<EditListingPage />} />
             <Route path="/inquiries" element={<LandlordInquiries />} />
+            <Route path="/leads" element={<Leads />} />
+            <Route path="/viewings" element={<Viewings />} />
             <Route path="/stay-requests" element={<StayRequests />} />
             <Route path="/team" element={<CompanyWorkspace />} />
             <Route path="/subscription" element={<LandlordSubscription />} />

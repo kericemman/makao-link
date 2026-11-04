@@ -13,7 +13,9 @@ const plans = require("../payments/plan.config");
 const { createInitialSubscription } = require("../subscriptions/subscription.service");
 const { syncWebsiteInquiriesToAppAlertsForUser } = require("../inquiries/inquiryBridge.service");
 const verifySocialIdentity = require("./socialIdentity.service");
+const { hasRole } = require("../authorization/authorization.service");
 const { buildLegalAcceptance } = require("./legalAcceptance.service");
+const { normalizeKenyanPhone, phoneUniquenessFilter } = require("../../utils/kenyanPhone");
 const {
   clearSharedSessionCookie,
   getSharedSessionToken,
@@ -26,6 +28,7 @@ const buildAuthUser = (user) => ({
   email: user.email,
   phone: user.phone,
   role: user.role,
+  roles: [...new Set([...(user.roles || []), user.role].filter(Boolean))],
   avatar: user.avatar,
   businessName: user.businessName,
   bio: user.bio,
@@ -47,13 +50,13 @@ const otpMatches = (enteredOtp, storedHash) => {
   return enteredHash.length === savedHash.length && crypto.timingSafeEqual(enteredHash, savedHash);
 };
 
-const generateEmailOtp = () =>
-  String(Math.floor(100000 + Math.random() * 900000));
+const generateEmailOtp = () => String(crypto.randomInt(100000, 1000000));
 
 const setEmailOtp = (user) => {
   const otp = generateEmailOtp();
   user.emailOtpHash = hashOtp(otp);
   user.emailOtpExpires = new Date(Date.now() + 1000 * 60 * 10);
+  user.emailOtpAttempts = 0;
   return otp;
 };
 
@@ -73,6 +76,12 @@ exports.registerLandlord = async (req, res, next) => {
     const { name, email, password, phone, plan, agentCode, acceptedLegalPolicies } = req.body;
     const normalizedEmail = String(email || "").toLowerCase().trim();
     const legalAcceptance = buildLegalAcceptance({ acceptedLegalPolicies });
+    let normalizedPhone;
+    try {
+      normalizedPhone = normalizeKenyanPhone(phone);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
 
     if (!name || !email || !password || !phone || !plan) {
       return res.status(400).json({ message: "All fields are required" });
@@ -86,11 +95,15 @@ exports.registerLandlord = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid plan selected" });
     }
 
-    const existingUser = await User.findOne({ email: normalizedEmail });
+    const [existingUser, existingPhone] = await Promise.all([
+      User.findOne({ email: normalizedEmail }),
+      User.exists(phoneUniquenessFilter(normalizedPhone))
+    ]);
 
     if (existingUser) {
-      return res.status(400).json({ message: "Email already exists" });
+      return res.status(409).json({ message: "Email already exists" });
     }
+    if (existingPhone) return res.status(409).json({ message: "This phone number is already linked to an account." });
 
     const agent = agentCode
       ? await User.findOne({
@@ -104,8 +117,9 @@ exports.registerLandlord = async (req, res, next) => {
       name,
       email: normalizedEmail,
       password,
-      phone,
+      phone: normalizedPhone,
       role: "landlord",
+      isEmailVerified: false,
       legalAcceptance,
       onboardedByAgent: agent?._id || null,
       onboardingSource: agent ? "agent" : "direct",
@@ -115,37 +129,20 @@ exports.registerLandlord = async (req, res, next) => {
     const subscription = await createInitialSubscription(user._id, plan);
 
     user.subscription = subscription._id;
+    const otp = setEmailOtp(user);
     await user.save();
-
-    const token = generateToken(user);
-    setSharedSessionCookie(res, user, token);
-
-    await sendEmail({
-        to: user.email,
-        subject: "Welcome to RendaHomes",
-        html: welcomeEmail({
-          name: user.name,
-          planName: plans[plan].name,
-          isFreePlan: plan === "normal"
-        })
-      });
+    await sendEmailOtp(user, otp);
 
     res.status(201).json({
       success: true,
-      message: "Account created successfully",
-      token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role
-      },
-      subscription: {
-        ...subscription.toObject()
-      }
+      requiresVerification: true,
+      email: user.email,
+      message: "We sent a verification code to your email. Verify it to continue."
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "An account with this email or phone number already exists." });
+    }
     next(error);
   }
 };
@@ -172,11 +169,11 @@ exports.loginLandlord = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    if (user.role === "agent" && user.agentStatus === "suspended") {
+    if (hasRole(user, "agent") && user.agentStatus === "suspended") {
       return res.status(403).json({ message: "Your agent account is suspended" });
     }
 
-    if (user.role === "landlord_staff" && user.teamStatus !== "active") {
+    if (hasRole(user, "landlord_staff") && user.teamStatus !== "active") {
       return res.status(403).json({ message: "Your company workspace access is suspended." });
     }
 
@@ -261,15 +258,15 @@ exports.sharedSession = async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select("name email role");
-    if (!user || !["user", "agent"].includes(user.role)) {
+    const user = await User.findById(decoded.id).select("name email role roles");
+    if (!user || ![...new Set([...(user.roles || []), user.role])].some((role) => ["user", "tenant", "agent"].includes(role))) {
       clearSharedSessionCookie(res);
       return res.json({ authenticated: false, user: null });
     }
 
     return res.json({
       authenticated: true,
-      user: { _id: user._id, name: user.name, email: user.email, role: user.role }
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role, roles: [...new Set([...(user.roles || []), user.role])] }
     });
   } catch {
     clearSharedSessionCookie(res);
@@ -295,6 +292,12 @@ exports.register = async (req, res) => {
   try {
     const { name, email, phone, password, role } = req.body;
     const normalizedEmail = String(email || "").toLowerCase().trim();
+    let normalizedPhone;
+    try {
+      normalizedPhone = normalizeKenyanPhone(phone);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
 
     if (!name || !email || !phone || !password) {
       return res.status(400).json({
@@ -308,12 +311,18 @@ exports.register = async (req, res) => {
       });
     }
 
-    const existingUser = await User.findOne({ email: normalizedEmail });
+    const [existingUser, existingPhone] = await Promise.all([
+      User.findOne({ email: normalizedEmail }),
+      User.exists(phoneUniquenessFilter(normalizedPhone))
+    ]);
 
     if (existingUser) {
       return res.status(409).json({
         message: "An account with this email already exists"
       });
+    }
+    if (existingPhone) {
+      return res.status(409).json({ message: "This phone number is already linked to an account." });
     }
 
     const allowedRoles = ["user", "landlord"];
@@ -322,7 +331,7 @@ exports.register = async (req, res) => {
     const user = await User.create({
       name,
       email: normalizedEmail,
-      phone,
+      phone: normalizedPhone,
       password,
       role: safeRole,
       isEmailVerified: false
@@ -341,6 +350,9 @@ exports.register = async (req, res) => {
       message: "We sent a verification code to your email."
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "An account with this email or phone number already exists." });
+    }
     return res.status(500).json({
       message: "Failed to create account"
     });
@@ -490,6 +502,7 @@ exports.resetPassword = async (req, res, next) => {
     user.password = password;
     user.passwordResetToken = null;
     user.passwordResetExpires = null;
+    user.isEmailVerified = true;
 
     await user.save();
 
@@ -512,7 +525,12 @@ exports.verifyEmail = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!/^\d{6}$/.test(String(otp))) {
+      return res.status(400).json({ message: "Enter the 6-digit verification code." });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() })
+      .select("+emailOtpHash +emailOtpExpires +emailOtpAttempts");
 
     if (!user) {
       return res.status(400).json({ message: "Invalid or expired verification code" });
@@ -528,7 +546,18 @@ exports.verifyEmail = async (req, res) => {
       });
     }
 
+    if (user.emailOtpAttempts >= 5) {
+      return res.status(429).json({ message: "Too many incorrect codes. Request a new verification code." });
+    }
+
     if (!otpMatches(otp, user.emailOtpHash)) {
+      const attempt = await User.updateOne(
+        { _id: user._id, emailOtpHash: user.emailOtpHash, emailOtpAttempts: { $lt: 5 } },
+        { $inc: { emailOtpAttempts: 1 } }
+      );
+      if (!attempt.modifiedCount) {
+        return res.status(429).json({ message: "Too many incorrect codes. Request a new verification code." });
+      }
       return res.status(400).json({
         message: "Invalid verification code"
       });
@@ -537,15 +566,38 @@ exports.verifyEmail = async (req, res) => {
     user.isEmailVerified = true;
     user.emailOtpHash = null;
     user.emailOtpExpires = null;
+    user.emailOtpAttempts = 0;
     await user.save();
 
     const token = generateToken(user);
     setSharedSessionCookie(res, user, token);
 
+    let subscription = null;
+    if (user.role === "landlord") {
+      try {
+        const verifiedUser = await User.findById(user._id).populate("subscription");
+        subscription = verifiedUser?.subscription || null;
+        if (subscription) {
+          await sendEmail({
+            to: user.email,
+            subject: "Welcome to RendaHomes",
+            html: welcomeEmail({
+              name: user.name,
+              planName: plans[subscription.plan]?.name || "Free",
+              isFreePlan: subscription.plan === "normal"
+            })
+          });
+        }
+      } catch (error) {
+        console.error("Verified landlord welcome email failed:", error.message);
+      }
+    }
+
     return res.json({
       success: true,
       token,
-      user: buildAuthUser(user)
+      user: buildAuthUser(user),
+      ...(subscription ? { subscription } : {})
     });
   } catch (error) {
     return res.status(500).json({
@@ -597,7 +649,7 @@ exports.resendEmailOtp = async (req, res) => {
 
 exports.socialLogin = async (req, res) => {
   try {
-    const { provider, providerId: requestedProviderId, idToken, identityToken, credential } = req.body;
+    const { provider, providerId: requestedProviderId, idToken, identityToken, credential, phone } = req.body;
     const allowedProviders = ["google"];
 
     if (!provider || !allowedProviders.includes(provider)) {
@@ -618,10 +670,20 @@ exports.socialLogin = async (req, res) => {
     let user = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (!user) {
+      let normalizedPhone;
+      try {
+        normalizedPhone = normalizeKenyanPhone(phone);
+      } catch (error) {
+        return res.status(400).json({ message: error.message });
+      }
+      if (await User.exists(phoneUniquenessFilter(normalizedPhone))) {
+        return res.status(409).json({ message: "This phone number is already linked to an account." });
+      }
+
       user = await User.create({
         name: name || "RendaHomes User",
         email: email.toLowerCase().trim(),
-        phone: "N/A",
+        phone: normalizedPhone,
         password: `${provider}-${providerId}-${Date.now()}`,
         role: "user",
         avatar: avatar || "",
@@ -645,6 +707,18 @@ exports.socialLogin = async (req, res) => {
     const fullUser = await User.findById(user._id).select("+socialProviderId");
 
     if (!fullUser.isEmailVerified) {
+      if (!fullUser.phone) {
+        let normalizedPhone;
+        try {
+          normalizedPhone = normalizeKenyanPhone(phone);
+        } catch (error) {
+          return res.status(400).json({ message: error.message });
+        }
+        if (await User.exists({ ...phoneUniquenessFilter(normalizedPhone), _id: { $ne: fullUser._id } })) {
+          return res.status(409).json({ message: "This phone number is already linked to an account." });
+        }
+        fullUser.phone = normalizedPhone;
+      }
       const otp = setEmailOtp(fullUser);
       await fullUser.save();
       await sendEmailOtp(fullUser, otp);
@@ -680,6 +754,9 @@ exports.socialLogin = async (req, res) => {
       message: "We sent a verification code to your email."
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "This phone number is already linked to an account." });
+    }
     if (error.statusCode && error.statusCode < 500) {
       return res.status(error.statusCode).json({ message: error.message });
     }

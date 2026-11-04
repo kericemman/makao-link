@@ -3,7 +3,12 @@ const mongoose = require("mongoose");
 const assetSchema = new mongoose.Schema({
   publicId: { type: String, trim: true },
   resourceType: { type: String, enum: ["image", "raw"] },
-  format: { type: String, trim: true }
+  format: { type: String, trim: true },
+  key: { type: String, trim: true },
+  originalName: { type: String, trim: true },
+  contentType: { type: String, trim: true },
+  size: { type: Number, min: 0 },
+  uploadedAt: Date
 }, { _id: false });
 
 const kycSchema = new mongoose.Schema(

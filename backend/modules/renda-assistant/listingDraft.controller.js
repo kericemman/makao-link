@@ -5,7 +5,7 @@ const {
 
 exports.getMyListingDraft = async (req, res, next) => {
   try {
-    const draft = await getOwnedListingDraft({ draftId: req.params.draftId, landlordId: req.landlordOwnerId });
+    const draft = await getOwnedListingDraft({ draftId: req.params.draftId, landlordId: req.landlordOwnerId, actorId: req.organizationMembership ? req.user._id : undefined });
     return res.json({
       success: true,
       draft: {

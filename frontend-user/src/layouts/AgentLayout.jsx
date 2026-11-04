@@ -2,9 +2,11 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 import {
   FiBookOpen,
+  FiCalendar,
   FiChevronDown,
   FiCopy,
   FiHome,
+  FiSearch,
   FiLink,
   FiLogOut,
   FiMenu,
@@ -28,6 +30,8 @@ export default function AgentLayout() {
       { path: "/agent/dashboard", name: "Overview", icon: FiHome, description: "Performance snapshot" },
       { path: "/agent/referrals", name: "Referral Links", icon: FiLink, description: "Share onboarding links" },
       { path: "/agent/landlords", name: "Landlords", icon: FiUsers, description: "Track onboarded owners" },
+      { path: "/agent/marketplace", name: "Property requests", icon: FiSearch, description: "Suggest authorized listings" },
+      { path: "/agent/viewings", name: "Viewings", icon: FiCalendar, description: "Coordinate appointments" },
       { path: "/agent/instructions", name: "Instructions", icon: FiBookOpen, description: "Admin updates" },
       { path: "/agent/profile", name: "Profile", icon: FiUser, description: "Agent account" }
     ],

@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import LoadingScreen from "./LoadingScreen";
+import { userHasAnyRole } from "../utils/navigation";
 
 export default function RoleRoute({ allowedRoles = [], children }) {
   const { booting, isAuthenticated, user } = useAuth();
@@ -12,7 +13,7 @@ export default function RoleRoute({ allowedRoles = [], children }) {
     return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
-  if (!allowedRoles.includes(user?.role)) {
+  if (!userHasAnyRole(user, allowedRoles)) {
     return <Navigate to="/" replace />;
   }
 

@@ -1,31 +1,22 @@
-const crypto = require("crypto");
 const User = require("../users/user.model");
 const Listing = require("../listings/listings.model");
 const Payment = require("../payments/payment.model");
 const Subscription = require("../subscriptions/subscription.model");
 const sendEmail = require("../../utils/sendEmail");
-const { agentInviteEmail, agentInstructionEmail } = require("../../utils/emailTemplates");
+const { agentInstructionEmail } = require("../../utils/emailTemplates");
+const { createOrGrantAgentRole, createResetInvite, sendAgentInvitation } = require("./agentAccount.service");
+const { hasRole } = require("../authorization/authorization.service");
 const AgentInstruction = require("./agentInstruction.model");
 const { recordAdminActivity } = require("../admin/adminActivity.service");
+const { recordAuthorizationChange } = require("../authorization/audit.service");
+const { withAuthorizationTransaction } = require("../authorization/transaction.service");
+const { normalizeServiceAreas } = require("../propertyRequests/agentMarketplace.service");
 
 const LANDLORD_URL = process.env.LANDLORD_URL || "https://landlord.rendahomes.com";
 const USER_URL = process.env.USER_URL || "https://user.rendahomes.com";
 
-const buildAgentCode = async (name = "AGENT") => {
-  const base = String(name)
-    .split(/\s+/)[0]
-    .replace(/[^a-z0-9]/gi, "")
-    .toUpperCase()
-    .slice(0, 10) || "AGENT";
-
-  for (let index = 1; index <= 999; index += 1) {
-    const code = `AGT-${base}-${String(index).padStart(3, "0")}`;
-    const exists = await User.exists({ agentCode: code });
-    if (!exists) return code;
-  }
-
-  return `AGT-${base}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
-};
+const agentRoleFilter = () => ({ $or: [{ role: "agent" }, { roles: "agent" }] });
+const agentIdFilter = (id) => ({ _id: id, ...agentRoleFilter() });
 
 const referralLinks = (agentCode) => ({
   landlord: `${LANDLORD_URL}/register?agent=${agentCode}`,
@@ -147,6 +138,8 @@ const formatAgent = async (agent) => ({
   role: agent.role,
   agentCode: agent.agentCode,
   status: agent.agentStatus,
+  marketplaceStatus: agent.agentMarketplaceStatus,
+  serviceAreas: agent.agentServiceAreas || [],
   commissionRate: agent.commissionRate,
   createdAt: agent.createdAt,
   referralLinks: referralLinks(agent.agentCode),
@@ -157,31 +150,14 @@ const formatAgent = async (agent) => ({
 
 exports.createAgent = async (req, res, next) => {
   try {
-    const { fullName, name, email, phone, password, commissionRate = 10 } = req.body;
+    const { fullName, name, email, phone, commissionRate = 10 } = req.body;
     const agentName = fullName || name;
 
-    if (!agentName || !email || !phone || !password) {
-      return res.status(400).json({ message: "Name, email, phone and password are required" });
+    if (!agentName || !email || !phone) {
+      return res.status(400).json({ message: "Name, email and phone are required" });
     }
-
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res.status(409).json({ message: "An account with this email already exists" });
-    }
-
-    const agentCode = await buildAgentCode(agentName);
-    const agent = await User.create({
-      name: agentName,
-      email,
-      phone,
-      password,
-      role: "agent",
-      agentCode,
-      agentStatus: "active",
-      commissionRate,
-      createdByAdmin: req.user._id,
-      isEmailVerified: true
-    });
+    if (!Number.isFinite(Number(commissionRate)) || Number(commissionRate) < 0 || Number(commissionRate) > 100) return res.status(400).json({ message: "Commission rate must be between 0 and 100." });
+    const { agent, setupUrl } = await createOrGrantAgentRole({ name: agentName, email, phone, commissionRate: Number(commissionRate), createdByAdmin: req.user._id });
 
     await recordAdminActivity({
       eventType: "agent_created",
@@ -195,23 +171,16 @@ exports.createAgent = async (req, res, next) => {
       entityId: String(agent._id)
     });
 
-    const links = referralLinks(agentCode);
-
-    await sendEmail({
-      to: agent.email,
-      subject: "Your RendaHomes agent account",
-      html: agentInviteEmail({
-        name: agent.name,
-        agentCode: agent.agentCode,
-        password,
-        landlordLink: links.landlord,
-        loginUrl: `${USER_URL}/login`
-      })
-    });
+    let invitationSent = false;
+    try {
+      await sendAgentInvitation({ agent, setupUrl });
+      invitationSent = true;
+    } catch (error) { console.error("Agent invitation email failed:", error.message); }
 
     res.status(201).json({
       success: true,
-      message: "Agent created and invited",
+      message: invitationSent ? "Agent created and invited" : "Agent account created, but the invitation email failed. The agent can use password reset to activate access.",
+      invitationSent,
       agent: await formatAgent(agent)
     });
   } catch (error) {
@@ -219,9 +188,19 @@ exports.createAgent = async (req, res, next) => {
   }
 };
 
+exports.resendAgentInvitation = async (req, res, next) => {
+  try {
+    const agent = await User.findOne(agentIdFilter(req.params.id));
+    if (!agent) return res.status(404).json({ message: "Agent not found." });
+    const setupUrl = agent.isEmailVerified ? "" : await createResetInvite(agent);
+    await sendAgentInvitation({ agent, setupUrl });
+    res.json({ success: true, message: "Agent invitation sent." });
+  } catch (error) { next(error); }
+};
+
 exports.getAgents = async (req, res, next) => {
   try {
-    const agents = await User.find({ role: "agent" }).sort({ createdAt: -1 });
+    const agents = await User.find(agentRoleFilter()).sort({ createdAt: -1 });
     res.json({
       success: true,
       agents: await Promise.all(agents.map(formatAgent))
@@ -233,7 +212,7 @@ exports.getAgents = async (req, res, next) => {
 
 exports.getAgentById = async (req, res, next) => {
   try {
-    const agent = await User.findOne({ _id: req.params.id, role: "agent" });
+    const agent = await User.findOne(agentIdFilter(req.params.id));
     if (!agent) return res.status(404).json({ message: "Agent not found" });
 
     res.json({
@@ -247,15 +226,42 @@ exports.getAgentById = async (req, res, next) => {
 
 exports.updateAgent = async (req, res, next) => {
   try {
-    const agent = await User.findOne({ _id: req.params.id, role: "agent" });
+    const allowedFields = new Set(["fullName", "name", "phone", "commissionRate", "agentMarketplaceStatus", "agentServiceAreas"]);
+    if (Object.keys(req.body || {}).some((key) => !allowedFields.has(key))) return res.status(400).json({ message: "Unsupported agent update field." });
+    const { fullName, name, phone, commissionRate, agentMarketplaceStatus, agentServiceAreas } = req.body;
+    if (agentMarketplaceStatus !== undefined && !["not_enabled", "pending", "approved", "suspended"].includes(agentMarketplaceStatus)) return res.status(400).json({ message: "Choose a valid marketplace status." });
+    const normalizedAreas = agentServiceAreas === undefined ? undefined : normalizeServiceAreas(agentServiceAreas);
+    const agent = await withAuthorizationTransaction(async (session) => {
+      const current = await User.findOne(agentIdFilter(req.params.id)).session(session);
+      if (!current) return null;
+      const previousMarketplaceStatus = current.agentMarketplaceStatus;
+      const previousServiceAreas = current.agentServiceAreas.map((area) => area.toObject());
+      if (fullName || name) current.name = fullName || name;
+      if (phone) current.phone = phone;
+      if (commissionRate !== undefined) current.commissionRate = commissionRate;
+      if (agentMarketplaceStatus !== undefined) current.agentMarketplaceStatus = agentMarketplaceStatus;
+      if (normalizedAreas !== undefined) current.agentServiceAreas = normalizedAreas;
+      if (current.agentMarketplaceStatus === "approved" && (current.agentStatus !== "active" || !current.agentServiceAreas.length)) {
+        const error = new Error("An active agent needs at least one approved service area before marketplace approval.");
+        error.statusCode = 400;
+        throw error;
+      }
+      await current.save({ session });
+      if (agentMarketplaceStatus !== undefined || normalizedAreas !== undefined) {
+        await recordAuthorizationChange(req, {
+          action: "agent.marketplace_settings_updated",
+          resourceType: "agent",
+          resourceId: current._id,
+          changes: {
+            previous: { marketplaceStatus: previousMarketplaceStatus, serviceAreas: previousServiceAreas },
+            next: { marketplaceStatus: current.agentMarketplaceStatus, serviceAreas: current.agentServiceAreas.map((area) => area.toObject()) }
+          },
+          session
+        });
+      }
+      return current;
+    });
     if (!agent) return res.status(404).json({ message: "Agent not found" });
-
-    const { fullName, name, phone, commissionRate } = req.body;
-    if (fullName || name) agent.name = fullName || name;
-    if (phone) agent.phone = phone;
-    if (commissionRate !== undefined) agent.commissionRate = commissionRate;
-
-    await agent.save();
     res.json({ success: true, agent: await formatAgent(agent) });
   } catch (error) {
     next(error);
@@ -264,11 +270,17 @@ exports.updateAgent = async (req, res, next) => {
 
 exports.suspendAgent = async (req, res, next) => {
   try {
-    const agent = await User.findOneAndUpdate(
-      { _id: req.params.id, role: "agent" },
-      { agentStatus: "suspended" },
-      { new: true }
-    );
+    const agent = await withAuthorizationTransaction(async (session) => {
+      const current = await User.findOne(agentIdFilter(req.params.id)).session(session);
+      if (!current) return null;
+      const previousStatus = current.agentStatus;
+      const previousMarketplaceStatus = current.agentMarketplaceStatus;
+      current.agentStatus = "suspended";
+      current.agentMarketplaceStatus = "suspended";
+      await current.save({ session });
+      await recordAuthorizationChange(req, { action: "agent.suspended", resourceType: "agent", resourceId: current._id, changes: { previousStatus, previousMarketplaceStatus, status: current.agentStatus, marketplaceStatus: current.agentMarketplaceStatus }, session });
+      return current;
+    });
     if (!agent) return res.status(404).json({ message: "Agent not found" });
     res.json({ success: true, agent: await formatAgent(agent) });
   } catch (error) {
@@ -278,11 +290,14 @@ exports.suspendAgent = async (req, res, next) => {
 
 exports.activateAgent = async (req, res, next) => {
   try {
-    const agent = await User.findOneAndUpdate(
-      { _id: req.params.id, role: "agent" },
-      { agentStatus: "active" },
-      { new: true }
-    );
+    const agent = await withAuthorizationTransaction(async (session) => {
+      const current = await User.findOne(agentIdFilter(req.params.id)).session(session);
+      if (!current) return null;
+      current.agentStatus = "active";
+      await current.save({ session });
+      await recordAuthorizationChange(req, { action: "agent.activated", resourceType: "agent", resourceId: current._id, changes: { status: current.agentStatus, marketplaceStatus: current.agentMarketplaceStatus }, session });
+      return current;
+    });
     if (!agent) return res.status(404).json({ message: "Agent not found" });
     res.json({ success: true, agent: await formatAgent(agent) });
   } catch (error) {
@@ -292,7 +307,7 @@ exports.activateAgent = async (req, res, next) => {
 
 exports.getAgentOnboarded = async (req, res, next) => {
   try {
-    const agent = await User.findOne({ _id: req.params.id, role: "agent" });
+    const agent = await User.findOne(agentIdFilter(req.params.id));
     if (!agent) return res.status(404).json({ message: "Agent not found" });
 
     const landlords = await User.find({
@@ -325,7 +340,7 @@ exports.createInstruction = async (req, res, next) => {
     });
 
     if (emailAgents) {
-      const agents = await User.find({ role: "agent", agentStatus: "active" }).select("email name");
+      const agents = await User.find({ ...agentRoleFilter(), agentStatus: "active" }).select("email name");
       await Promise.all(
         agents.map((agent) =>
           sendEmail({
@@ -349,7 +364,7 @@ exports.createInstruction = async (req, res, next) => {
 
 exports.getInstructions = async (req, res, next) => {
   try {
-    const filter = req.user.role === "agent" ? { isPublished: true } : {};
+    const filter = hasRole(req.user, "agent") ? { isPublished: true } : {};
     const instructions = await AgentInstruction.find(filter).sort({ createdAt: -1 });
     res.json({ success: true, instructions });
   } catch (error) {

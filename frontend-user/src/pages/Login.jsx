@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 import { socialLoginUser } from "../services/auth.service";
 import { getApiErrorMessage } from "../utils/apiError";
+import { safeNextPath, safeRoleDestination, safeSignupDestination, userHasAnyRole } from "../utils/navigation";
 
 export default function Login() {
   const { login, isAuthenticated, booting, user } = useAuth();
@@ -17,11 +18,10 @@ export default function Login() {
 
   useEffect(() => {
     if (!booting && isAuthenticated) {
-      const nextPath = params.get("next");
-      const fallbackPath = user?.role === "agent" ? "/agent/dashboard" : "/";
-      navigate(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : fallbackPath, { replace: true });
+      const fallbackPath = userHasAnyRole(user, ["agent"]) ? "/agent/dashboard" : "/";
+      navigate(safeRoleDestination(params.get("next"), user, fallbackPath), { replace: true });
     }
-  }, [booting, isAuthenticated, navigate, params, user?.role]);
+  }, [booting, isAuthenticated, navigate, params, user?.role, user?.roles]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -30,13 +30,12 @@ export default function Login() {
 
     try {
       const data = await login(form);
-      const fallbackPath = data.user?.role === "agent" ? "/agent/dashboard" : "/";
-      const nextPath = params.get("next");
-      navigate(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : fallbackPath, { replace: true });
+      const fallbackPath = userHasAnyRole(data.user, ["agent"]) ? "/agent/dashboard" : "/";
+      navigate(safeRoleDestination(params.get("next"), data.user, fallbackPath), { replace: true });
     } catch (err) {
       const data = err?.response?.data;
       if (data?.requiresVerification) {
-        const next = params.get("next");
+        const next = safeNextPath(params.get("next"), "");
         const nextParam = next ? `&next=${encodeURIComponent(next)}` : "";
         navigate(`/verify-email?email=${encodeURIComponent(data.email || form.email)}${nextParam}`);
         return;
@@ -53,7 +52,7 @@ export default function Login() {
     try {
       const data = await socialLoginUser(idToken);
       if (data.requiresVerification) {
-        const next = params.get("next");
+        const next = safeNextPath(params.get("next"), "");
         const nextParam = next ? `&next=${encodeURIComponent(next)}` : "";
         navigate(`/verify-email?email=${encodeURIComponent(data.email)}${nextParam}`);
       }
@@ -93,9 +92,10 @@ export default function Login() {
         </button>
       </form>
       <div className="mt-5 flex flex-wrap justify-between gap-3 text-sm font-bold text-[#065A57]">
-        <Link to={params.get("next") ? `/signup?next=${encodeURIComponent(params.get("next"))}` : "/signup"} className="hover:text-[#013E43]">Create account</Link>
+        <Link to={safeSignupDestination(params.get("next")) ? `/signup?next=${encodeURIComponent(safeSignupDestination(params.get("next")))}` : "/signup"} className="hover:text-[#013E43]">Create account</Link>
         <Link to="/forgot-password" className="hover:text-[#013E43]">Forgot password?</Link>
       </div>
+      <p className="mt-5 border-t border-[#DDEAE3] pt-4 text-center text-sm font-semibold text-[#647C75]">Interested in representing RendaHomes? <Link to="/agent/apply" className="text-[#013E43] underline">Apply to become an agent</Link></p>
     </section>
   );
 }

@@ -4,6 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "node --test modules/**/*.test.js modules/**/**/*.test.js",
+    "test:identity:integration": "node --test modules/authorization/identity.mongo.integration.test.js",
+    "migrate:identity:dry-run": "node scripts/migrateIdentityOrganizations.js",
+    "migrate:identity:apply": "node scripts/migrateIdentityOrganizations.js --apply",
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
@@ -12,6 +15,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1161.0",
+    "@aws-sdk/s3-request-presigner": "^3.1161.0",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.9.0",
@@ -26,11 +31,13 @@
     "multer": "^2.1.1",
     "multer-storage-cloudinary": "^4.0.0",
     "node-cron": "^4.2.1",
-    "nodemon": "^3.1.14",
     "openai": "^7.45.1",
     "resend": "^6.9.3",
     "slugify": "^1.6.6",
     "streamifier": "^0.1.1",
     "validator": "^13.15.26"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }

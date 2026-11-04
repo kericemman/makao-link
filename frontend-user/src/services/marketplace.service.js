@@ -1,0 +1,22 @@
+import api from "../api/api";
+
+export const createPropertyRequest = async (payload, idempotencyKey) => (await api.post("/property-requests", payload, { headers: { "Idempotency-Key": idempotencyKey } })).data;
+export const getPropertyRequests = async () => (await api.get("/property-requests")).data;
+export const getPropertyRequest = async (id) => (await api.get(`/property-requests/${id}`)).data;
+export const matchPropertyRequest = async (id) => (await api.post(`/property-requests/${id}/matches`)).data;
+export const closePropertyRequest = async (id) => (await api.post(`/property-requests/${id}/close`)).data;
+export const getAgentProposals = async (id) => (await api.get(`/property-requests/${id}/agent-proposals`)).data;
+export const respondToAgentProposal = async (requestId, proposalId, status) => (await api.patch(`/property-requests/${requestId}/agent-proposals/${proposalId}`, { status })).data;
+export const getAgentMarketplaceRequests = async () => (await api.get("/agents/marketplace/requests")).data;
+export const submitAgentApplication = async (payload) => (await api.post("/agents/applications", payload)).data;
+export const getAgentEligibleListings = async (requestId) => (await api.get(`/agents/marketplace/requests/${requestId}/listings`)).data;
+export const submitAgentProposal = async (requestId, payload) => (await api.post(`/agents/marketplace/requests/${requestId}/proposals`, payload)).data;
+export const withdrawAgentProposal = async (proposalId) => (await api.patch(`/agents/marketplace/proposals/${proposalId}/withdraw`)).data;
+export const getMyViewings = async () => (await api.get("/viewings/me")).data;
+export const getAgentViewings = async () => (await api.get("/viewings/agent")).data;
+export const updateViewing = async (id, action, payload = {}) => (await api.post(`/viewings/${id}/${action}`, payload)).data;
+export const requestViewing = async (payload, idempotencyKey) => (await api.post("/viewings", payload, { headers: { "Idempotency-Key": idempotencyKey } })).data;
+export const respondToViewingProposal = async (id) => (await api.post(`/viewings/${id}/confirm`)).data;
+export const proposeViewingTime = async (id, payload) => (await api.post(`/viewings/${id}/reschedule`, payload)).data;
+export const cancelViewing = async (id, reason = "") => (await api.post(`/viewings/${id}/cancel`, { reason })).data;
+export const getPublicListing = async (id) => (await api.get(`/listings/${id}`)).data;

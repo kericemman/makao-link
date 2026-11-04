@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { FiArrowUpRight, FiCheckCircle, FiMail, FiMessageSquare, FiPhone, FiSend, FiUser } from "react-icons/fi";
+import { FiArrowUpRight, FiCalendar, FiCheckCircle, FiMail, FiMessageSquare, FiPhone, FiSend, FiUser } from "react-icons/fi";
 import { FaApple, FaGooglePlay } from "react-icons/fa";
 import { portalLinks } from "../../config/portals";
 import { createPublicInquiry } from "../../services/inquiries.service";
@@ -13,6 +13,7 @@ const initialForm = {
 };
 
 const userLoginUrl = `${portalLinks.user.href}/login?next=${encodeURIComponent("/inquiries")}`;
+const viewingLink = (listingId) => `${portalLinks.user.href}/viewings?listingId=${encodeURIComponent(listingId)}`;
 
 export default function ListingInquiryCard({ listing }) {
   const [form, setForm] = useState(initialForm);
@@ -83,6 +84,10 @@ export default function ListingInquiryCard({ listing }) {
       <p className="mt-2 text-sm leading-6 text-[#065A57]">
         Share your contact details and the landlord will receive your inquiry directly.
       </p>
+
+      <a href={viewingLink(listing?._id)} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#A8D8C1] px-4 py-2 text-sm font-bold text-[#013E43] transition hover:bg-[#F0F7F4]">
+        <FiCalendar /> Request a viewing
+      </a>
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-3">
         <Field icon={FiUser} label="Name" name="name" value={form.name} onChange={handleChange} placeholder="Your full name" required />

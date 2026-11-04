@@ -33,6 +33,10 @@ const listingReportRoutes = require("./modules/listingReports/listingReport.rout
 const landlordTeamRoutes = require("./modules/team/team.routes");
 const stayBookingRoutes = require("./modules/stays/stayBooking.routes");
 const rendaAssistantRoutes = require("./modules/renda-assistant/rendaAssistant.routes");
+const organizationRoutes = require("./modules/organizations/organization.routes");
+const propertyRequestRoutes = require("./modules/propertyRequests/propertyRequest.routes");
+const viewingRoutes = require("./modules/viewings/viewing.routes");
+const leadRoutes = require("./modules/leads/lead.routes");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -48,7 +52,9 @@ const devOrigins = isProduction
       "http://localhost:5176",
       "http://127.0.0.1:5176",
       "http://localhost:5177",
-      "http://127.0.0.1:5177"
+      "http://127.0.0.1:5177",
+      "http://localhost:5178",
+      "http://127.0.0.1:5178"
     ];
 
 const allowedOrigins = [
@@ -124,6 +130,10 @@ app.use("/api/settings", settingRoutes);
 app.use("/api/listing-reports", listingReportRoutes);
 app.use("/api/landlord/team", landlordTeamRoutes);
 app.use("/api/renda-assistant", rendaAssistantRoutes);
+app.use("/api/organizations", organizationRoutes);
+app.use("/api/property-requests", propertyRequestRoutes);
+app.use("/api/viewings", viewingRoutes);
+app.use("/api/leads", leadRoutes);
 app.use("/", seoRoutes);
 
 app.use(errorHandler);

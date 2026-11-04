@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import { FiChevronLeft, FiChevronRight, FiFilter } from "react-icons/fi";
 import PropertyCard from "../PropertyCard";
-import { mainRoutes } from "../../config/portals";
+import { mainRoutes, userPropertyRequestUrl } from "../../config/portals";
 
-export default function ListingResults({ listings, pagination, loading, error, page, pages, total, onPage }) {
+export default function ListingResults({ listings, filters, pagination, loading, error, page, pages, total, onPage }) {
   return (
     <section>
       <div className="mb-5 flex flex-col gap-3 rounded-[1.25rem] border border-[#A8D8C1] bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -24,7 +24,15 @@ export default function ListingResults({ listings, pagination, loading, error, p
       ) : loading ? (
         <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="h-96 animate-pulse rounded-[1.35rem] border border-[#A8D8C1] bg-white" />
+            <div key={index} aria-hidden="true" className="overflow-hidden rounded-[1.35rem] border border-[#A8D8C1] bg-white">
+              <div className="aspect-[1.1] animate-pulse bg-[#DCEBE3] sm:aspect-[1.35]" />
+              <div className="space-y-3 p-3 sm:p-5">
+                <div className="h-4 w-2/5 animate-pulse rounded bg-[#E7F0EB]" />
+                <div className="h-4 w-4/5 animate-pulse rounded bg-[#E7F0EB]" />
+                <div className="h-3 w-3/5 animate-pulse rounded bg-[#E7F0EB]" />
+                <div className="h-3 w-1/2 animate-pulse rounded bg-[#E7F0EB]" />
+              </div>
+            </div>
           ))}
         </div>
       ) : listings.length ? (
@@ -39,6 +47,9 @@ export default function ListingResults({ listings, pagination, loading, error, p
           <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#065A57]">
             Try removing a filter, widening the budget, or searching a nearby town.
           </p>
+          <a href={userPropertyRequestUrl(filters)} className="mt-5 inline-flex min-h-10 items-center justify-center rounded-full bg-[#013E43] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#005C57]">
+            Create a property request
+          </a>
         </div>
       )}
 

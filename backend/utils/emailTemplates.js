@@ -4,6 +4,7 @@ const clientUrl = process.env.CLIENT_URL || "https://rendahomes.com";
 const landlordClientUrl = process.env.LANDLORD_CLIENT_URL || "https://landlord.rendahomes.com";
 const adminClientUrl = process.env.ADMIN_CLIENT_URL || clientUrl;
 const userClientUrl = process.env.USER_CLIENT_URL || "https://user.rendahomes.com";
+const escapeHtml = (value = "") => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 
 exports.welcomeEmail = ({ name, planName, isFreePlan }) => {
   return buildEmailLayout({
@@ -173,6 +174,31 @@ exports.inquiryConfirmationEmail = ({ name, listingTitle }) => {
   });
 };
 
+exports.stayRequestReceivedEmail = ({ landlordName, listingTitle, guestName, guestEmail, guestPhone, requestCode, checkIn, checkOut, guests, message }) => {
+  const safe = (value) => escapeHtml(value || "");
+  const formatDate = (value) => new Intl.DateTimeFormat("en-KE", {
+    day: "numeric", month: "short", year: "numeric", timeZone: "UTC"
+  }).format(new Date(value));
+  return buildEmailLayout({
+    title: "New Short-Stay Request",
+    greeting: `Hello ${safe(landlordName || "Host")}`,
+    intro: `A guest has requested a stay at <strong>${safe(listingTitle)}</strong>. The dates are not reserved until you confirm them.`,
+    body: `
+      <p><strong>Request code:</strong> ${safe(requestCode)}</p>
+      <p><strong>Dates:</strong> ${safe(formatDate(checkIn))} – ${safe(formatDate(checkOut))}</p>
+      <p><strong>Guests:</strong> ${safe(guests)}</p>
+      <p><strong>Guest:</strong> ${safe(guestName)}</p>
+      <p><strong>Email:</strong> ${safe(guestEmail)}</p>
+      <p><strong>Phone:</strong> ${safe(guestPhone)}</p>
+      ${message ? `<p><strong>Message:</strong><br />${safe(message).replace(/\r?\n/g, "<br />")}</p>` : ""}
+      <p>Review the request and confirm availability in your landlord dashboard. You can then contact the guest directly.</p>
+    `,
+    ctaText: "Review stay requests",
+    ctaUrl: `${landlordClientUrl}/stay-requests`,
+    footerNote: "This is a request, not a confirmed reservation. Do not consider the dates booked until you confirm them."
+  });
+};
+
 exports.contactReceivedEmail = ({ name, subject }) => {
   return buildEmailLayout({
     title: "We Received Your Message",
@@ -320,29 +346,43 @@ exports.appUpdatePublishedEmail = ({ title, body, category, audience = "mobile_a
   });
 };
 
-exports.agentInviteEmail = ({ name, agentCode, password, landlordLink, loginUrl }) => {
+exports.agentInviteEmail = ({ name, agentCode, landlordLink, loginUrl, setupUrl }) => {
+  const safeName = escapeHtml(name);
+  const safeAgentCode = escapeHtml(agentCode);
+  const safeLandlordLink = escapeHtml(landlordLink);
+  const destination = setupUrl || loginUrl || `${userClientUrl}/login`;
   return buildEmailLayout({
     title: "Your RendaHomes Agent Account",
-    greeting: `Hello ${name}`,
-    intro: "Your agent account has been created. You can now onboard landlords and track your commission from the agent portal.",
+    greeting: `Hello ${safeName}`,
+    intro: setupUrl ? "Your agent account has been approved. Set a password securely to finish activating your access." : "Your RendaHomes agent access is ready. Sign in to onboard landlords and track your referrals.",
     body: `
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;">
         <tr>
           <td style="padding:12px 14px; border:1px solid #DDEAE3; border-radius:10px; background:#F8FAF8;">
             <p style="margin:0 0 8px; color:#647C75; font-size:13px;">Agent code</p>
-            <p style="margin:0; color:#013E43; font-size:20px; font-weight:800; letter-spacing:1px;">${agentCode}</p>
+            <p style="margin:0; color:#013E43; font-size:20px; font-weight:800; letter-spacing:1px;">${safeAgentCode}</p>
           </td>
         </tr>
       </table>
-      <p><strong>Temporary password:</strong> ${password}</p>
-      <p><strong>Landlord referral link:</strong><br /><a href="${landlordLink}" style="color:#013E43; font-weight:700;">${landlordLink}</a></p>
-      <p>After logging in, open your instructions page to read onboarding guides shared by admin.</p>
+      ${setupUrl ? "<p>This single-use setup link expires in 30 minutes.</p>" : ""}
+      <p><strong>Landlord referral link:</strong><br /><a href="${safeLandlordLink}" style="color:#013E43; font-weight:700;">${safeLandlordLink}</a></p>
+      <p>After signing in, open your instructions page to read onboarding guides shared by admin.</p>
     `,
-    ctaText: "Open Agent Portal",
-    ctaUrl: loginUrl || `${userClientUrl}/login`,
-    footerNote: "For security, change your password after your first login."
+    ctaText: setupUrl ? "Set Your Password" : "Open Agent Portal",
+    ctaUrl: destination,
+    footerNote: "If you did not expect this invitation, contact RendaHomes support."
   });
 };
+
+exports.agentApplicationRejectedEmail = ({ name, reviewNote = "" }) => buildEmailLayout({
+  title: "RendaHomes Agent Application Update",
+  greeting: `Hello ${escapeHtml(name)}`,
+  intro: "Thank you for your interest in joining the RendaHomes agent network.",
+  body: `<p>We are unable to approve your application at this time.</p>${reviewNote ? `<p><strong>Admin note:</strong> ${escapeHtml(reviewNote)}</p>` : ""}<p>You may contact RendaHomes support if you have questions.</p>`,
+  ctaText: "Visit RendaHomes",
+  ctaUrl: clientUrl,
+  footerNote: "This decision applies to the agent application only; it does not affect any existing RendaHomes account."
+});
 
 exports.agentInstructionEmail = ({ name, title, content }) => {
   return buildEmailLayout({

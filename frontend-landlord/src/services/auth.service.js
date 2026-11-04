@@ -5,6 +5,16 @@ export const registerLandlord = async (payload) => {
   return response.data;
 };
 
+export const verifyEmail = async (payload) => {
+  const response = await api.post("/auth/verify-email", payload);
+  return response.data;
+};
+
+export const resendEmailOtp = async (email) => {
+  const response = await api.post("/auth/resend-email-otp", { email });
+  return response.data;
+};
+
 export const loginLandlord = async (payload) => {
   const response = await api.post("/auth/login", payload);
   return response.data;

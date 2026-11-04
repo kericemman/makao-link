@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { FiImage, FiSend } from "react-icons/fi";
 import { getMyInquiries, markInquiryRead, replyToInquiry } from "../services/alerts.service";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -71,6 +72,9 @@ export default function Inquiries() {
                 <a href={`${portalLinks.main.href}/listings/${active.listing?._id}`} className="mt-3 inline-flex rounded-full bg-[#F0F7F4] px-3 py-2 text-xs font-extrabold text-[#013E43]">
                   Open listing
                 </a>
+                <Link to={`/viewings?listingId=${active.listing?._id}&inquiryType=app&inquiryId=${active._id}`} className="ml-2 mt-3 inline-flex rounded-full bg-[#123D38] px-3 py-2 text-xs font-bold text-white">
+                  Request viewing
+                </Link>
               </div>
             </div>
 

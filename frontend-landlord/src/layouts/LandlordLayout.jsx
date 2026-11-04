@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import DashboardAlert from "../context/DashboardAlert";
 import { getMySubscription } from "../services/payment.service";
+import { getMyOrganizations } from "../services/organization.service";
 import {
   FiHome,
   FiList,
@@ -19,7 +20,8 @@ import {
   FiHelpCircle,
   FiShield,
   FiUsers,
-  FiCalendar
+  FiCalendar,
+  FiTarget
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 
@@ -32,6 +34,7 @@ const LandlordLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [organizationMemberships, setOrganizationMemberships] = useState([]);
 
   const [freshSubscription, setFreshSubscription] = useState(null);
   const [freshUsage, setFreshUsage] = useState({
@@ -58,14 +61,15 @@ const LandlordLayout = () => {
   };
 
   useEffect(() => {
-    fetchFreshSubscription();
-  }, []);
+    if (user?.role === "landlord" || user?.role === "landlord_staff") fetchFreshSubscription();
+    else getMyOrganizations().then((data) => setOrganizationMemberships(data.organizations || [])).catch(() => setOrganizationMemberships([]));
+  }, [user?.role]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setShowUserMenu(false);
 
-    fetchFreshSubscription();
+    if (user?.role === "landlord" || user?.role === "landlord_staff") fetchFreshSubscription();
   }, [location.pathname]);
 
   const subscription = freshSubscription || authSubscription;
@@ -141,6 +145,8 @@ const LandlordLayout = () => {
         { path: "/dashboard", name: "Overview", icon: FiHome, description: "Your account at a glance" },
         { path: "/listings", name: "Properties", icon: FiList, description: "Manage your listings" },
         { path: "/inquiries", name: "Inquiries", icon: FiMessageSquare, description: "Respond to property leads" },
+        { path: "/leads", name: "Leads", icon: FiTarget, description: "Manage customer progression" },
+        { path: "/viewings", name: "Viewings", icon: FiCalendar, description: "Confirm and track appointments" },
         { path: "/stay-requests", name: "Stay requests", icon: FiCalendar, description: "Review short-stay date requests" }
       ]
     },
@@ -159,15 +165,22 @@ const LandlordLayout = () => {
       ]
     }
     ];
+    if (user?.role !== "landlord" && user?.role !== "landlord_staff") {
+      const canReadLeads = organizationMemberships.some((organization) =>
+        organization.membership?.permissions?.includes("inquiries:read")
+      );
+      return canReadLeads ? [{ label: "Workspace", items: [groups[0].items.find((item) => item.path === "/leads")] }] : [];
+    }
     const advanced = ["premium", "pro"].includes(subscription?.plan) && subscription?.status === "active";
     if (advanced && (user?.role === "landlord" || user?.teamPermissions?.includes("reports"))) {
       groups[0].items.push({ path: "/team", name: "Company workspace", icon: FiUsers, description: "Agents, assignments, and reports" });
     }
     if (user?.role === "landlord_staff") return groups.filter((group) => group.label === "Workspace");
     return groups;
-  }, [subscription?.plan, subscription?.status, user?.role, user?.teamPermissions]);
+  }, [subscription?.plan, subscription?.status, user?.role, user?.teamPermissions, organizationMemberships]);
 
   const navigationItems = navigationGroups.flatMap((group) => group.items);
+  const canManageLandlordAccount = user?.role === "landlord" || user?.role === "landlord_staff";
 
   const isActivePath = (path) => {
     if (path === "/dashboard") {
@@ -214,9 +227,9 @@ const LandlordLayout = () => {
             {isSidebarOpen && <div className="mt-4"><div className="flex items-center justify-between gap-2 text-xs"><span className="font-semibold text-white">{planName} plan</span><span className={`capitalize ${isSubscriptionActive ? "text-emerald-200" : "text-amber-200"}`}>{subscription?.status?.replaceAll("_", " ") || "Inactive"}</span></div>{usage?.limit > 0 && <><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15"><div className={`h-full rounded-full transition-all ${isUsageHigh ? "bg-amber-300" : "bg-emerald-300"}`} style={{ width: `${usagePercentage}%` }} /></div><div className="mt-1.5 flex justify-between text-[11px] text-emerald-50/70"><span>{usage.used} of {usage.limit} listing slots</span><span>{usage.remaining} left</span></div></>}</div>}
           </div>
 
-          <button type="button" aria-label="Add property" onClick={(event) => { if (isBlocked) handleAddListingClick(event); else navigate("/listings/new"); setIsMobileMenuOpen(false); }} className={`mx-3 mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#D7F0E1] px-3 text-sm font-semibold text-[#164D3C] transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 ${!isSidebarOpen ? "lg:mx-2 lg:px-0" : ""}`} title={!isSidebarOpen ? "Add property" : undefined}>
+          {canManageLandlordAccount && <button type="button" aria-label="Add property" onClick={(event) => { if (isBlocked) handleAddListingClick(event); else navigate("/listings/new"); setIsMobileMenuOpen(false); }} className={`mx-3 mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#D7F0E1] px-3 text-sm font-semibold text-[#164D3C] transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 ${!isSidebarOpen ? "lg:mx-2 lg:px-0" : ""}`} title={!isSidebarOpen ? "Add property" : undefined}>
             <FiPlusCircle className="shrink-0 text-lg" />{isSidebarOpen && <span>Add property</span>}
-          </button>
+          </button>}
 
           <nav aria-label="Landlord navigation" className="mt-4 flex-1 space-y-5 overflow-y-auto px-3 pb-4">
             {navigationGroups.map((group) => (
@@ -271,7 +284,7 @@ const LandlordLayout = () => {
               </div>
 
               <div className="flex items-center gap-2 sm:gap-3">
-                <Link to="/subscription" className="hidden min-h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex"><FiCreditCard className="text-emerald-800" />{planName} plan</Link>
+                {canManageLandlordAccount && <Link to="/subscription" className="hidden min-h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex"><FiCreditCard className="text-emerald-800" />{planName} plan</Link>}
 
                 <div className="relative">
                   <button

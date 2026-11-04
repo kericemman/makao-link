@@ -128,14 +128,14 @@ export default function Listings() {
                 Use filters for exact matches, or explore category rails below.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            {/* <div className="flex flex-wrap gap-3">
               <a href={landlordListPropertyUrl()} title={portalLinks.landlord.purpose} className="rounded-full border border-[#02BB31] bg-white px-5 py-3 text-sm font-extrabold text-[#013E43] shadow-sm">
                 List a property
               </a>
               <a href={portalLinks.user.href} title={portalLinks.user.purpose} className="rounded-full bg-[#013E43] px-5 py-3 text-sm font-extrabold text-white shadow-sm">
                 Dashboard
               </a>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>
@@ -163,6 +163,7 @@ export default function Listings() {
         />
         <ListingResults
           listings={listings}
+          filters={filters}
           pagination={pagination}
           loading={loading}
           error={error}

@@ -21,7 +21,7 @@ test("landlord KYC responses omit document URLs, asset IDs, and identification n
   assert.deepEqual(safe, { _id: "kyc-id", fullName: "Test Landlord", status: "pending" });
 });
 
-test("admin KYC view signs new authenticated assets with a short expiry", () => {
+test("admin KYC view signs new authenticated Cloudinary assets with a short expiry", async () => {
   const calls = [];
   const cloudinary = {
     utils: {
@@ -32,7 +32,7 @@ test("admin KYC view signs new authenticated assets with a short expiry", () => 
     }
   };
   const now = 1_800_000_000_000;
-  const view = createAdminKycView({
+  const view = await createAdminKycView({
     _id: "kyc-id",
     documentFront: "https://cloudinary.example/authenticated/front",
     documentAssets: {
@@ -50,11 +50,26 @@ test("admin KYC view signs new authenticated assets with a short expiry", () => 
   }]);
 });
 
-test("legacy KYC links remain available to authorized reviewers without changing records", () => {
+test("legacy KYC links remain available to authorized reviewers without changing records", async () => {
   const cloudinary = { utils: { private_download_url: () => assert.fail("legacy asset should not be re-signed") } };
   const legacyUrl = "https://res.cloudinary.com/example/image/upload/legacy-front.jpg";
-  const view = createAdminKycView({ documentFront: legacyUrl }, cloudinary);
+  const view = await createAdminKycView({ documentFront: legacyUrl }, cloudinary);
   assert.equal(view.documentLinks.documentFront, legacyUrl);
+});
+
+test("admin KYC view uses a short-lived private R2 URL and never returns its object key", async () => {
+  const asset = { key: "kyc/private-object", originalName: "identity.pdf", contentType: "application/pdf" };
+  const view = await createAdminKycView({
+    documentFront: "r2-private:kyc/private-object",
+    documentAssets: { documentFront: asset }
+  }, { utils: {} }, Date.now(), async (value) => {
+    assert.equal(value, asset);
+    return "https://private-r2.example/signed";
+  });
+  assert.equal(view.documentLinks.documentFront, "https://private-r2.example/signed");
+  assert.equal(JSON.stringify(view).includes("kyc/private-object"), false);
+  assert.equal(view.documentFront, undefined);
+  assert.equal(view.documentAssets, undefined);
 });
 
 test("Cloudinary upload metadata records the public ID and delivery resource format", () => {
@@ -69,4 +84,7 @@ test("Cloudinary upload metadata records the public ID and delivery resource for
     format: "docx"
   });
   assert.equal(assetMetadataFromFile({ path: "https://example.com/file.jpg" }), undefined);
+  assert.deepEqual(assetMetadataFromFile({ r2Asset: { key: "kyc/key", contentType: "image/jpeg" } }), {
+    key: "kyc/key", contentType: "image/jpeg"
+  });
 });

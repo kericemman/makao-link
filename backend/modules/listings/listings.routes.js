@@ -25,7 +25,9 @@ const {
 
 const { protect } = require("../../middleware/auth.middleware");
 const landlordWorkspace = require("../../middleware/landlordWorkspace.middleware");
-const upload = require("../../middleware/upload.middleware");
+const listingAccess = require("../../middleware/listingAccess.middleware");
+const listingImageLimit = require("../../middleware/listingImageLimit.middleware");
+const upload = require("./listingUpload.middleware");
 
 // public
 router.get("/meta", getListingMeta);
@@ -47,7 +49,8 @@ router.post(
   "/",
   protect,
   landlordWorkspace("listings"),
-  upload.array("images", 10),
+  listingImageLimit,
+  upload,
   createListing
 );
 
@@ -61,7 +64,7 @@ router.get(
 router.get(
   "/landlord/:id",
   protect,
-  landlordWorkspace("listings"),
+  listingAccess("listings:read"),
   getMyListingById
 );
 
@@ -70,27 +73,28 @@ router.get(
 router.put(
   "/:id",
   protect,
-  landlordWorkspace("listings"),
-  upload.array("images", 10),
+  listingAccess("listings:update"),
+  listingImageLimit,
+  upload,
   updateListing
 );
 
 router.patch(
   "/:id/availability",
   protect,
-  landlordWorkspace("listings"),
+  listingAccess("listings:advertise"),
   updateListingAvailability
 );
 
 router.delete(
   "/:id",
   protect,
-  landlordWorkspace("listings"),
+  listingAccess("listings:update"),
   deleteListing
 );
 
-router.patch("/:id/mark-taken", protect, landlordWorkspace("listings"), markListingTaken);
-router.patch("/:id/mark-available", protect, landlordWorkspace("listings"), markListingAvailable);
+router.patch("/:id/mark-taken", protect, listingAccess("listings:advertise"), markListingTaken);
+router.patch("/:id/mark-available", protect, listingAccess("listings:advertise"), markListingAvailable);
 
 router.get("/:id", getListingById);
 

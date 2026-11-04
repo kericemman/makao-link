@@ -30,6 +30,16 @@ const storage = new CloudinaryStorage({
 });
 
 const fileFilter = (req, file, cb) => {
+  if (file.fieldname === "images" && Number.isInteger(req.maxListingImages)) {
+    const count = Number(req.listingImageCount || 0);
+    if (count >= req.maxListingImages) {
+      const error = new Error(`Your plan allows up to ${req.maxListingImages} images per listing.`);
+      error.statusCode = 400;
+      error.code = "LISTING_IMAGE_LIMIT";
+      return cb(error, false);
+    }
+  }
+
   const extension = path.extname(file.originalname).toLowerCase();
   const mimeType = file.mimetype.toLowerCase();
   const imageMimeByExtension = new Map([
@@ -47,11 +57,15 @@ const fileFilter = (req, file, cb) => {
     && mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
   if (isMatchingImage || isPdf || isDocx) {
+    if (file.fieldname === "images") req.listingImageCount = Number(req.listingImageCount || 0) + 1;
     cb(null, true);
   } else {
-    cb(new Error(kycDocumentFields.has(file.fieldname)
+    const error = new Error(kycDocumentFields.has(file.fieldname)
       ? "Use a supported image, PDF, or DOCX file for verification documents"
-      : "Only supported image files are allowed"), false);
+      : "Only supported image files are allowed");
+    error.statusCode = 400;
+    error.code = "UNSUPPORTED_FILE_TYPE";
+    cb(error, false);
   }
 };
 
@@ -64,3 +78,4 @@ const upload = multer({
 });
 
 module.exports = upload;
+module.exports.fileFilter = fileFilter;

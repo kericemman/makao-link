@@ -1,0 +1,21 @@
+const express = require("express");
+const { protect } = require("../../middleware/auth.middleware");
+const requireRole = require("../../middleware/role.middleware");
+const organization = require("./organization.controller");
+const mandate = require("./mandate.controller");
+const authorization = require("../authorization/authorization.controller");
+
+const router = express.Router();
+router.use(protect);
+router.get("/", organization.getMyOrganizations);
+router.get("/:organizationId/members", organization.listMembers);
+router.post("/", requireRole("landlord"), organization.createOrganization);
+router.post("/:organizationId/branches", requireRole("landlord"), organization.addBranch);
+router.post("/:organizationId/members", requireRole("landlord"), organization.addMember);
+router.delete("/:organizationId/members/:membershipId", requireRole("landlord"), organization.revokeMember);
+router.put("/:organizationId/listings/:listingId", requireRole("landlord"), organization.attachListing);
+router.get("/mandates", mandate.getMyMandates);
+router.post("/mandates", requireRole("landlord"), mandate.grantMandate);
+router.delete("/mandates/:id", requireRole("landlord"), mandate.revokeMandate);
+router.put("/users/:userId/roles", requireRole("admin"), authorization.updateUserRoles);
+module.exports = router;

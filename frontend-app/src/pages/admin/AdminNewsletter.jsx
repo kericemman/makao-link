@@ -39,7 +39,7 @@ const AdminNewsletterSubscribersPage = () => {
       setLoading(true);
       const data = await getNewsletterSubscribers();
       setSubscribers(data.subscribers || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load subscribers", {
         style: { background: "#013E43", color: "#fff" }
       });
@@ -75,7 +75,6 @@ const AdminNewsletterSubscribersPage = () => {
 
     // Date range filter
     if (dateRange !== "all") {
-      const now = new Date();
       const filterDate = new Date();
       
       switch(dateRange) {
@@ -109,7 +108,7 @@ const AdminNewsletterSubscribersPage = () => {
       fetchSubscribers();
       setShowUnsubscribeModal(false);
       setSelectedSubscriber(null);
-    } catch (error) {
+    } catch {
       toast.error("Failed to unsubscribe", {
         style: { background: "#013E43", color: "#fff" }
       });
@@ -125,7 +124,7 @@ const AdminNewsletterSubscribersPage = () => {
       fetchSubscribers();
       setShowDeleteModal(false);
       setSelectedSubscriber(null);
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete subscriber", {
         style: { background: "#013E43", color: "#fff" }
       });
@@ -155,7 +154,7 @@ const AdminNewsletterSubscribersPage = () => {
       toast.success("Subscribers exported successfully", {
         style: { background: "#02BB31", color: "#fff" }
       });
-    } catch (error) {
+    } catch {
       toast.error("Failed to export subscribers", {
         style: { background: "#013E43", color: "#fff" }
       });

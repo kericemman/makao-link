@@ -15,7 +15,7 @@ exports.syncWebsiteInquiriesToAppAlertsForUser = async (user) => {
   const synced = [];
 
   for (const inquiry of websiteInquiries) {
-    const existing = await AppAlert.findOne({
+    const existing = await AppAlert.findOne({ websiteInquiry: inquiry._id }) || await AppAlert.findOne({
       listing: inquiry.listing,
       landlord: inquiry.landlord,
       user: user._id,
@@ -23,6 +23,10 @@ exports.syncWebsiteInquiriesToAppAlertsForUser = async (user) => {
     });
 
     if (existing) {
+      if (!existing.websiteInquiry) {
+        existing.websiteInquiry = inquiry._id;
+        await existing.save();
+      }
       synced.push(existing);
       continue;
     }
@@ -31,6 +35,7 @@ exports.syncWebsiteInquiriesToAppAlertsForUser = async (user) => {
       listing: inquiry.listing,
       landlord: inquiry.landlord,
       user: user._id,
+      websiteInquiry: inquiry._id,
       message: inquiry.message,
       readByUser: true,
       readByLandlord: false

@@ -25,7 +25,7 @@ const sendEmail = async ({ to, subject, html }) => {
     return;
   }
 
-  await resend.emails.send({
+  return resend.emails.send({
     from: `RendaHomes <${process.env.EMAIL_FROM || "hello@rendahomes.com"}>`,
     to,
     subject,

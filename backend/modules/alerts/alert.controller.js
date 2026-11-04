@@ -1,6 +1,10 @@
 const AppAlert = require("./alert.model");
 const Listing = require("../listings/listings.model");
 const { syncWebsiteInquiriesToAppAlertsForUser } = require("../inquiries/inquiryBridge.service");
+const { ensureLead } = require("../leads/lead.service");
+const { withAuthorizationTransaction } = require("../authorization/transaction.service");
+const Lead = require("../leads/lead.model");
+const { canTransitionLead } = require("../leads/lead.service");
 
 const alertPopulate = [
   {
@@ -53,13 +57,17 @@ exports.createListingInquiry = async (req, res, next) => {
       });
     }
 
-    const inquiry = await AppAlert.create({
-      listing: listing._id,
-      landlord: listing.landlord,
-      user: req.user._id,
-      message,
-      readByUser: true,
-      readByLandlord: false
+    const inquiry = await withAuthorizationTransaction(async (session) => {
+      const [created] = await AppAlert.create([{
+        listing: listing._id,
+        landlord: listing.landlord,
+        user: req.user._id,
+        message,
+        readByUser: true,
+        readByLandlord: false
+      }], { session });
+      await ensureLead({ sourceModel: "AppAlert", sourceRecord: created._id, listing: listing._id, advertiser: listing.landlord, customer: req.user._id, sourceChannel: "user_portal", session });
+      return created;
     });
 
     const populatedInquiry = await populateAlert(AppAlert.findById(inquiry._id));
@@ -109,7 +117,7 @@ exports.replyToAlert = async (req, res, next) => {
   try {
     const { message } = req.body;
 
-    if (!message) {
+    if (typeof message !== "string" || !message.trim() || message.length > 3000) {
       return res.status(400).json({ message: "Reply message is required" });
     }
 
@@ -126,16 +134,21 @@ exports.replyToAlert = async (req, res, next) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    inquiry.replies.push({
-      sender: req.user._id,
-      senderRole: req.user.role,
-      message
+    await withAuthorizationTransaction(async (session) => {
+      const current = await AppAlert.findOne({ _id: inquiry._id, $or: [{ user: req.user._id }, { landlord: req.user._id }] }).session(session);
+      if (!current) { const error = new Error("Inquiry not found."); error.statusCode = 404; throw error; }
+      current.replies.push({ sender: req.user._id, senderRole: isUser ? "user" : req.user.role === "admin" ? "admin" : "landlord", message: message.trim() });
+      current.readByUser = isUser;
+      current.readByLandlord = isLandlord;
+      await current.save({ session });
+      if (isLandlord) {
+        const lead = await Lead.findOne({ sourceModel: "AppAlert", sourceRecord: current._id }).session(session);
+        if (lead && canTransitionLead(lead.stage, "contacted")) {
+          lead.stage = "contacted";
+          await lead.save({ session });
+        }
+      }
     });
-
-    inquiry.readByUser = isUser;
-    inquiry.readByLandlord = isLandlord;
-
-    await inquiry.save();
 
     const populatedInquiry = await populateAlert(AppAlert.findById(inquiry._id));
 

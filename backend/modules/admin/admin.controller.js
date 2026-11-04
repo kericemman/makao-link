@@ -26,8 +26,10 @@ const AppUpdate = require("../app/models/appUpdate.model");
 const AdminActivity = require("./adminActivity.model");
 const { recordAdminActivity } = require("./adminActivity.service");
 const { queueStatusNotificationSafely } = require("../renda-assistant/notifications.service");
+const { serializeListingImages, promoteStagedImages, deletePublicImages, deletePrivateImages } = require("../listings/listingMedia.storage");
 
 const LISTING_TRASH_RETENTION_DAYS = 30;
+const agentRoleFilter = { $or: [{ role: "agent" }, { roles: "agent" }] };
 
 const purgeExpiredDeletedListings = async () => {
   await Listing.deleteMany({
@@ -42,12 +44,13 @@ exports.getPendingListings = async (req, res, next) => {
     await purgeExpiredDeletedListings();
 
     const listings = await Listing.find({ status: "pending", isDeleted: { $ne: true } })
+      .select("+imageAssets")
       .populate("landlord", "name email phone")
       .sort({ createdAt: -1 });
 
     res.json({
       success: true,
-      listings
+      listings: await Promise.all(listings.map(serializeListingImages))
     });
   } catch (error) {
     next(error);
@@ -55,13 +58,25 @@ exports.getPendingListings = async (req, res, next) => {
 };
 
 exports.approveListing = async (req, res, next) => {
+  let publicKeys = [];
+  let privateKeys = [];
+  let listingSaved = false;
   try {
-    const listing = await Listing.findById(req.params.id).populate("landlord");
+    const listing = await Listing.findById(req.params.id).select("+imageAssets").populate("landlord");
 
     if (!listing) {
       return res.status(404).json({ message: "Listing not found" });
     }
 
+    const promoted = await promoteStagedImages(listing._id, listing.images, listing.imageAssets || []);
+    publicKeys = promoted.publicKeys || [];
+    privateKeys = promoted.privateKeys || [];
+    listing.images = promoted.images;
+    listing.imageAssets = promoted.assets.map((asset) => {
+      const plain = typeof asset.toObject === "function" ? asset.toObject() : { ...asset };
+      delete plain.stagingKey;
+      return plain;
+    });
     listing.status = "approved";
     listing.isActive = true;
     listing.unlistReason = null;
@@ -70,6 +85,8 @@ exports.approveListing = async (req, res, next) => {
     listing.reviewedAt = new Date();
     listing.availabilityCheckedAt = listing.availabilityCheckedAt || new Date();
     await listing.save();
+    listingSaved = true;
+    await deletePrivateImages(privateKeys);
     await queueStatusNotificationSafely({ userId: listing.landlord?._id, eventType: "listing_approved", entityId: listing._id, eventVersion: listing.reviewedAt.getTime() });
     await recordAdminActivity({
       eventType: "listing_approved",
@@ -96,16 +113,17 @@ exports.approveListing = async (req, res, next) => {
     res.json({
       success: true,
       message: "Listing approved",
-      listing
+      listing: await serializeListingImages(listing)
     });
   } catch (error) {
+    if (!listingSaved) await deletePublicImages(publicKeys);
     next(error);
   }
 };
 
 exports.rejectListing = async (req, res, next) => {
   try {
-    const listing = await Listing.findById(req.params.id).populate("landlord");
+    const listing = await Listing.findById(req.params.id).select("+imageAssets").populate("landlord");
 
     if (!listing) {
       return res.status(404).json({ message: "Listing not found" });
@@ -143,7 +161,7 @@ exports.rejectListing = async (req, res, next) => {
     res.json({
       success: true,
       message: "Listing rejected",
-      listing
+      listing: await serializeListingImages(listing)
     });
   } catch (error) {
     next(error);
@@ -187,7 +205,7 @@ exports.getAdminSummary = async (req, res, next) => {
       Kyc.countDocuments({ status: "pending" }),
       ListingReport.countDocuments({ status: { $in: ["new", "reviewing"] } }),
       PartnerApplication.countDocuments({ status: "pending_review" }),
-      User.countDocuments({ role: "agent", agentStatus: "active" }),
+      User.countDocuments({ $and: [agentRoleFilter, { agentStatus: "active" }] }),
       StayBooking.countDocuments({ status: "requested" }),
       HelpRequest.countDocuments({ status: "new" }),
       AppTicket.countDocuments({ status: { $in: ["open", "reviewing"] } }),
@@ -322,8 +340,8 @@ exports.getAdminCommercialOverview = async (req, res, next) => {
       Subscription.aggregate([
         { $group: { _id: { plan: "$plan", status: "$status" }, count: { $sum: 1 } } }
       ]),
-      User.countDocuments({ role: "agent" }),
-      User.countDocuments({ role: "agent", agentStatus: "active" }),
+      User.countDocuments(agentRoleFilter),
+      User.countDocuments({ $and: [agentRoleFilter, { agentStatus: "active" }] }),
       User.aggregate([
         { $match: { role: "landlord", onboardedByAgent: { $ne: null } } },
         { $group: { _id: "$onboardedByAgent", count: { $sum: 1 } } }
@@ -342,7 +360,7 @@ exports.getAdminCommercialOverview = async (req, res, next) => {
         { $match: { "payer.role": "landlord", "payer.onboardedByAgent": { $ne: null } } },
         { $group: { _id: "$payer.onboardedByAgent", amount: { $sum: "$amount" } } }
       ]),
-      User.find({ role: "agent" }).select("name agentCode agentStatus commissionRate").lean(),
+      User.find(agentRoleFilter).select("name agentCode agentStatus commissionRate").lean(),
       WhatsAppListingAddon.aggregate([
         { $group: { _id: "$status", count: { $sum: 1 } } }
       ]),
@@ -493,7 +511,7 @@ exports.getRecentActivity = async (req, res, next) => {
       AppTicket.find().sort({ createdAt: -1 }).limit(5).populate("user", "name"),
       Kyc.find({ status: "pending" }).sort({ createdAt: -1 }).limit(5).populate("landlord", "name"),
       PartnerApplication.find({ status: "pending_review" }).sort({ createdAt: -1 }).limit(5),
-      User.find({ role: "agent" }).sort({ createdAt: -1 }).limit(5),
+      User.find(agentRoleFilter).sort({ createdAt: -1 }).limit(5),
       AppUpdate.find().sort({ updatedAt: -1 }).limit(5)
     ]);
 
@@ -831,10 +849,12 @@ exports.getListingHistory = async (req, res, next) => {
     }
 
     const listings = await Listing.find(filter)
+      .select("+imageAssets")
       .populate("landlord", "name email phone")
       .sort({ updatedAt: -1, createdAt: -1 });
 
-    const formattedListings = listings.map((listing) => ({
+    const safeListings = await Promise.all(listings.map(serializeListingImages));
+    const formattedListings = safeListings.map((listing) => ({
       _id: listing._id,
       title: listing.title,
       description: listing.description,
@@ -1122,6 +1142,7 @@ exports.getAllListings = async (req, res, next) => {
     }
 
     const listings = await Listing.find(filter)
+      .select("+imageAssets")
       .populate("landlord", "name email phone")
       .populate("deletedByAdmin", "name email")
       .populate("reviewedByAdmin", "name email")
@@ -1129,7 +1150,7 @@ exports.getAllListings = async (req, res, next) => {
 
     res.json({
       success: true,
-      listings
+      listings: await Promise.all(listings.map(serializeListingImages))
     });
   } catch (error) {
     next(error);
@@ -1147,7 +1168,7 @@ exports.updateListingTrust = async (req, res, next) => {
       markAvailabilityChecked
     } = req.body;
 
-    const listing = await Listing.findById(req.params.id);
+    const listing = await Listing.findById(req.params.id).select("+imageAssets");
 
     if (!listing) {
       return res.status(404).json({ message: "Listing not found" });
@@ -1202,7 +1223,7 @@ exports.updateListingTrust = async (req, res, next) => {
     res.json({
       success: true,
       message: "Listing trust details updated",
-      listing
+      listing: await serializeListingImages(listing)
     });
   } catch (error) {
     next(error);
@@ -1211,7 +1232,7 @@ exports.updateListingTrust = async (req, res, next) => {
 
 exports.moveListingToTrash = async (req, res, next) => {
   try {
-    const listing = await Listing.findById(req.params.id);
+    const listing = await Listing.findById(req.params.id).select("+imageAssets");
 
     if (!listing) {
       return res.status(404).json({ message: "Listing not found" });
@@ -1245,7 +1266,7 @@ exports.moveListingToTrash = async (req, res, next) => {
     res.json({
       success: true,
       message: "Listing moved to trash and removed from public listings",
-      listing
+      listing: await serializeListingImages(listing)
     });
   } catch (error) {
     next(error);
@@ -1257,7 +1278,7 @@ exports.restoreListingFromTrash = async (req, res, next) => {
     const listing = await Listing.findOne({
       _id: req.params.id,
       isDeleted: true
-    });
+    }).select("+imageAssets");
 
     if (!listing) {
       return res.status(404).json({ message: "Trash listing not found" });

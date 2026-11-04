@@ -1,15 +1,31 @@
 const Inquiry = require("./inquiry.model");
 const Listing = require("../listings/listings.model");
+const OrganizationMembership = require("../organizations/organizationMembership.model");
 const User = require("../users/user.model");
+const { ensureLead } = require("../leads/lead.service");
+const { withAuthorizationTransaction } = require("../authorization/transaction.service");
+const Lead = require("../leads/lead.model");
+const { canTransitionLead } = require("../leads/lead.service");
 const sendEmail = require("../../utils/sendEmail");
 const { syncWebsiteInquiriesToAppAlertsForUser } = require("./inquiryBridge.service");
 const { recordAdminActivity } = require("../admin/adminActivity.service");
 const workspaceOwnerId = (req) => req.landlordOwnerId || req.user._id;
 const inquiryWorkspaceFilter = (req, extra = {}) => ({
   landlord: workspaceOwnerId(req),
-  ...(req.user.role === "landlord_staff" && req.user.teamRole === "agent" ? { assignedAgent: req.user._id } : {}),
+  ...(req.user.role === "landlord_staff" && req.user.teamRole === "agent" || req.organizationMembership?.role === "agent" ? { assignedAgent: req.user._id } : {}),
   ...extra
 });
+const scopedInquiryFilter = async (req, extra = {}) => {
+  const filter = inquiryWorkspaceFilter(req, extra);
+  if (req.landlordOrganization) {
+    const listings = await Listing.find({
+      organization: req.landlordOrganization._id,
+      ...(req.organizationMembership?.branchIds?.length ? { branch: { $in: req.organizationMembership.branchIds } } : {})
+    }).distinct("_id");
+    filter.listing = { $in: listings };
+  }
+  return filter;
+};
 const {
   inquiryReceivedEmail,
   inquiryConfirmationEmail
@@ -30,13 +46,18 @@ exports.createInquiry = async (req, res, next) => {
       return res.status(404).json({ message: "Listing not found" });
     }
 
-    const inquiry = await Inquiry.create({
-      listing: listing._id,
-      landlord: listing.landlord._id,
-      name,
-      email,
-      phone,
-      message
+    const matchingUser = await User.findOne({ email: email.toLowerCase() }).select("_id");
+    const inquiry = await withAuthorizationTransaction(async (session) => {
+      const [createdInquiry] = await Inquiry.create([{
+        listing: listing._id,
+        landlord: listing.landlord._id,
+        name,
+        email,
+        phone,
+        message
+      }], { session });
+      await ensureLead({ sourceModel: "Inquiry", sourceRecord: createdInquiry._id, listing: listing._id, advertiser: listing.landlord._id, customer: matchingUser?._id || null, sourceChannel: "website", session });
+      return createdInquiry;
     });
 
     await recordAdminActivity({
@@ -48,8 +69,6 @@ exports.createInquiry = async (req, res, next) => {
       entityType: "inquiry",
       entityId: String(inquiry._id)
     });
-
-    const matchingUser = await User.findOne({ email: email.toLowerCase() });
 
     if (matchingUser) {
       await syncWebsiteInquiriesToAppAlertsForUser(matchingUser);
@@ -89,7 +108,7 @@ exports.createInquiry = async (req, res, next) => {
 
 exports.getLandlordInquiries = async (req, res, next) => {
   try {
-    const inquiries = await Inquiry.find(inquiryWorkspaceFilter(req))
+    const inquiries = await Inquiry.find(await scopedInquiryFilter(req))
       .populate("listing", "title location price images purpose portfolioName portfolioCategory")
       .populate("assignedAgent", "name teamRole")
       .sort({ createdAt: -1 });
@@ -111,15 +130,29 @@ exports.updateInquiryStatus = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid inquiry status" });
     }
 
-    const inquiry = await Inquiry.findOneAndUpdate(
-      { _id: req.params.id, ...inquiryWorkspaceFilter(req) },
-      { status },
-      { new: true }
-    ).populate("listing", "title location price images");
+    const inquiry = await withAuthorizationTransaction(async (session) => {
+      const updated = await Inquiry.findOneAndUpdate(
+        await scopedInquiryFilter(req, { _id: req.params.id }),
+        { status },
+        { new: true, session }
+      );
+      if (updated) {
+        const stage = status === "new" ? "new" : status === "contacted" ? "contacted" : "closed_unsuccessful";
+        const lead = await Lead.findOne({ sourceModel: "Inquiry", sourceRecord: updated._id }).session(session);
+        if (lead && lead.stage !== stage) {
+          if (!canTransitionLead(lead.stage, stage)) { const error = new Error("This inquiry has progressed beyond the requested legacy status."); error.statusCode = 409; throw error; }
+          lead.stage = stage;
+          await lead.save({ session });
+        }
+      }
+      return updated;
+    });
 
     if (!inquiry) {
       return res.status(404).json({ message: "Inquiry not found" });
     }
+
+    await inquiry.populate("listing", "title location price images");
 
     res.json({
       success: true,

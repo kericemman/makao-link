@@ -43,6 +43,8 @@ const listingDraftSchema = new mongoose.Schema({
   conversation: { type: mongoose.Schema.Types.ObjectId, ref: "RendaAssistantConversation", required: true, index: true },
   landlord: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  organization: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", default: null, index: true },
+  branch: { type: mongoose.Schema.Types.ObjectId, default: null },
   fields: { type: fieldsSchema, default: () => ({}) },
   status: { type: String, enum: ["collecting", "submitted", "cancelled"], default: "collecting", index: true },
   revision: { type: Number, min: 0, default: 0 },

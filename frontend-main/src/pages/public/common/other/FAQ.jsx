@@ -164,13 +164,13 @@ function FAQ() {
       id: 20,
       category: "account",
       question: "Is my personal information secure?",
-      answer: "Absolutely! We use 256-bit SSL encryption to protect your data. Your personal information is never shared with third parties without your consent. We're committed to maintaining the highest security standards."
+      answer: "We use technical and organizational safeguards, including account authentication, role-based access, and restricted access to private documents. Some information is shared with service providers or with a landlord or authorized agent when needed for a feature you choose. See our Privacy Policy for details. No online service can guarantee complete security."
     },
     {
       id: 21,
       category: "account",
       question: "Can I delete my account?",
-      answer: "Yes, you can delete your account at any time from your account settings. Please note that this action is permanent and cannot be undone. All your data will be removed from our systems within 30 days."
+      answer: "You can request account closure by contacting support. Some records may need to be retained for legal, payment, security, or dispute-resolution purposes. See our Privacy Policy for how to make a privacy request and how retention is handled."
     },
     {
       id: 22,

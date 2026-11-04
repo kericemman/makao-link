@@ -5,12 +5,13 @@ import { useAuth } from "../context/AuthContext";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 import { socialLoginUser } from "../services/auth.service";
 import { getApiErrorMessage } from "../utils/apiError";
+import { safeSignupDestination } from "../utils/navigation";
 
 export default function Signup() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "+254", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -23,7 +24,7 @@ export default function Signup() {
     try {
       const data = await register(form);
       if (data.requiresVerification) {
-        const next = params.get("next");
+        const next = safeSignupDestination(params.get("next"));
         const nextParam = next ? `&next=${encodeURIComponent(next)}` : "";
         navigate(`/verify-email?email=${encodeURIComponent(data.email || form.email)}${nextParam}`);
       }
@@ -35,12 +36,13 @@ export default function Signup() {
   };
 
   const continueWithGoogle = async (idToken) => {
+    const phone = form.phone.replace(/[\s().-]/g, "");
     setLoading(true);
     setError("");
     try {
-      const data = await socialLoginUser(idToken);
+      const data = await socialLoginUser(idToken, phone);
       if (data.requiresVerification) {
-        const next = params.get("next");
+        const next = safeSignupDestination(params.get("next"));
         const nextParam = next ? `&next=${encodeURIComponent(next)}` : "";
         navigate(`/verify-email?email=${encodeURIComponent(data.email)}${nextParam}`);
       }
@@ -56,12 +58,13 @@ export default function Signup() {
       <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#02BB31]">Create account</p>
       <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-[#013E43]">Start tracking your inquiries and viewings.</h1>
       <p className="mt-3 text-sm font-semibold leading-6 text-[#065A57]">Create a tenant account for replies, viewing plans, profile updates, and support.</p>
+      {params.get("next")?.startsWith("/agent/") && <div role="note" className="mt-4 border-l-2 border-emerald-700 bg-emerald-50 px-3 py-2 text-sm leading-5 text-emerald-950"><p>Agent accounts are approved by RendaHomes admin. Sign in with an existing agent account, or apply to become an agent.</p><Link to="/agent/apply" className="mt-1 inline-block font-semibold underline">Apply to become an agent</Link></div>}
       <GoogleSignInButton onCredential={continueWithGoogle} disabled={loading} />
       {import.meta.env.VITE_GOOGLE_CLIENT_ID ? <p className="mt-4 text-center text-xs font-bold text-[#065A57]">or continue with email</p> : null}
       <form onSubmit={submit} className="mt-6 space-y-4">
         <Input icon={FiUser} label="Name" placeholder="Your full name" value={form.name} onChange={(name) => setForm((f) => ({ ...f, name }))} />
         <Input icon={FiMail} label="Email" type="email" placeholder="you@example.com" value={form.email} onChange={(email) => setForm((f) => ({ ...f, email }))} />
-        <Input icon={FiPhone} label="Phone" type="tel" placeholder="+254 700 000 000" value={form.phone} onChange={(phone) => setForm((f) => ({ ...f, phone }))} />
+        <Input icon={FiPhone} label="Phone" type="tel" autoComplete="tel" maxLength={16} placeholder="+254 700 000 000" value={form.phone} onChange={(phone) => setForm((f) => ({ ...f, phone }))} />
         <Input
           icon={FiLock}
           label="Password"
@@ -82,7 +85,7 @@ export default function Signup() {
         </button>
       </form>
       <p className="mt-5 text-sm font-bold text-[#065A57]">
-        Already have an account? <Link to={params.get("next") ? `/login?next=${encodeURIComponent(params.get("next"))}` : "/login"} className="text-[#013E43]">Sign in</Link>
+        Already have an account? <Link to={safeSignupDestination(params.get("next")) ? `/login?next=${encodeURIComponent(safeSignupDestination(params.get("next")))}` : "/login"} className="text-[#013E43]">Sign in</Link>
       </p>
     </section>
   );

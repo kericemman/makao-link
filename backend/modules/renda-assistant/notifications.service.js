@@ -12,7 +12,13 @@ const STATUS_TEXT = Object.freeze({
   stay_confirmed: "RendaHomes update: your short-stay request has been confirmed by the host.",
   stay_declined: "RendaHomes update: your short-stay request was declined by the host. Contact the host to discuss alternatives.",
   stay_cancelled: "RendaHomes update: your short-stay request has been cancelled.",
-  stay_completed: "RendaHomes update: your short stay is marked complete."
+  stay_completed: "RendaHomes update: your short stay is marked complete.",
+  viewing_requested: "RendaHomes update: a customer has requested a property viewing. Sign in to review and respond.",
+  viewing_confirmed: "RendaHomes update: a property viewing time has been confirmed. Sign in to see the appointment details.",
+  viewing_declined: "RendaHomes update: a property viewing request was declined. Sign in to review the response.",
+  viewing_reschedule_proposed: "RendaHomes update: a new time has been proposed for a property viewing. Sign in to respond.",
+  viewing_cancelled: "RendaHomes update: a property viewing has been cancelled. Sign in to see the details.",
+  viewing_completed: "RendaHomes update: a property viewing has been marked complete. Sign in to view the outcome."
 });
 
 const normalizeKenyanWhatsAppContact = (phone) => {
