@@ -486,15 +486,17 @@ const LandlordListings = () => {
                     <td className="px-6 py-4">{getAvailabilityBadge(listing.availability)}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <Link
-                          to={`/listings/${listing._id}`}
+                        <a
+                          href={`${mainUrl.replace(/\/$/, "")}/listings/${listing._id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="p-2 text-[#126542] hover:bg-[#F8FAFC] rounded-lg transition-colors"
                           title="View Details"
                         >
                           <FiEye />
-                        </Link>
+                        </a>
                         <Link
-                          to={`/listings/edit/${listing._id}`}
+                          to={`/listings/${listing._id}/edit`}
                           className="p-2 text-[#475569] hover:bg-[#F8FAFC] rounded-lg transition-colors"
                           title="Edit"
                         >

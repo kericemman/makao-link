@@ -603,7 +603,7 @@ exports.getMyListings = async (req, res, next) => {
 
     res.json({
       success: true,
-      listings: await Promise.all(listings.map(serializeListingImages))
+      listings: await Promise.all(listings.map((listing) => serializeListingImages(listing)))
     });
   } catch (error) {
     next(error);

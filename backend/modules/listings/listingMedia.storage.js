@@ -112,6 +112,7 @@ const privateUrlFor = async (key) => {
 };
 
 const serializeListingImages = async (record, signPrivateUrl = privateUrlFor) => {
+  if (typeof signPrivateUrl !== "function") signPrivateUrl = privateUrlFor;
   const listing = typeof record?.toObject === "function" ? record.toObject() : { ...record };
   const images = Array.isArray(listing.images) ? listing.images : [];
   const assets = Array.isArray(listing.imageAssets) ? listing.imageAssets : [];

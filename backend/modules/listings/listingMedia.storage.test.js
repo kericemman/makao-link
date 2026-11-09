@@ -70,3 +70,9 @@ test("landlord preview signs private staged images without exposing storage meta
   assert.equal("imageAssets" in serialized, false);
   assert.equal(JSON.stringify(serialized).includes("listing-staging/owner/key.jpg"), false);
 });
+
+test("listing arrays can serialize with map without treating the index as a signer", async () => {
+  const listings = [{ images: ["https://media.example.test/one.jpg"] }];
+  const serialized = await Promise.all(listings.map(serializeListingImages));
+  assert.equal(serialized[0].images[0], listings[0].images[0]);
+});

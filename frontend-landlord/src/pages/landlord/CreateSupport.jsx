@@ -84,7 +84,7 @@ function CreateTicket() {
         duration: 5000
       })
 
-      navigate("/dashboard/support")
+      navigate("/support")
 
     } catch (error) {
       toast.error(
@@ -143,7 +143,7 @@ function CreateTicket() {
       <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
         <div className="flex items-center space-x-4">
           <Link
-            to="/dashboard/support"
+            to="/support"
             className="p-2 hover:bg-[#F8FAFC] rounded-lg transition-colors"
           >
             <FiArrowLeft className="text-xl text-[#475569]" />
@@ -290,7 +290,7 @@ function CreateTicket() {
               {/* Submit Button */}
               <div className="flex justify-end space-x-3 pt-4 border-t border-[#E2E8F0]">
                 <Link
-                  to="/dashboard/support"
+                  to="/support"
                   className="px-6 py-3 text-[#475569] border border-[#E2E8F0] rounded-lg hover:bg-[#F8FAFC] transition-colors"
                 >
                   Cancel

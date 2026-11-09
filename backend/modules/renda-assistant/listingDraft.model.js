@@ -40,7 +40,7 @@ const fieldsSchema = new mongoose.Schema({
 }, { _id: false, strict: "throw" });
 
 const listingDraftSchema = new mongoose.Schema({
-  conversation: { type: mongoose.Schema.Types.ObjectId, ref: "RendaAssistantConversation", required: true, index: true },
+  conversation: { type: mongoose.Schema.Types.ObjectId, ref: "RendaAssistantConversation", required: true },
   landlord: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   organization: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", default: null, index: true },

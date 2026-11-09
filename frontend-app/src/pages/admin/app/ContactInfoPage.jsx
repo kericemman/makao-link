@@ -35,6 +35,17 @@ const initialForm = {
   }
 };
 
+const safeSocialUrl = (value) => {
+  const candidate = String(value || "").trim();
+  if (!candidate) return "";
+  try {
+    const url = new URL(/^[a-z][a-z\d+.-]*:/i.test(candidate) ? candidate : `https://${candidate}`);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+};
+
 export default function ContactInfoPage() {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
@@ -324,28 +335,28 @@ export default function ContactInfoPage() {
               <div>
                 <h3 className="text-sm font-semibold text-[#013E43] mb-3">Social Media</h3>
                 <div className="flex flex-wrap gap-3">
-                  {form.socials.facebook && (
-                    <a href="#" className="p-2 bg-white rounded-lg text-[#1877F2] hover:bg-[#F1F7F3] transition-colors">
+                  {safeSocialUrl(form.socials.facebook) && (
+                    <a href={safeSocialUrl(form.socials.facebook)} target="_blank" rel="noopener noreferrer" aria-label="Open Facebook" className="p-2 bg-white rounded-lg text-[#1877F2] hover:bg-[#F1F7F3] transition-colors">
                       <FiFacebook className="text-xl" />
                     </a>
                   )}
-                  {form.socials.instagram && (
-                    <a href="#" className="p-2 bg-white rounded-lg text-[#E4405F] hover:bg-[#F1F7F3] transition-colors">
+                  {safeSocialUrl(form.socials.instagram) && (
+                    <a href={safeSocialUrl(form.socials.instagram)} target="_blank" rel="noopener noreferrer" aria-label="Open Instagram" className="p-2 bg-white rounded-lg text-[#E4405F] hover:bg-[#F1F7F3] transition-colors">
                       <FiInstagram className="text-xl" />
                     </a>
                   )}
-                  {form.socials.linkedin && (
-                    <a href="#" className="p-2 bg-white rounded-lg text-[#0A66C2] hover:bg-[#F1F7F3] transition-colors">
+                  {safeSocialUrl(form.socials.linkedin) && (
+                    <a href={safeSocialUrl(form.socials.linkedin)} target="_blank" rel="noopener noreferrer" aria-label="Open LinkedIn" className="p-2 bg-white rounded-lg text-[#0A66C2] hover:bg-[#F1F7F3] transition-colors">
                       <FiLinkedin className="text-xl" />
                     </a>
                   )}
-                  {form.socials.x && (
-                    <a href="#" className="p-2 bg-white rounded-lg text-[#1DA1F2] hover:bg-[#F1F7F3] transition-colors">
+                  {safeSocialUrl(form.socials.x) && (
+                    <a href={safeSocialUrl(form.socials.x)} target="_blank" rel="noopener noreferrer" aria-label="Open X" className="p-2 bg-white rounded-lg text-[#1DA1F2] hover:bg-[#F1F7F3] transition-colors">
                       <FiTwitter className="text-xl" />
                     </a>
                   )}
-                  {form.socials.tiktok && (
-                    <a href="#" className="p-2 bg-white rounded-lg text-black hover:bg-[#F1F7F3] transition-colors">
+                  {safeSocialUrl(form.socials.tiktok) && (
+                    <a href={safeSocialUrl(form.socials.tiktok)} target="_blank" rel="noopener noreferrer" aria-label="Open TikTok" className="p-2 bg-white rounded-lg text-black hover:bg-[#F1F7F3] transition-colors">
                       <FaTiktok className="text-xl" />
                     </a>
                   )}
