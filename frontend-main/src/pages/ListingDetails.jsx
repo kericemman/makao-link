@@ -97,13 +97,13 @@ export default function ListingDetails() {
   const seoDescription = listing
     ? seoText(`${formatPrice(listing.price, listing.purpose)}. ${listing.description || ""}`, 155)
     : "View verified RendaHomes property details, images, location, landlord contact, and related listings.";
-  const seoImage = listing?.images?.find(Boolean);
+  const seoImage = listing?.images?.map(normalizeImage).find(Boolean);
 
   useSeo({
     title: seoTitle,
     description: seoDescription,
     path: listing?._id ? `/listings/${listing._id}` : `/listings/${id}`,
-    image: typeof seoImage === "string" ? seoImage : seoImage?.url,
+    image: seoImage,
     type: "product",
     jsonLd: buildListingJsonLd(listing)
   });
