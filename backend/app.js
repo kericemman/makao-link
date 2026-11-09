@@ -37,9 +37,12 @@ const organizationRoutes = require("./modules/organizations/organization.routes"
 const propertyRequestRoutes = require("./modules/propertyRequests/propertyRequest.routes");
 const viewingRoutes = require("./modules/viewings/viewing.routes");
 const leadRoutes = require("./modules/leads/lead.routes");
+const whatchimpWebhookRoutes = require("./modules/webhooks/whatchimpWebhook.routes");
+const { redactWebhookToken } = require("./modules/webhooks/whatchimpWebhook.logging");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
+morgan.token("url", (req) => redactWebhookToken(req.originalUrl || req.url));
 const devOrigins = isProduction
   ? []
   : [
@@ -86,7 +89,10 @@ app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(helmet());
 app.use(morgan(isProduction ? "combined" : "dev"));
-app.use(generalApiLimiter);
+app.use((req, res, next) => {
+  if (/^\/api\/webhooks\/whatchimp\/[^/]+$/.test(req.path)) return next();
+  return generalApiLimiter(req, res, next);
+});
 
 /**
  * IMPORTANT:
@@ -96,6 +102,9 @@ app.use(
   "/api/payments/paystack-webhook",
   express.raw({ type: "application/json" })
 );
+
+// Keep raw bytes bounded for the token-authenticated, receive-only diagnostic handler.
+app.use("/api/webhooks", whatchimpWebhookRoutes());
 
 app.use(express.json({ limit: "200kb" }));
 app.use(express.urlencoded({ extended: true, limit: "200kb" }));
