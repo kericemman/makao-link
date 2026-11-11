@@ -8,6 +8,9 @@ const appRoot = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  resolve: {
+    dedupe: ["react", "react-dom"]
+  },
   server: {
     port: 5177,
     strictPort: true,
