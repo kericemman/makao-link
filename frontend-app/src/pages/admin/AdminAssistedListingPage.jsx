@@ -37,7 +37,16 @@ export default function AdminAssistedListingPage() {
     Promise.all([api.get("/listings/meta"), api.get("/admin/assisted-listing-drafts")])
       .then(([metaResponse, draftResponse]) => {
         if (!active) return;
-        setMeta(metaResponse.data);
+        const listingMeta = metaResponse.data?.meta || metaResponse.data || {};
+        setMeta({
+          counties: Array.isArray(listingMeta.counties) ? listingMeta.counties : [],
+          countyNames: listingMeta.countyNames || {},
+          countyTowns: listingMeta.countyTowns || {},
+          listingTypes: Array.isArray(listingMeta.listingTypes) ? listingMeta.listingTypes : [],
+          listingPurposes: Array.isArray(listingMeta.listingPurposes) ? listingMeta.listingPurposes : [],
+          residentialTypes: Array.isArray(listingMeta.residentialTypes) ? listingMeta.residentialTypes : [],
+          officeSizeUnits: Array.isArray(listingMeta.officeSizeUnits) ? listingMeta.officeSizeUnits : []
+        });
         setDrafts(draftResponse.data.drafts || []);
       })
       .catch(() => { if (active) toast.error("Could not load listing options and saved drafts."); })
@@ -45,10 +54,10 @@ export default function AdminAssistedListingPage() {
     return () => { active = false; };
   }, []);
 
-  const countyOptions = useMemo(() => meta.counties.map((value) => ({ value, label: meta.countyNames?.[value] || readable(value) })), [meta.counties, meta.countyNames]);
+  const countyOptions = useMemo(() => (meta.counties || []).map((value) => ({ value, label: meta.countyNames?.[value] || readable(value) })), [meta.counties, meta.countyNames]);
   const townOptions = useMemo(() => (meta.countyTowns?.[form.county] || []).map((value) => ({ value, label: readable(value) })), [meta.countyTowns, form.county]);
-  const propertyTypes = useMemo(() => meta.listingTypes.map((value) => ({ value, label: value === "office" ? "Office Space" : readable(value) })), [meta.listingTypes]);
-  const purposes = useMemo(() => meta.listingPurposes.map((value) => ({ value, label: value === "rent" ? "For Rent" : value === "sale" ? "For Sale" : "BnB / Short Stay" })), [meta.listingPurposes]);
+  const propertyTypes = useMemo(() => (meta.listingTypes || []).map((value) => ({ value, label: value === "office" ? "Office Space" : readable(value) })), [meta.listingTypes]);
+  const purposes = useMemo(() => (meta.listingPurposes || []).map((value) => ({ value, label: value === "rent" ? "For Rent" : value === "sale" ? "For Sale" : "BnB / Short Stay" })), [meta.listingPurposes]);
   const residentialTypes = meta.residentialTypes || [];
   const isResidential = residentialTypes.includes(form.type);
   const isOffice = form.type === "office";
