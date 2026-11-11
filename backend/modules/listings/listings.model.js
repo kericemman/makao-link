@@ -118,6 +118,13 @@ const listingSchema = new mongoose.Schema(
       default: null
     },
 
+    googleMapsUrl: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: 2048
+    },
+
     type: {
       type: String,
       enum: LISTING_TYPES,

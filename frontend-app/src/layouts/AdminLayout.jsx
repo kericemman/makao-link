@@ -102,6 +102,12 @@ const AdminLayout = () => {
             description: "Owner accounts"
           },
           {
+            label: "Assisted Listing",
+            path: "/admin/landlords/assisted-listing",
+            icon: FiHome,
+            description: "Save a listing draft for a landlord"
+          },
+          {
             label: "KYC Reviews",
             path: "/admin/kyc",
             icon: FiShield,
@@ -216,6 +222,12 @@ const AdminLayout = () => {
             path: "/admin/services/applications",
             icon: FiFileText,
             description: "Review partners"
+          },
+          {
+            label: "Assisted Provider Intake",
+            path: "/admin/services/assisted",
+            icon: FaHandshake,
+            description: "Enter provider details and share payment link"
           },
           {
             label: "Approved Partners",

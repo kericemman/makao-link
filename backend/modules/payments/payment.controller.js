@@ -18,6 +18,7 @@ const {
 } = require("../../utils/emailTemplates");
 
 const plans = require("./plan.config");
+const { getPlanPricing, isPlanPaymentAmount } = require("./planPricing.service");
 const { publicPlanCatalog } = require("../renda-assistant/landlordOnboarding.service");
 
 const {
@@ -36,12 +37,7 @@ const addOneMonth = () => {
 
 const expectedPlanPayment = (data, planKey) => {
   const plan = plans[planKey];
-  return Boolean(
-    plan &&
-      plan.price > 0 &&
-      Number(data?.amount) === plan.price * 100 &&
-      data?.currency === "KES"
-  );
+  return Boolean(plan?.price > 0 && isPlanPaymentAmount(data?.amount, data?.currency, plan));
 };
 
 exports.getPublicPlans = async (req, res, next) => {
@@ -57,7 +53,7 @@ const verifyConfiguredPlan = async (plan) => {
     const response = await paystack.get(`/plan/${encodeURIComponent(plan.paystackPlanCode)}`);
     const configuredPlan = response.data?.data;
     return Boolean(
-      Number(configuredPlan?.amount) === plan.price * 100 &&
+      Number(configuredPlan?.amount) === getPlanPricing(plan).totalAmount * 100 &&
         configuredPlan?.currency === "KES" &&
         configuredPlan?.interval === "monthly"
     );
@@ -311,6 +307,7 @@ const activateSubscription = async ({
   if (!reference || !expectedPlanPayment({ amount: amount * 100, currency }, plan)) {
     throw new Error("Subscription payment does not match the selected plan");
   }
+  const pricing = getPlanPricing(plans[plan]);
 
   let subscription = await Subscription.findOne({ user: userId });
 
@@ -346,6 +343,9 @@ const activateSubscription = async ({
       subscription: subscription._id,
       reference,
       amount,
+      baseAmount: pricing.baseAmount,
+      vatRate: pricing.vatRate,
+      vatAmount: pricing.vatAmount,
       currency: currency || "KES",
       plan,
       status: "success",
@@ -354,6 +354,9 @@ const activateSubscription = async ({
   } else if (payment.status !== "success") {
     payment.subscription = subscription._id;
     payment.amount = amount;
+    payment.baseAmount = pricing.baseAmount;
+    payment.vatRate = pricing.vatRate;
+    payment.vatAmount = pricing.vatAmount;
     payment.currency = currency || "KES";
     payment.plan = plan;
     payment.status = "success";
@@ -575,7 +578,7 @@ exports.initializeSubscriptionPayment = async (req, res, next) => {
     const planIsConfigured = await verifyConfiguredPlan(selectedPlan);
     if (!planIsConfigured) {
       return res.status(503).json({
-        message: `${selectedPlan.name} Paystack plan must be configured for KES ${selectedPlan.price} monthly.`
+        message: `${selectedPlan.name} Paystack monthly plan must be configured for KES ${getPlanPricing(selectedPlan).totalAmount} including VAT.`
       });
     }
 
@@ -586,7 +589,7 @@ exports.initializeSubscriptionPayment = async (req, res, next) => {
 
     const response = await paystack.post("/transaction/initialize", {
       email: user.email,
-      amount: selectedPlan.price * 100,
+      amount: getPlanPricing(selectedPlan).totalAmount * 100,
       plan: selectedPlan.paystackPlanCode,
       callback_url: callbackUrl,
       metadata: {

@@ -76,6 +76,19 @@ const partnerApplicationSchema = new mongoose.Schema(
       type: String,
       enum: ["pending_review", "approved", "rejected"],
       default: "pending_review"
+    },
+
+    intakeSource: {
+      type: String,
+      enum: ["self_service", "admin_assisted"],
+      default: "self_service",
+      index: true
+    },
+
+    createdByAdmin: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
     }
   },
   { timestamps: true }

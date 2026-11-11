@@ -9,32 +9,9 @@ import { FaWhatsapp } from "react-icons/fa";
 import { buildWhatsAppUrl, listingDraftMessage } from "../../utils/whatsapp";
 import { getTeamMembers } from "../../services/team.service";
 import ListingSetupChecklist from "./ListingSetupChecklist";
-import {
-  FiMapPin,
-  FiDollarSign,
-  FiFileText,
-  FiCheckCircle,
-  FiGrid,
-  FiCamera,
-  FiUpload,
-  FiTrash2,
-  FiArrowLeft,
-  FiInfo,
-  FiVideo,
-  FiTarget,
-  FiHome,
-  FiCrosshair,
-  FiNavigation
-} from "react-icons/fi";
-import {
-  FaBed,
-  FaBath,
-  FaBuilding,
-  FaPhone,
-  FaUtensils,
-  FaRulerCombined,
-  FaRuler
-} from "react-icons/fa";
+import ListingPropertyFields from "../../components/listings/ListingPropertyFields";
+import ListingImagesField from "../../components/listings/ListingImagesField";
+import { FiArrowLeft, FiInfo } from "react-icons/fi";
 import toast from "react-hot-toast";
 
 const prettifyLabel = (value = "") =>
@@ -101,6 +78,7 @@ const CreateListingPage = () => {
     area: "",
     latitude: "",
     longitude: "",
+    googleMapsUrl: "",
     type: "",
     bedrooms: "",
     bathrooms: "",
@@ -277,9 +255,9 @@ const CreateListingPage = () => {
   const countyOptions = useMemo(() => {
     return (listingMeta.counties || []).map((county) => ({
       value: county,
-      label: prettifyLabel(county)
+      label: listingMeta.countyNames?.[county] || prettifyLabel(county)
     }));
-  }, [listingMeta.counties]);
+  }, [listingMeta.counties, listingMeta.countyNames]);
 
   const townOptions = useMemo(() => {
     const towns = listingMeta.countyTowns?.[formData.county] || [];
@@ -559,6 +537,7 @@ const CreateListingPage = () => {
       if (formData.area) payload.append("area", formData.area);
       if (formData.latitude) payload.append("latitude", formData.latitude);
       if (formData.longitude) payload.append("longitude", formData.longitude);
+      if (formData.googleMapsUrl) payload.append("googleMapsUrl", formData.googleMapsUrl.trim());
 
       if (isResidential) {
         payload.append("bedrooms", formData.bedrooms);
@@ -715,601 +694,38 @@ const CreateListingPage = () => {
             {user?.role === "landlord" && <label className="text-sm font-semibold text-slate-800">Assign to agent<select value={inventory.assignedAgent} onChange={(event) => setInventory({ ...inventory, assignedAgent: event.target.value })} className="mt-1 block h-10 w-full border border-slate-300 bg-white px-3 font-normal"><option value="">Keep unassigned</option>{teamMembers.filter((member) => member.status === "active").map((member) => <option key={member._id} value={member._id}>{member.name} · {member.role}</option>)}</select></label>}
           </div>}
         </section>}
-        {/* keep your existing form JSX from Basic Information downwards */}
-        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
-          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
-            <FiFileText className="mr-2 text-[#126542]" />
-            Basic Information
-          </h2>
+        <ListingPropertyFields
+          formData={formData}
+          errors={errors}
+          onChange={handleChange}
+          onAmenityChange={handleAmenityChange}
+          disabled={loading || metaLoading}
+          loading={loading}
+          metaLoading={metaLoading}
+          purposes={purposes}
+          propertyTypes={propertyTypes}
+          residentialTypes={residentialTypes}
+          isResidential={isResidential}
+          isOffice={isOffice}
+          countyOptions={countyOptions}
+          townOptions={townOptions}
+          listingMeta={listingMeta}
+          amenitiesList={amenitiesList}
+          onUseCurrentLocation={handleUseCurrentLocation}
+          mapSrc={mapSrc}
+          mapLatitude={mapLatitude}
+          mapLongitude={mapLongitude}
+        />
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                Title <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiFileText className="h-5 w-5 text-[#0D915C]" />
-                </div>
-                <input
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  placeholder="e.g., 2 Bedroom Modern Apartment in Westlands"
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                    errors.title
-                      ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#E2E8F0] focus:border-[#126542]"
-                  }`}
-                  disabled={loading || metaLoading}
-                />
-              </div>
-              {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                Description <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows="5"
-                placeholder="Describe your property in detail..."
-                className={`w-full px-4 py-3 rounded-lg border-2 outline-none transition-all resize-none ${
-                  errors.description
-                    ? "border-red-400 focus:border-red-500 bg-red-50"
-                    : "border-[#E2E8F0] focus:border-[#126542]"
-                }`}
-                disabled={loading || metaLoading}
-              />
-              {errors.description && (
-                <p className="text-sm text-red-500 mt-1">{errors.description}</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
-          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
-            <FiMapPin className="mr-2 text-[#126542]" />
-            Location & Price
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                Purpose <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiTarget className="h-5 w-5 text-[#0D915C]" />
-                </div>
-                <select
-                  name="purpose"
-                  value={formData.purpose}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#E2E8F0] focus:border-[#126542] outline-none appearance-none bg-white"
-                  disabled={loading || metaLoading}
-                >
-                  {purposes.map((purpose) => (
-                    <option key={purpose.value} value={purpose.value}>
-                      {purpose.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {errors.purpose && <p className="text-sm text-red-500 mt-1">{errors.purpose}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                {formData.purpose === "short_stay" ? "Price per night (KES)" : "Price (KES)"} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiDollarSign className="h-5 w-5 text-[#0D915C]" />
-                </div>
-                <input
-                  name="price"
-                  type="number"
-                  value={formData.price}
-                  onChange={handleChange}
-                  placeholder={formData.purpose === "short_stay" ? "e.g., 8500 per night" : "e.g., 25000"}
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                    errors.price
-                      ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#E2E8F0] focus:border-[#126542]"
-                  }`}
-                  disabled={loading || metaLoading}
-                />
-              </div>
-              {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price}</p>}
-            </div>
-
-            {formData.purpose === "short_stay" && (
-              <div className="md:col-span-2 grid grid-cols-2 gap-4 rounded-xl bg-[#F3F8F5] p-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[#0F172A]">Maximum guests</label>
-                  <input name="maxGuests" type="number" min="1" value={formData.maxGuests} onChange={handleChange} className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2.5" />
-                  {errors.maxGuests && <p className="mt-1 text-sm text-red-600">{errors.maxGuests}</p>}
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[#0F172A]">Minimum nights</label>
-                  <input name="minNights" type="number" min="1" value={formData.minNights} onChange={handleChange} className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2.5" />
-                  {errors.minNights && <p className="mt-1 text-sm text-red-600">{errors.minNights}</p>}
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[#0F172A]">Check-in from</label>
-                  <input name="checkInTime" type="time" value={formData.checkInTime} onChange={handleChange} className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2.5" />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[#0F172A]">Check-out by</label>
-                  <input name="checkOutTime" type="time" value={formData.checkOutTime} onChange={handleChange} className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3 py-2.5" />
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                County <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiMapPin className="h-5 w-5 text-[#0D915C]" />
-                </div>
-                <select
-                  name="county"
-                  value={formData.county}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
-                    errors.county
-                      ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#E2E8F0] focus:border-[#126542]"
-                  }`}
-                  disabled={loading || metaLoading}
-                >
-                  <option value="">Select County</option>
-                  {countyOptions.map((county) => (
-                    <option key={county.value} value={county.value}>
-                      {county.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {errors.county && <p className="text-sm text-red-500 mt-1">{errors.county}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                Town / Location <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiHome className="h-5 w-5 text-[#0D915C]" />
-                </div>
-                <select
-                  name="town"
-                  value={formData.town}
-                  onChange={handleChange}
-                  disabled={!formData.county || loading || metaLoading}
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
-                    errors.town
-                      ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#E2E8F0] focus:border-[#126542]"
-                  }`}
-                >
-                  <option value="">Select Town</option>
-                  {townOptions.map((town) => (
-                    <option key={town.value} value={town.value}>
-                      {town.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {errors.town && <p className="text-sm text-red-500 mt-1">{errors.town}</p>}
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                Specific Area / Landmark (Optional)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiMapPin className="h-5 w-5 text-[#0D915C]" />
-                </div>
-                <input
-                  name="area"
-                  value={formData.area}
-                  onChange={handleChange}
-                  placeholder="e.g., Next to Garden City Mall"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#E2E8F0] focus:border-[#126542] outline-none transition-colors"
-                  disabled={loading || metaLoading}
-                />
-              </div>
-              <p className="text-xs text-[#475569] mt-1">Optional: Add specific directions or landmark</p>
-            </div>
-
-            <div className="md:col-span-2 rounded-md border border-[#E2E8F0] bg-[#F8FAFC] p-4">
-              <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <label className="block text-sm font-medium text-[#0F172A]">
-                    Map Location (Optional)
-                  </label>
-                  <p className="mt-1 text-xs text-[#475569]">
-                    Add coordinates so tenants can understand the property area better.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleUseCurrentLocation}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0F172A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#164E3B]"
-                >
-                  <FiCrosshair />
-                  Use my location
-                </button>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide text-[#475569]">
-                    Latitude
-                  </label>
-                  <input
-                    name="latitude"
-                    type="number"
-                    step="any"
-                    min="-90"
-                    max="90"
-                    value={formData.latitude}
-                    onChange={handleChange}
-                    placeholder="-1.286389"
-                    className="mt-1 w-full rounded-lg border-2 border-[#E2E8F0] bg-white px-4 py-3 outline-none transition-colors focus:border-[#126542]"
-                    disabled={loading || metaLoading}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide text-[#475569]">
-                    Longitude
-                  </label>
-                  <input
-                    name="longitude"
-                    type="number"
-                    step="any"
-                    min="-180"
-                    max="180"
-                    value={formData.longitude}
-                    onChange={handleChange}
-                    placeholder="36.817223"
-                    className="mt-1 w-full rounded-lg border-2 border-[#E2E8F0] bg-white px-4 py-3 outline-none transition-colors focus:border-[#126542]"
-                    disabled={loading || metaLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-4 overflow-hidden rounded-md border border-[#E2E8F0] bg-white">
-                <iframe
-                  title="Property map preview"
-                  src={mapSrc}
-                  className="h-72 w-full"
-                  loading="lazy"
-                />
-              </div>
-
-              <a
-                href={`https://www.openstreetmap.org/?mlat=${mapLatitude}&mlon=${mapLongitude}#map=16/${mapLatitude}/${mapLongitude}`}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#475569] hover:text-[#0F172A]"
-              >
-                <FiNavigation />
-                Open map in new tab
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
-          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
-            <FiGrid className="mr-2 text-[#126542]" />
-            Property Details
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                Property Type <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaBuilding className="h-5 w-5 text-[#0D915C]" />
-                </div>
-                <select
-                  name="type"
-                  value={formData.type}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
-                    errors.type
-                      ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#E2E8F0] focus:border-[#126542]"
-                  }`}
-                  disabled={loading || metaLoading}
-                >
-                  <option value="">Select Type</option>
-                  {propertyTypes.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {errors.type && <p className="text-sm text-red-500 mt-1">{errors.type}</p>}
-            </div>
-
-            {isResidential ? (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                    Bedrooms <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaBed className="h-5 w-5 text-[#0D915C]" />
-                    </div>
-                    <input
-                      name="bedrooms"
-                      type="number"
-                      value={formData.bedrooms}
-                      onChange={handleChange}
-                      placeholder="e.g., 2"
-                      min="0"
-                      className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                        errors.bedrooms
-                          ? "border-red-400 focus:border-red-500 bg-red-50"
-                          : "border-[#E2E8F0] focus:border-[#126542]"
-                      }`}
-                      disabled={loading || metaLoading}
-                    />
-                  </div>
-                  {errors.bedrooms && (
-                    <p className="text-sm text-red-500 mt-1">{errors.bedrooms}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                    Bathrooms <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaBath className="h-5 w-5 text-[#0D915C]" />
-                    </div>
-                    <input
-                      name="bathrooms"
-                      type="number"
-                      value={formData.bathrooms}
-                      onChange={handleChange}
-                      placeholder="e.g., 2"
-                      min="0"
-                      className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                        errors.bathrooms
-                          ? "border-red-400 focus:border-red-500 bg-red-50"
-                          : "border-[#E2E8F0] focus:border-[#126542]"
-                      }`}
-                      disabled={loading || metaLoading}
-                    />
-                  </div>
-                  {errors.bathrooms && (
-                    <p className="text-sm text-red-500 mt-1">{errors.bathrooms}</p>
-                  )}
-                </div>
-              </>
-            ) : null}
-
-            {isOffice ? (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                    Size <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaRuler className="h-5 w-5 text-[#0D915C]" />
-                    </div>
-                    <input
-                      name="size"
-                      type="number"
-                      value={formData.size}
-                      onChange={handleChange}
-                      placeholder="e.g., 1200"
-                      min="0"
-                      className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                        errors.size
-                          ? "border-red-400 focus:border-red-500 bg-red-50"
-                          : "border-[#E2E8F0] focus:border-[#126542]"
-                      }`}
-                      disabled={loading || metaLoading}
-                    />
-                  </div>
-                  {errors.size && <p className="text-sm text-red-500 mt-1">{errors.size}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                    Size Unit
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaRulerCombined className="h-5 w-5 text-[#0D915C]" />
-                    </div>
-                    <select
-                      name="sizeUnit"
-                      value={formData.sizeUnit}
-                      onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#E2E8F0] focus:border-[#126542] outline-none appearance-none bg-white"
-                      disabled={loading || metaLoading}
-                    >
-                      {(listingMeta.officeSizeUnits || []).map((unit) => (
-                        <option key={unit} value={unit}>
-                          {unit === "sqft" ? "Square Feet (sq ft)" : prettifyLabel(unit)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </>
-            ) : null}
-
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">
-                Contact Phone <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaPhone className="h-5 w-5 text-[#0D915C]" />
-                </div>
-                <input
-                  name="contactPhone"
-                  value={formData.contactPhone}
-                  onChange={handleChange}
-                  placeholder="e.g., 0712345678"
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none transition-all ${
-                    errors.contactPhone
-                      ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#E2E8F0] focus:border-[#126542]"
-                  }`}
-                  disabled={loading || metaLoading}
-                />
-              </div>
-              {errors.contactPhone && (
-                <p className="text-sm text-red-500 mt-1">{errors.contactPhone}</p>
-              )}
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="kitchen"
-                  checked={formData.kitchen}
-                  onChange={handleChange}
-                  className="w-5 h-5 text-[#126542] border-[#E2E8F0] rounded focus:ring-[#126542]"
-                />
-                <span className="text-sm text-[#475569] flex items-center">
-                  <FaUtensils className="mr-2" />
-                  Kitchen available
-                </span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
-          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
-            <FiVideo className="mr-2 text-[#126542]" />
-            Virtual Tour (Optional)
-          </h2>
-
-          <div>
-            <label className="block text-sm font-medium text-[#0F172A] mb-1">
-              Video URL
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiVideo className="h-5 w-5 text-[#0D915C]" />
-              </div>
-              <input
-                name="video"
-                value={formData.video}
-                onChange={handleChange}
-                placeholder="https://youtube.com/watch?v=..."
-                className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-[#E2E8F0] focus:border-[#126542] outline-none transition-colors"
-                disabled={loading || metaLoading}
-              />
-            </div>
-            <p className="text-xs text-[#475569] mt-1">
-              Add a YouTube or Vimeo link for a virtual tour of your property
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
-          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
-            <FiCheckCircle className="mr-2 text-[#126542]" />
-            Amenities
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {amenitiesList.map((amenity) => (
-              <label key={amenity.key} className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.amenities[amenity.key]}
-                  onChange={() => handleAmenityChange(amenity.key)}
-                  className="w-5 h-5 text-[#126542] border-[#E2E8F0] rounded focus:ring-[#126542]"
-                />
-                <span className="text-sm text-[#475569]">{amenity.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-md shadow-sm p-6 border border-[#E2E8F0]">
-          <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center">
-            <FiCamera className="mr-2 text-[#126542]" />
-            Property Images <span className="text-red-500 ml-1">*</span>
-          </h2>
-
-          <div className="mb-4">
-            <div
-              className={`border-2 border-dashed rounded-md p-6 text-center transition-all ${
-                errors.images ? "border-red-300 bg-red-50" : "border-[#E2E8F0] hover:border-[#126542]"
-              }`}
-            >
-              <input
-                type="file"
-                multiple
-                accept="image/*,.heic,.heif,.tif,.tiff"
-                onChange={handleImages}
-                className="hidden"
-                id="image-upload"
-                disabled={loading || metaLoading}
-              />
-              <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center">
-                <FiUpload className="text-3xl text-[#475569] mb-2" />
-                <span className="text-sm text-[#475569]">Click to upload or drag and drop</span>
-                <span className="text-xs text-[#475569] mt-1">
-                  Select multiple images. Large files are compressed before upload. Max {imageLimit} images.
-                </span>
-              </label>
-            </div>
-            {errors.images && <p className="text-sm text-red-500 mt-1">{errors.images}</p>}
-            <p className="text-xs text-[#475569] mt-2">{images.length}/{imageLimit} image(s) selected</p>
-          </div>
-
-          {preview.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-              {preview.map((img, index) => (
-                <div key={index} className="relative group">
-                  <img
-                    src={img}
-                    alt={`Preview ${index + 1}`}
-                    className="h-24 w-full object-cover rounded-lg border border-[#E2E8F0]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <FiTrash2 size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <ListingImagesField
+          imagesCount={images.length}
+          imageLimit={imageLimit}
+          previews={preview}
+          error={errors.images}
+          disabled={loading || metaLoading}
+          onFilesChange={handleImages}
+          onRemove={removeImage}
+        />
 
         <div className="flex justify-end space-x-3">
           {whatsappAssistanceEnabled ? (

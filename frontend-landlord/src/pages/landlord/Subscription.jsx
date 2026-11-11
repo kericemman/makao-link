@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   changeSubscriptionPlan,
   getMySubscription,
-  initializeSubscriptionPayment
+  getPublicPlans
 } from "../../services/payment.service";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -124,9 +124,9 @@ const LandlordSubscription = () => {
   const { refreshSubscription } = useAuth();
 
   const [subscription, setSubscription] = useState(null);
+  const [pricingCatalog, setPricingCatalog] = useState([]);
   const [usage, setUsage] = useState({ used: 0, limit: 0, remaining: 0 });
   const [loading, setLoading] = useState(true);
-  const [payLoading, setPayLoading] = useState(false);
   const [upgradeLoadingPlan, setUpgradeLoadingPlan] = useState("");
   const [expandedPlans, setExpandedPlans] = useState({});
   const [error, setError] = useState("");
@@ -158,6 +158,14 @@ const LandlordSubscription = () => {
 
   useEffect(() => {
     fetchSubscription();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    getPublicPlans()
+      .then((data) => { if (active) setPricingCatalog(data.plans || []); })
+      .catch(() => {});
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -201,34 +209,15 @@ const LandlordSubscription = () => {
     }).format(price);
 
   const handlePayNow = async () => {
-    try {
-      setPayLoading(true);
-      setError("");
-
-      const data = await initializeSubscriptionPayment();
-
-      if (!data.authorization_url) {
-        throw new Error("Payment URL not returned");
-      }
-
-      window.location.href = data.authorization_url;
-    } catch (err) {
-      const message =
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to initialize payment";
-
-      setError(message);
-
-      toast.error(message, {
-        style: { background: "#013E43", color: "#fff" }
-      });
-    } finally {
-      setPayLoading(false);
-    }
+    const planKey = subscription?.pendingPlan || subscription?.plan;
+    if (planKey && planKey !== "normal") navigate(`/subscription/checkout/${planKey}`);
   };
 
   const handlePlanChange = async (planKey) => {
+    if (planKey !== "normal") {
+      navigate(`/subscription/checkout/${planKey}`);
+      return;
+    }
     try {
       setUpgradeLoadingPlan(planKey);
       setError("");
@@ -371,7 +360,7 @@ const LandlordSubscription = () => {
             <p className="mt-2 text-xs text-slate-500">{renderStatusMessage()}</p>
           </div>
 
-          {showPaymentAction && <button onClick={handlePayNow} disabled={payLoading} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 bg-emerald-800 px-5 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50">{payLoading ? "Redirecting..." : <><FiCreditCard /> Pay / renew subscription</>}</button>}
+          {showPaymentAction && <button onClick={handlePayNow} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 bg-emerald-800 px-5 text-sm font-semibold text-white hover:bg-emerald-900"><FiCreditCard /> Review price and pay</button>}
         </div>
 
         <aside className="border border-emerald-200 bg-[#F0F8F3] p-5 sm:p-6">
@@ -391,10 +380,11 @@ const LandlordSubscription = () => {
           {allPlans.map((plan) => {
             const isCurrent = plan.key === subscription?.plan;
             const planIndex = planOrder.indexOf(plan.key);
-            const isUpgrade = planIndex > currentPlanIndex;
             const isDowngrade = planIndex < currentPlanIndex;
             const visibleFeatures = expandedPlans[plan.key] ? plan.features : plan.features.slice(0, 5);
             const PlanIcon = plan.icon;
+            const serverPrice = pricingCatalog.find((item) => item.key === plan.key);
+            const totalPrice = serverPrice?.totalPrice ?? plan.price + Math.round(plan.price * 0.16);
 
             return (
               <article key={plan.key} className={`flex min-w-0 flex-col border bg-white ${plan.featured ? "border-emerald-700 ring-1 ring-emerald-700" : "border-slate-200"}`}>
@@ -404,7 +394,8 @@ const LandlordSubscription = () => {
                     {isCurrent ? <span className="border border-emerald-200 bg-white px-2.5 py-1 text-xs font-semibold text-emerald-800">Current plan</span> : plan.featured ? <span className="bg-emerald-800 px-2.5 py-1 text-xs font-semibold text-white">Popular</span> : null}
                   </div>
                   <p className="mt-2 min-h-10 text-sm leading-5 text-slate-600">{plan.audience}</p>
-                  <p className="mt-4 text-2xl font-bold text-slate-950">{plan.price === 0 ? "Free" : formatCurrency(plan.price)}<span className="ml-1 text-xs font-medium text-slate-500">{plan.price ? "/ month" : "forever"}</span></p>
+                  <p className="mt-4 text-2xl font-bold text-slate-950">{plan.price === 0 ? "Free" : formatCurrency(totalPrice)}<span className="ml-1 text-xs font-medium text-slate-500">{plan.price ? "/ month incl. VAT" : "forever"}</span></p>
+                  {plan.price > 0 && <p className="mt-1 text-xs text-slate-500">{formatCurrency(plan.price)} + {formatCurrency(serverPrice?.vatAmount ?? Math.round(plan.price * 0.16))} VAT</p>}
                   <p className="mt-1 text-sm font-semibold text-emerald-900">Up to {plan.limit} active listings</p>
                 </div>
                 <div className="flex flex-1 flex-col p-5">
@@ -418,7 +409,7 @@ const LandlordSubscription = () => {
                   {plan.key === "pro" && <div className="mt-4 border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">WhatsApp listing is included. Portfolio grouping is available in this dashboard; WhatsApp automation for multiple properties is coming soon. Combined public building and unit pages are still in development.</div>}
 
                   <div className="mt-auto pt-5">
-                    {isCurrent ? <div className="flex min-h-11 items-center justify-center border border-emerald-200 bg-emerald-50 text-sm font-semibold text-emerald-900">You are on this plan</div> : <button type="button" onClick={() => handlePlanChange(plan.key)} disabled={Boolean(upgradeLoadingPlan)} className={`inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60 ${isDowngrade ? "bg-slate-800 hover:bg-slate-900" : "bg-emerald-800 hover:bg-emerald-900"}`}>{upgradeLoadingPlan === plan.key ? "Processing..." : <>{isUpgrade ? "Upgrade" : "Downgrade"}<FiArrowRight /></>}</button>}
+                    {isCurrent ? <div className="flex min-h-11 items-center justify-center border border-emerald-200 bg-emerald-50 text-sm font-semibold text-emerald-900">You are on this plan</div> : <button type="button" onClick={() => handlePlanChange(plan.key)} disabled={Boolean(upgradeLoadingPlan)} className={`inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60 ${isDowngrade ? "bg-slate-800 hover:bg-slate-900" : "bg-emerald-800 hover:bg-emerald-900"}`}>{plan.key === "normal" ? "Downgrade" : "View plan"}<FiArrowRight /></button>}
                   </div>
                 </div>
               </article>

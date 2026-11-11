@@ -12,6 +12,8 @@ import PendingListingsPage from "../pages/admin/AdminPendingPage";
 import AdminAllListingsPage from "../pages/admin/AdminListingPage";
 import AdminListingReportsPage from "../pages/admin/AdminListingReportsPage";
 import AdminLandlordsPage from "../pages/admin/AdminLandlord";
+import AdminAssistedListingPage from "../pages/admin/AdminAssistedListingPage";
+import AdminAssistedServicePage from "../pages/admin/AdminAssistedServicePage";
 import AdminPaymentsPage from "../pages/admin/AdminPaymentPage";
 import AdminInquiriesPage from "../pages/admin/AdminInquiriesPage";
 import AdminSupportPage from "../pages/admin/AdminSupport";
@@ -50,6 +52,7 @@ const AppRoutes = () => {
             <Route path="/admin/listings/reports" element={<AdminListingReportsPage />} />
             <Route path="/admin/stay-requests" element={<AdminStayRequestsPage />} />
             <Route path="/admin/landlords" element={<AdminLandlordsPage />} />
+            <Route path="/admin/landlords/assisted-listing" element={<AdminAssistedListingPage />} />
             <Route path="/admin/kyc" element={<AdminKycPage />} />
             <Route path="/admin/agents" element={<AdminAgentsPage />} />
             <Route path="/admin/payments" element={<AdminPaymentsPage />} />
@@ -63,6 +66,7 @@ const AppRoutes = () => {
             <Route path="/admin/contact" element={<AdminContactMessagesPage />} />
             <Route path="/admin/contact/:id" element={<AdminContactMessageDetailPage />} />
             <Route path="/admin/services/applications" element={<AdminServiceApplicationsPage />} />
+            <Route path="/admin/services/assisted" element={<AdminAssistedServicePage />} />
             <Route path="/admin/services/applications/:id" element={<AdminServiceApplicationDetailPage />} />
             <Route path="/admin/services/partners" element={<AdminServiceApplicationsPage />} />
             <Route path="/admin/blog" element={<AdminBlogsPage />} />

@@ -278,6 +278,7 @@ export default function ListingDetails() {
                 <FiMapPin className="mt-1 shrink-0 text-[#02BB31]" />
                 {location}
               </p>
+              {listing.googleMapsUrl && <a href={listing.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#087443] underline underline-offset-2">Open in Google Maps</a>}
               {Number(listing.totalUnits) > 1 && <p className="mt-3 border-l-2 border-[#02BB31] bg-[#F0F7F4] px-3 py-2 text-sm font-semibold text-[#065A57]">{listing.portfolioName ? `${listing.portfolioName} · ` : ""}{listing.portfolioCategory || "Units"}: {listing.availableUnits ?? listing.totalUnits} of {listing.totalUnits} available</p>}
 
               <div className="mt-6 grid grid-cols-2 gap-3">
@@ -297,7 +298,7 @@ export default function ListingDetails() {
                     <div className="mt-4 rounded-xl bg-[#F0F7F4] p-4">
                       <p className="text-sm font-bold text-[#013E43]">Request received · {stayRequest.requestCode}</p>
                       <p className="mt-1 text-xs text-[#52716A]">Contact the host on WhatsApp to confirm the stay.</p>
-                      {stayWhatsappHref && <a href={stayWhatsappHref} target="_blank" rel="noreferrer" className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-[#128C4A] px-4 py-3 text-sm font-bold text-white"><FaWhatsapp />Book on WhatsApp</a>}
+                      {stayWhatsappHref && <a href={stayWhatsappHref} target="_blank" rel="noreferrer" className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-[#128C4A] px-4 py-3 text-sm font-bold text-white"><FaWhatsapp />Confirm on WhatsApp</a>}
                     </div>
                   ) : (
                     <form onSubmit={submitStayRequest} className="mt-4 space-y-3">
@@ -311,7 +312,7 @@ export default function ListingDetails() {
                       <input required type="tel" placeholder="Phone number" value={stayForm.guestPhone} onChange={(e) => setStayForm({ ...stayForm, guestPhone: e.target.value })} className="w-full rounded-lg border border-[#C6D9CE] px-3 py-2.5 text-sm text-[#173F37]" />
                       <textarea rows="2" placeholder="Message to the host (optional)" value={stayForm.message} onChange={(e) => setStayForm({ ...stayForm, message: e.target.value })} className="w-full resize-y rounded-lg border border-[#C6D9CE] px-3 py-2.5 text-sm text-[#173F37]" />
                       {stayError && <p role="alert" className="text-sm text-rose-700">{stayError}</p>}
-                      <button disabled={staySending} className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#013E43] px-4 py-3 text-sm font-bold text-white hover:bg-[#005C57] disabled:opacity-60"><FiCalendar />{staySending ? "Sending request…" : "Request stay"}</button>
+                      <button disabled={staySending} className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#013E43] px-4 py-3 text-sm font-bold text-white hover:bg-[#005C57] disabled:opacity-60"><FiCalendar />{staySending ? "Sending request…" : "Book your stay"}</button>
                     </form>
                   )}
                 </div>

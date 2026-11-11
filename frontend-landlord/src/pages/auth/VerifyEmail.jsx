@@ -4,7 +4,6 @@ import { FiCheckCircle, FiMail } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { resendEmailOtp, verifyEmail } from "../../services/auth.service";
-import { initializeSubscriptionPayment } from "../../services/payment.service";
 
 export default function VerifyLandlordEmail() {
   const [params] = useSearchParams();
@@ -31,15 +30,8 @@ export default function VerifyLandlordEmail() {
       }
 
       if (data.subscription && data.subscription.plan !== "normal" && data.subscription.status === "pending_payment") {
-        try {
-          const payment = await initializeSubscriptionPayment();
-          window.location.assign(payment.authorization_url);
-          return;
-        } catch {
-          toast.error("Your email is verified, but checkout could not start. Continue from your subscription page.");
-          navigate("/subscription", { replace: true });
-          return;
-        }
+        navigate(`/subscription/checkout/${encodeURIComponent(data.subscription.pendingPlan || data.subscription.plan)}`, { replace: true });
+        return;
       }
 
       navigate(getSafeNext(params.get("next")), { replace: true });

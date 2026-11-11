@@ -1,4 +1,5 @@
 const plans = require("../payments/plan.config");
+const { getPlanPricing } = require("../payments/planPricing.service");
 
 const publicPlanCatalog = (planConfig = plans) => {
   const entries = Object.entries(planConfig).map(([key, plan]) => {
@@ -6,10 +7,14 @@ const publicPlanCatalog = (planConfig = plans) => {
         !Number.isInteger(plan.listingLimit) || plan.listingLimit < 1) {
       throw new TypeError(`Invalid public plan configuration: ${key}`);
     }
+    const pricing = getPlanPricing(plan);
     return {
       key,
       name: plan.name,
       price: plan.price,
+      vatRate: pricing.vatRate,
+      vatAmount: pricing.vatAmount,
+      totalPrice: pricing.totalAmount,
       currency: "KES",
       billingInterval: key === "normal" ? null : "monthly",
       listingLimit: plan.listingLimit

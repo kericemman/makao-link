@@ -69,7 +69,7 @@ const RegisterLandlordPage = () => {
   const selectedPlanConfig = planCatalog.find((plan) => plan.key === selectedPlan);
   const planDetails = selectedPlanConfig ? {
     name: selectedPlanConfig.name,
-    price: selectedPlanConfig.price === 0 ? "Free" : `KES ${selectedPlanConfig.price.toLocaleString()} / month`,
+    price: selectedPlanConfig.price === 0 ? "Free" : `KES ${Number(selectedPlanConfig.totalPrice).toLocaleString()} / month, VAT included`,
     limit: `${selectedPlanConfig.listingLimit} active listings`,
     color: "text-[#0D915C]",
     bgColor: "bg-[#02BB31]/10"

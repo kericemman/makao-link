@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const buildPublicListingQuery = require("./listing.filters");
+const { COUNTY_TOWNS } = require("./listing.constants");
 const { parseRecentListingQuery } = buildPublicListingQuery;
 
 test("public listing filters always include publication and deletion constraints", () => {
@@ -72,6 +73,15 @@ test("search terms are escaped before being used as regular expressions", () => 
   const { filter } = buildPublicListingQuery({ search: "Ruiru (CBD)+" });
   assert.equal(filter.$or[0].title.test("Ruiru (CBD)+"), true);
   assert.equal(filter.$or[0].title.test("Ruiru CBD"), false);
+});
+
+test("canonical county search also finds legacy Eldoret and Naivasha county values", () => {
+  const uasinGishu = buildPublicListingQuery({ county: "uasin-gishu" }).filter.county.$in;
+  assert.equal(uasinGishu[0].test("uasin-gishu"), true);
+  assert.equal(uasinGishu[1].test("eldoret"), true);
+  const nakuru = buildPublicListingQuery({ county: "nakuru" }).filter.county.$in;
+  assert.equal(nakuru[1].test("naivasha"), true);
+  assert.equal(COUNTY_TOWNS["uasin-gishu"].includes("eldoret-town"), true);
 });
 
 test("pagination and numeric filters reject malformed or excessive values", () => {

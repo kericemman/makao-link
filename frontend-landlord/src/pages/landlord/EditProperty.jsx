@@ -7,6 +7,7 @@ import {
 } from "../../services/listings.service";
 import imageCompression from "browser-image-compression";
 import { compressListingImage } from "../../utils/listingImages";
+import CountySearchSelect from "../../components/listings/CountySearchSelect";
 import { useAuth } from "../../context/AuthContext";
 import {
   FiMapPin,
@@ -157,7 +158,7 @@ const EditListingPage = () => {
           checkInTime: listing.checkInTime || "15:00",
           checkOutTime: listing.checkOutTime || "10:00",
           price: listing.price ?? "",
-          county: listing.county || "",
+          county: ({ eldoret: "uasin-gishu", naivasha: "nakuru" })[listing.county] || listing.county || "",
           town: listing.town || "",
           area: listing.area || "",
           type: listing.type || "",
@@ -205,9 +206,9 @@ const EditListingPage = () => {
   const countyOptions = useMemo(() => {
     return (listingMeta.counties || []).map((county) => ({
       value: county,
-      label: prettifyLabel(county)
+      label: listingMeta.countyNames?.[county] || prettifyLabel(county)
     }));
-  }, [listingMeta.counties]);
+  }, [listingMeta.counties, listingMeta.countyNames]);
 
   const townOptions = useMemo(() => {
     const towns = listingMeta.countyTowns?.[formData.county] || [];
@@ -580,29 +581,7 @@ const EditListingPage = () => {
               <label className="block text-sm font-medium text-[#0F172A] mb-1">
                 County <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiMapPin className="h-5 w-5 text-[#0D915C]" />
-                </div>
-                <select
-                  name="county"
-                  value={formData.county}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 outline-none appearance-none bg-white ${
-                    errors.county
-                      ? "border-red-400 focus:border-red-500 bg-red-50"
-                      : "border-[#E2E8F0] focus:border-[#126542]"
-                  }`}
-                  disabled={loading}
-                >
-                  <option value="">Select County</option>
-                  {countyOptions.map((county) => (
-                    <option key={county.value} value={county.value}>
-                      {county.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <CountySearchSelect value={formData.county} options={countyOptions} onChange={handleChange} disabled={loading} invalid={Boolean(errors.county)} />
               {errors.county && <p className="text-sm text-red-500 mt-1">{errors.county}</p>}
             </div>
 

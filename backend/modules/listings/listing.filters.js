@@ -1,4 +1,4 @@
-const { LISTING_TYPES, LISTING_PURPOSES } = require("./listing.constants");
+const { LISTING_TYPES, LISTING_PURPOSES, LEGACY_COUNTY_ALIASES } = require("./listing.constants");
 
 const PUBLIC_QUERY_KEYS = new Set([
   "category",
@@ -150,7 +150,15 @@ const parsePublicListingQuery = (query = {}, { defaultPage = 1, defaultLimit = 1
   if (purpose) filter.purpose = purpose;
   if (purpose === "short_stay" && guests !== undefined) filter.maxGuests = { $gte: guests };
   if (type) filter.type = type;
-  if (values.county) filter.county = new RegExp(`^${escapeRegex(values.county)}$`, "i");
+  if (values.county) {
+    const legacyValues = Object.entries(LEGACY_COUNTY_ALIASES)
+      .filter(([, canonical]) => canonical === values.county.toLowerCase())
+      .map(([legacy]) => legacy);
+    const canonicalRegex = new RegExp(`^${escapeRegex(values.county)}$`, "i");
+    filter.county = legacyValues.length
+      ? { $in: [canonicalRegex, ...legacyValues.map((county) => new RegExp(`^${escapeRegex(county)}$`, "i"))] }
+      : canonicalRegex;
+  }
   if (values.town) filter.town = new RegExp(`^${escapeRegex(values.town)}$`, "i");
   if (bedrooms !== undefined) filter.bedrooms = { $gte: bedrooms };
   if (bathrooms !== undefined) filter.bathrooms = { $gte: bathrooms };

@@ -9,7 +9,7 @@ const escapeHtml = (value = "") => String(value).replace(/[&<>"']/g, (character)
 exports.welcomeEmail = ({ name, planName, isFreePlan }) => {
   return buildEmailLayout({
     title: "Welcome to RendaHomes",
-    greeting: `Hello ${name}`,
+    greeting: `Hello ${escapeHtml(name)}`,
     intro: `
       Finding the right tenants shouldn't feel like a gamble.
 
@@ -44,6 +44,18 @@ exports.passwordResetEmail = ({ name, resetUrl }) => {
     ctaText: "Reset Password",
     ctaUrl: resetUrl,
     footerNote: "If you did not request a password reset, you can safely ignore this email."
+  });
+};
+
+exports.assistedLandlordSetupEmail = ({ name, planName, setupUrl, loginUrl, isPaidPlan = false }) => {
+  return buildEmailLayout({
+    title: "Your RendaHomes landlord account is ready",
+    greeting: `Hello ${escapeHtml(name)}`,
+    intro: "RendaHomes has prepared your landlord account and property listing with your approval.",
+    body: `<p><strong>Selected package:</strong> ${escapeHtml(planName)}</p><p>Set your password using the secure link below. The link is single-use and expires in 30 minutes. Your property listing will remain under review until it is approved.</p>${isPaidPlan ? "<p>For a paid package, complete subscription payment from your landlord dashboard to activate your listing limit.</p>" : ""}`,
+    ctaText: "Set Your Password",
+    ctaUrl: setupUrl,
+    footerNote: `After setting your password, sign in to your landlord portal at ${escapeHtml(loginUrl)}.`
   });
 };
 

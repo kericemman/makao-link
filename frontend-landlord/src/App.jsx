@@ -23,6 +23,7 @@ import CompanyWorkspace from "./pages/landlord/CompanyWorkspace";
 import StayRequests from "./pages/landlord/StayRequests";
 import Leads from "./pages/landlord/Leads";
 import Viewings from "./pages/landlord/Viewings";
+import PlanCheckout from "./pages/landlord/PlanCheckout";
 
 export default function App() {
   return (
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/stay-requests" element={<StayRequests />} />
             <Route path="/team" element={<CompanyWorkspace />} />
             <Route path="/subscription" element={<LandlordSubscription />} />
+            <Route path="/subscription/checkout/:planKey" element={<PlanCheckout />} />
             <Route path="/support" element={<LandlordSupportPage />} />
             <Route path="/support/:id" element={<LandlordSupportDetailPage />} />
             <Route path="/profile" element={<LandlordProfilePage />} />

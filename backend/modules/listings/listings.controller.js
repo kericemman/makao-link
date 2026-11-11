@@ -8,6 +8,7 @@ const { withAuthorizationTransaction } = require("../authorization/transaction.s
 
 const {
   COUNTY_TOWNS,
+  COUNTY_TITLES,
   COUNTIES,
   RESIDENTIAL_TYPES,
   LISTING_TYPES,
@@ -29,6 +30,16 @@ const { canCreateListing } = require("../subscriptions/subscription.service");
 const Subscription = require("../subscriptions/subscription.model");
 const { uploadListingImages, serializeListingImages, deletePrivateImages } = require("./listingMedia.storage");
 const workspaceOwnerId = (req) => req.landlordOwnerId || req.user._id;
+const isValidGoogleMapsUrl = (value) => {
+  if (!value) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && ["google.com", "www.google.com", "maps.google.com", "maps.app.goo.gl", "goo.gl"].includes(url.hostname);
+  } catch {
+    return false;
+  }
+};
+exports.isValidGoogleMapsUrl = isValidGoogleMapsUrl;
 const workspaceListingFilter = (req, extra = {}) => req.authorizedListing ? ({
   _id: req.authorizedListing._id,
   ...extra
@@ -121,6 +132,7 @@ exports.getListingMeta = async (req, res, next) => {
       success: true,
       meta: {
         counties: COUNTIES,
+        countyNames: COUNTY_TITLES,
         countyTowns: COUNTY_TOWNS,
         residentialTypes: RESIDENTIAL_TYPES,
         listingTypes: LISTING_TYPES,
@@ -294,6 +306,9 @@ exports.getMyListingById = async (req, res, next) => {
 exports.createListing = async (req, res, next) => {
   let stagedKeys = [];
   try {
+    if (!isValidGoogleMapsUrl(String(req.body.googleMapsUrl || "").trim())) {
+      return res.status(400).json({ message: "Enter a valid HTTPS Google Maps link." });
+    }
     if (req.body.purpose && !LISTING_PURPOSES.includes(req.body.purpose)) {
       return res.status(400).json({ message: "Choose a valid listing purpose." });
     }
@@ -398,6 +413,7 @@ exports.createListing = async (req, res, next) => {
         req.body.longitude !== undefined && req.body.longitude !== ""
           ? Number(req.body.longitude)
           : null,
+      googleMapsUrl: String(req.body.googleMapsUrl || "").trim(),
       type: req.body.type,
 
       bedrooms:
@@ -786,6 +802,13 @@ exports.updateListing = async (req, res, next) => {
         : req.body.longitude === ""
           ? null
           : listing.longitude;
+    if (req.body.googleMapsUrl !== undefined) {
+      const googleMapsUrl = String(req.body.googleMapsUrl || "").trim();
+      if (!isValidGoogleMapsUrl(googleMapsUrl)) {
+        return res.status(400).json({ message: "Enter a valid HTTPS Google Maps link." });
+      }
+      listing.googleMapsUrl = googleMapsUrl;
+    }
     listing.type = req.body.type ?? listing.type;
 
     listing.bedrooms =

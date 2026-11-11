@@ -7,6 +7,10 @@ test("public plan catalog is derived from backend config and never exposes Payst
   const catalog = publicPlanCatalog(plans);
   assert.deepEqual(catalog.map(({ key }) => key), ["normal", "basic", "premium", "pro"]);
   assert.equal(catalog.find(({ key }) => key === "basic").listingLimit, 7);
+  assert.deepEqual(
+    (({ price, vatRate, vatAmount, totalPrice }) => ({ price, vatRate, vatAmount, totalPrice }))(catalog.find(({ key }) => key === "basic")),
+    { price: 500, vatRate: 16, vatAmount: 80, totalPrice: 580 }
+  );
   assert.equal(catalog.find(({ key }) => key === "basic").price, plans.basic.price);
   assert.equal("paystackPlanCode" in catalog[1], false);
 });

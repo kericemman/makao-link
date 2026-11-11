@@ -26,6 +26,21 @@ const paymentSchema = new mongoose.Schema(
       required: true
     },
 
+    baseAmount: {
+      type: Number,
+      default: null
+    },
+
+    vatRate: {
+      type: Number,
+      default: null
+    },
+
+    vatAmount: {
+      type: Number,
+      default: null
+    },
+
     currency: {
       type: String,
       default: "KES"

@@ -68,6 +68,17 @@ exports.approveListing = async (req, res, next) => {
       return res.status(404).json({ message: "Listing not found" });
     }
 
+    if (listing.listingSource === "admin_assisted") {
+      const subscription = await Subscription.findOne({ user: listing.landlord?._id || listing.landlord });
+      if (!subscription || (subscription.plan !== "normal" && subscription.status !== "active")) {
+        return res.status(409).json({
+          success: false,
+          code: "SUBSCRIPTION_NOT_ACTIVE",
+          message: "This assisted listing cannot be published until the landlord's selected paid package is active."
+        });
+      }
+    }
+
     const promoted = await promoteStagedImages(listing._id, listing.images, listing.imageAssets || []);
     publicKeys = promoted.publicKeys || [];
     privateKeys = promoted.privateKeys || [];

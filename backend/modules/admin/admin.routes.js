@@ -30,6 +30,14 @@ const {
 } = require("./admin.controller");
 const { protect } = require("../../middleware/auth.middleware");
 const requireRole = require("../../middleware/role.middleware");
+const listingUpload = require("../listings/listingUpload.middleware");
+const { createAssistedListingDraft, getAssistedListingDrafts, approveAssistedListingDraft, rejectAssistedListingDraft, resendAssistedLandlordSetupEmail } = require("./assistedListingDraft.controller");
+const { createAssistedServiceApplication } = require("./assistedServiceApplication.controller");
+
+const allowAdminDraftImageCount = (req, _res, next) => {
+  req.maxListingImages = 30;
+  next();
+};
 
 router.get("/summary", protect, requireRole("admin"), getAdminSummary);
 router.get("/overview-trends", protect, requireRole("admin"), getAdminOverviewTrends);
@@ -39,6 +47,11 @@ router.get("/notifications", protect, requireRole("admin"), getAdminNotification
 router.patch("/notifications/read-all", protect, requireRole("admin"), markAllAdminNotificationsRead);
 router.patch("/notifications/:id/read", protect, requireRole("admin"), markAdminNotificationRead);
 router.get("/landlords", protect, requireRole("admin"), getLandlords);
+router.get("/assisted-listing-drafts", protect, requireRole("admin"), getAssistedListingDrafts);
+router.post("/assisted-listing-drafts", protect, requireRole("admin"), allowAdminDraftImageCount, listingUpload, createAssistedListingDraft);
+router.patch("/assisted-listing-drafts/:id/approve", protect, requireRole("admin"), approveAssistedListingDraft);
+router.patch("/assisted-listing-drafts/:id/reject", protect, requireRole("admin"), rejectAssistedListingDraft);
+router.post("/assisted-listing-drafts/:id/resend-setup", protect, requireRole("admin"), resendAssistedLandlordSetupEmail);
 router.get("/payments", protect, requireRole("admin"), getAdminPayments);
 router.get("/listings/pending", protect, requireRole("admin"), getPendingListings);
 router.patch("/listings/:id/approve", protect, requireRole("admin"), approveListing);
@@ -48,6 +61,7 @@ router.get("/inquiries", protect, requireRole("admin"), getAdminInquiries);
 
 
 router.get("/service-applications", protect, requireRole("admin"), getServiceApplications);
+router.post("/service-applications/assisted", protect, requireRole("admin"), createAssistedServiceApplication);
 router.get("/service-applications/:id", protect, requireRole("admin"), getServiceApplicationById);
 router.patch("/service-applications/:id/approve", protect, requireRole("admin"), approveServiceApplication);
 router.patch("/service-applications/:id/reject", protect, requireRole("admin"), rejectServiceApplication);
