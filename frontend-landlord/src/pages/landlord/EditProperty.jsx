@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getMyListingById,
@@ -6,7 +6,8 @@ import {
   updateListing
 } from "../../services/listings.service";
 import imageCompression from "browser-image-compression";
-import { compressListingImage } from "../../utils/listingImages";
+import { compressListingImage, MAX_LISTING_UPLOAD_BYTES } from "../../utils/listingImages";
+import { getListingUploadErrorMessage } from "../../utils/listingUploadError";
 import CountySearchSelect from "../../components/listings/CountySearchSelect";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -56,6 +57,8 @@ const EditListingPage = () => {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [metaLoading, setMetaLoading] = useState(true);
+  const [processingImages, setProcessingImages] = useState(false);
+  const processingImagesRef = useRef(false);
   const [images, setImages] = useState([]);
   const [preview, setPreview] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
@@ -282,30 +285,45 @@ const EditListingPage = () => {
   };
 
   const handleImages = async (e) => {
+    const input = e.target;
     const files = Array.from(e.target.files || []);
-    const compressedFiles = [];
-
-    for (const file of files) {
-      try {
-        const compressed = await compressListingImage(imageCompression, file, IMAGE_COMPRESSION_OPTIONS);
-        compressedFiles.push(compressed);
-      } catch (error) {
-        toast.error(`${file.name}: ${error.message || "Could not process this image."}`);
-      }
-    }
-
-    if (compressedFiles.length > imageLimit) {
-      toast.error(`Your plan allows up to ${imageLimit} images per listing.`);
+    input.value = "";
+    if (!files.length || processingImagesRef.current) return;
+    if (files.length > imageLimit) {
+      toast.error(`Select no more than ${imageLimit} replacement images.`);
       return;
     }
+    processingImagesRef.current = true;
+    setProcessingImages(true);
+    const compressedFiles = [];
 
-    preview.forEach((url) => URL.revokeObjectURL(url));
+    try {
+      for (const file of files) {
+        try {
+          const compressed = await compressListingImage(imageCompression, file, IMAGE_COMPRESSION_OPTIONS);
+          compressedFiles.push(compressed);
+        } catch (error) {
+          toast.error(`${file.name}: ${error.message || "Could not process this image."}`);
+        }
+      }
 
-    setImages(compressedFiles);
-    setPreview(compressedFiles.map((file) => URL.createObjectURL(file)));
+      const totalBytes = compressedFiles.reduce((total, file) => total + file.size, 0);
+      if (totalBytes > MAX_LISTING_UPLOAD_BYTES) {
+        toast.error("These images exceed the 38 MB upload limit. Remove some images or select fewer at a time.");
+        return;
+      }
 
-    if (errors.images) {
-      setErrors((prev) => ({ ...prev, images: "" }));
+      preview.forEach((url) => URL.revokeObjectURL(url));
+
+      setImages(compressedFiles);
+      setPreview(compressedFiles.map((file) => URL.createObjectURL(file)));
+
+      if (errors.images) {
+        setErrors((prev) => ({ ...prev, images: "" }));
+      }
+    } finally {
+      processingImagesRef.current = false;
+      setProcessingImages(false);
     }
   };
 
@@ -421,7 +439,7 @@ const EditListingPage = () => {
         navigate("/listings");
       }, 1500);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update listing", {
+      toast.error(getListingUploadErrorMessage(error, "update the listing"), {
         style: { background: "#0F172A", color: "#fff" }
       });
     } finally {
@@ -891,7 +909,7 @@ const EditListingPage = () => {
                 ))}
               </div>
               <p className="text-xs text-[#475569] mt-2">
-                Upload new images below only if you want to replace the current ones.
+                Upload new images below only if you want to replace the current ones. The selected batch must stay below 38 MB.
               </p>
             </div>
           )}
@@ -905,13 +923,13 @@ const EditListingPage = () => {
                 onChange={handleImages}
                 className="hidden"
                 id="image-upload"
-                disabled={loading}
+                disabled={loading || processingImages}
               />
               <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center">
                 <FiUpload className="text-3xl text-[#475569] mb-2" />
                 <span className="text-sm text-[#475569]">Click to upload replacement images</span>
                 <span className="text-xs text-[#475569] mt-1">
-                  Select multiple images. Large files are compressed before upload. Max {imageLimit} images.
+                  {processingImages ? "Preparing images..." : `Select multiple images. Large files are compressed before upload. Max ${imageLimit} images and 38 MB per upload.`}
                 </span>
               </label>
             </div>
@@ -948,13 +966,13 @@ const EditListingPage = () => {
             type="button"
             onClick={() => navigate("/listings")}
             className="px-6 py-3 text-[#475569] border border-[#E2E8F0] rounded-lg hover:bg-[#F8FAFC] transition-colors"
-            disabled={loading}
+            disabled={loading || processingImages}
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || processingImages}
             className="px-6 py-3 bg-[#126542] text-white rounded-lg font-semibold hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {loading ? (

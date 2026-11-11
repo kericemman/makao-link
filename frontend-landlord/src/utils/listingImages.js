@@ -3,6 +3,7 @@ const heifExtensions = new Set([".heic", ".heif"]);
 const rawExtensions = new Set([".dng", ".cr2", ".cr3", ".nef", ".arw", ".rw2"]);
 const maxSourceBytes = 25 * 1024 * 1024;
 const maxTiffPixels = 32_000_000;
+export const MAX_LISTING_UPLOAD_BYTES = 38 * 1024 * 1024;
 
 const getExtension = (name = "") => {
   const index = name.lastIndexOf(".");
