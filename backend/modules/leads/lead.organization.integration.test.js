@@ -18,8 +18,9 @@ const Viewing = require("../viewings/viewing.model");
 const leadRoutes = require("./lead.routes");
 
 const uri = process.env.MONGO_URI_STAGING;
+const runStagingIntegration = process.env.RUN_STAGING_INTEGRATION_TESTS === "true";
 
-test("staging lead routes enforce organization branch scope and agent assignment", { skip: !uri && "MONGO_URI_STAGING is not configured" }, async (t) => {
+test("staging lead routes enforce organization branch scope and agent assignment", { skip: !runStagingIntegration ? "Set RUN_STAGING_INTEGRATION_TESTS=true to run staging database tests" : !uri && "MONGO_URI_STAGING is not configured" }, async (t) => {
   safeDatabaseName(uri, process.env);
   assert.ok(process.env.JWT_SECRET, "JWT_SECRET must be configured for route integration tests");
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });

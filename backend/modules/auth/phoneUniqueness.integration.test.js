@@ -7,8 +7,9 @@ const User = require("../users/user.model");
 const { safeDatabaseName } = require("../../scripts/migrateIdentityOrganizations");
 
 const uri = process.env.MONGO_URI_STAGING;
+const runStagingIntegration = process.env.RUN_STAGING_INTEGRATION_TESTS === "true";
 
-test("staging phone index enforces canonical uniqueness across account roles", { skip: !uri && "MONGO_URI_STAGING is not configured" }, async (t) => {
+test("staging phone index enforces canonical uniqueness across account roles", { skip: !runStagingIntegration ? "Set RUN_STAGING_INTEGRATION_TESTS=true to run staging database tests" : !uri && "MONGO_URI_STAGING is not configured" }, async (t) => {
   safeDatabaseName(uri, process.env);
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });
   await User.createIndexes();

@@ -19,8 +19,9 @@ const AuditRecord = require("../authorization/auditRecord.model");
 const viewingRoutes = require("./viewing.routes");
 
 const uri = process.env.MONGO_URI_STAGING;
+const runStagingIntegration = process.env.RUN_STAGING_INTEGRATION_TESTS === "true";
 
-test("staging viewing attribution is customer-owned and match-scoped", { skip: !uri && "MONGO_URI_STAGING is not configured" }, async () => {
+test("staging viewing attribution is customer-owned and match-scoped", { skip: !runStagingIntegration ? "Set RUN_STAGING_INTEGRATION_TESTS=true to run staging database tests" : !uri && "MONGO_URI_STAGING is not configured" }, async () => {
   safeDatabaseName(uri, process.env);
   assert.ok(process.env.JWT_SECRET, "JWT_SECRET must be configured for route integration tests");
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });

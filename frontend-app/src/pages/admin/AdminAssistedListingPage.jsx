@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import imageCompression from "browser-image-compression";
 import toast from "react-hot-toast";
 import api from "../../api/api";
@@ -14,6 +14,19 @@ const initialForm = {
 };
 
 const readable = (value = "") => value.split("-").map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" ");
+const normalizeListingMeta = (data) => {
+  const source = data?.meta || data || {};
+  const meta = {
+    counties: Array.isArray(source.counties) ? source.counties : [],
+    countyNames: source.countyNames && typeof source.countyNames === "object" ? source.countyNames : {},
+    countyTowns: source.countyTowns && typeof source.countyTowns === "object" ? source.countyTowns : {},
+    listingTypes: Array.isArray(source.listingTypes) ? source.listingTypes : [],
+    listingPurposes: Array.isArray(source.listingPurposes) ? source.listingPurposes : [],
+    residentialTypes: Array.isArray(source.residentialTypes) ? source.residentialTypes : [],
+    officeSizeUnits: Array.isArray(source.officeSizeUnits) ? source.officeSizeUnits : []
+  };
+  return { meta, valid: meta.counties.length > 0 && meta.listingTypes.length > 0 && meta.listingPurposes.length > 0 };
+};
 
 export default function AdminAssistedListingPage() {
   const [meta, setMeta] = useState({ counties: [], countyTowns: {}, listingTypes: [], listingPurposes: [], residentialTypes: [], officeSizeUnits: [] });
@@ -30,32 +43,53 @@ export default function AdminAssistedListingPage() {
   const [reviewing, setReviewing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [metaLoading, setMetaLoading] = useState(true);
+  const [metaError, setMetaError] = useState("");
+  const [draftsError, setDraftsError] = useState("");
+  const [processingImages, setProcessingImages] = useState(false);
   const [error, setError] = useState("");
+  const processingImagesRef = useRef(false);
 
   useEffect(() => {
     let active = true;
-    Promise.all([api.get("/listings/meta"), api.get("/admin/assisted-listing-drafts")])
-      .then(([metaResponse, draftResponse]) => {
+    Promise.allSettled([api.get("/listings/meta"), api.get("/admin/assisted-listing-drafts")])
+      .then(([metaResult, draftsResult]) => {
         if (!active) return;
-        const listingMeta = metaResponse.data?.meta || metaResponse.data || {};
-        setMeta({
-          counties: Array.isArray(listingMeta.counties) ? listingMeta.counties : [],
-          countyNames: listingMeta.countyNames || {},
-          countyTowns: listingMeta.countyTowns || {},
-          listingTypes: Array.isArray(listingMeta.listingTypes) ? listingMeta.listingTypes : [],
-          listingPurposes: Array.isArray(listingMeta.listingPurposes) ? listingMeta.listingPurposes : [],
-          residentialTypes: Array.isArray(listingMeta.residentialTypes) ? listingMeta.residentialTypes : [],
-          officeSizeUnits: Array.isArray(listingMeta.officeSizeUnits) ? listingMeta.officeSizeUnits : []
-        });
-        setDrafts(draftResponse.data.drafts || []);
+        if (metaResult.status === "fulfilled") {
+          const normalized = normalizeListingMeta(metaResult.value.data);
+          setMeta(normalized.meta);
+          setMetaError(normalized.valid ? "" : "Listing options returned incomplete data. Retry before creating a draft.");
+        } else {
+          setMetaError("Listing options could not be loaded. Retry before creating a draft.");
+        }
+        if (draftsResult.status === "fulfilled" && Array.isArray(draftsResult.value.data?.drafts)) {
+          setDrafts(draftsResult.value.data.drafts);
+          setDraftsError("");
+        } else {
+          setDraftsError("Saved drafts could not be loaded. Retry the page to refresh them.");
+        }
       })
-      .catch(() => { if (active) toast.error("Could not load listing options and saved drafts."); })
+      .catch(() => { if (active) setMetaError("Listing options could not be loaded. Retry before creating a draft."); })
       .finally(() => { if (active) setMetaLoading(false); });
     return () => { active = false; };
   }, []);
 
+  const retryInitialData = async () => {
+    setMetaLoading(true);
+    const [metaResult, draftsResult] = await Promise.allSettled([api.get("/listings/meta"), api.get("/admin/assisted-listing-drafts")]);
+    if (metaResult.status === "fulfilled") {
+      const normalized = normalizeListingMeta(metaResult.value.data);
+      setMeta(normalized.meta);
+      setMetaError(normalized.valid ? "" : "Listing options returned incomplete data. Retry before creating a draft.");
+    } else setMetaError("Listing options could not be loaded. Retry before creating a draft.");
+    if (draftsResult.status === "fulfilled" && Array.isArray(draftsResult.value.data?.drafts)) {
+      setDrafts(draftsResult.value.data.drafts);
+      setDraftsError("");
+    } else setDraftsError("Saved drafts could not be loaded. Retry the page to refresh them.");
+    setMetaLoading(false);
+  };
+
   const countyOptions = useMemo(() => (meta.counties || []).map((value) => ({ value, label: meta.countyNames?.[value] || readable(value) })), [meta.counties, meta.countyNames]);
-  const townOptions = useMemo(() => (meta.countyTowns?.[form.county] || []).map((value) => ({ value, label: readable(value) })), [meta.countyTowns, form.county]);
+  const townOptions = useMemo(() => (Array.isArray(meta.countyTowns?.[form.county]) ? meta.countyTowns[form.county] : []).map((value) => ({ value, label: readable(value) })), [meta.countyTowns, form.county]);
   const propertyTypes = useMemo(() => (meta.listingTypes || []).map((value) => ({ value, label: value === "office" ? "Office Space" : readable(value) })), [meta.listingTypes]);
   const purposes = useMemo(() => (meta.listingPurposes || []).map((value) => ({ value, label: value === "rent" ? "For Rent" : value === "sale" ? "For Sale" : "BnB / Short Stay" })), [meta.listingPurposes]);
   const residentialTypes = meta.residentialTypes || [];
@@ -81,14 +115,24 @@ export default function AdminAssistedListingPage() {
   const onFilesChange = async (event) => {
     const files = Array.from(event.target.files || []);
     event.target.value = "";
+    if (!files.length || processingImagesRef.current) return;
     if (files.length + images.length > imageLimit) return toast.error(`Selected package allows up to ${imageLimit} images.`);
-    const compressed = [];
-    for (const file of files) {
-      try { compressed.push(await compressListingImage(imageCompression, file, { maxSizeMB: 1, maxWidthOrHeight: 1600, useWebWorker: true })); }
-      catch { toast.error(`Could not process ${file.name}.`); }
+    processingImagesRef.current = true;
+    setProcessingImages(true);
+    try {
+      const compressed = [];
+      for (const file of files) {
+        try { compressed.push(await compressListingImage(imageCompression, file, { maxSizeMB: 1, maxWidthOrHeight: 1600, useWebWorker: true })); }
+        catch { toast.error(`Could not process ${file.name}.`); }
+      }
+      if (compressed.length) {
+        setImages((current) => [...current, ...compressed].slice(0, imageLimit));
+        setPreviews((current) => [...current, ...compressed.map((file) => URL.createObjectURL(file))].slice(0, imageLimit));
+      }
+    } finally {
+      processingImagesRef.current = false;
+      setProcessingImages(false);
     }
-    setImages((current) => [...current, ...compressed]);
-    setPreviews((current) => [...current, ...compressed.map((file) => URL.createObjectURL(file))]);
   };
 
   const removeImage = (index) => {
@@ -101,6 +145,7 @@ export default function AdminAssistedListingPage() {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (metaError || metaLoading || processingImages) return;
     setLoading(true);
     setError("");
     const body = new FormData();
@@ -108,7 +153,9 @@ export default function AdminAssistedListingPage() {
     images.forEach((image) => body.append("images", image));
     try {
       const response = await api.post("/admin/assisted-listing-drafts", body, { headers: { "Content-Type": "multipart/form-data" } });
+      if (!response.data?.draft?._id) throw new Error("The server did not return the saved draft. Refresh the drafts list before retrying.");
       setDrafts((current) => [response.data.draft, ...current]);
+      setDraftsError("");
       toast.success("Draft saved for review. No landlord account or public listing was created.");
       setForm(initialForm);
       setLandlord({ name: "", email: "", phone: "", businessName: "" });
@@ -118,7 +165,7 @@ export default function AdminAssistedListingPage() {
       previews.forEach(URL.revokeObjectURL);
       setPreviews([]);
     } catch (requestError) {
-      const message = requestError.response?.data?.message || "Could not save the assisted listing draft.";
+      const message = requestError.response?.data?.message || requestError.message || "Could not save the assisted listing draft.";
       setError(message);
       toast.error(message);
     } finally { setLoading(false); }
@@ -131,7 +178,7 @@ export default function AdminAssistedListingPage() {
       const response = await api.patch(`/admin/assisted-listing-drafts/${selectedDraft._id}/${decision}`, { reviewNote });
       if (decision === "approve") {
         const latest = await api.get("/admin/assisted-listing-drafts");
-        setDrafts(latest.data.drafts || []);
+        if (Array.isArray(latest.data?.drafts)) setDrafts(latest.data.drafts);
         if (response.data.accountSetupEmailSent) toast.success(response.data.message || "Draft approved.");
         else toast.error(response.data.message || "Draft approved, but the setup email needs attention.");
       } else {
@@ -179,14 +226,16 @@ export default function AdminAssistedListingPage() {
         <div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="text-lg font-semibold text-[#013E43]">Building inventory</h2><p className="mt-1 max-w-2xl text-sm text-[#647C75]">For multi-unit buildings, group similar homes into one category and track how many remain available.</p></div><label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-[#263D35]"><input type="checkbox" checked={inventoryMode} onChange={(event) => setInventoryMode(event.target.checked)} />Create a building category</label></div>
         {inventoryMode && <div className="mt-4 grid gap-4 border-t border-[#DDEAE3] pt-4 sm:grid-cols-2"><label className="text-sm font-medium text-[#263D35]">Building name<input required value={inventory.building} onChange={(e) => setInventory({ ...inventory, building: e.target.value })} placeholder="e.g. River Park Apartments" className="mt-1 w-full rounded border border-[#DDEAE3] px-3 py-2.5" /></label><label className="text-sm font-medium text-[#263D35]">Unit category<input required value={inventory.category} onChange={(e) => setInventory({ ...inventory, category: e.target.value })} placeholder="e.g. 1-bedroom apartments" className="mt-1 w-full rounded border border-[#DDEAE3] px-3 py-2.5" /></label><label className="text-sm font-medium text-[#263D35]">Total units<input required type="number" min="1" max="5000" value={inventory.totalUnits} onChange={(e) => setInventory({ ...inventory, totalUnits: e.target.value, availableUnits: inventory.availableUnits || e.target.value })} className="mt-1 w-full rounded border border-[#DDEAE3] px-3 py-2.5" /></label><label className="text-sm font-medium text-[#263D35]">Available units<input required type="number" min="0" max={inventory.totalUnits || 5000} value={inventory.availableUnits} onChange={(e) => setInventory({ ...inventory, availableUnits: e.target.value })} className="mt-1 w-full rounded border border-[#DDEAE3] px-3 py-2.5" /></label></div>}
       </section>}
-      <ListingPropertyFields formData={form} errors={{}} onChange={onChange} onAmenityChange={onAmenityChange} disabled={loading || metaLoading} loading={loading} metaLoading={metaLoading} purposes={purposes} propertyTypes={propertyTypes} residentialTypes={residentialTypes} isResidential={isResidential} isOffice={isOffice} countyOptions={countyOptions} townOptions={townOptions} listingMeta={meta} amenitiesList={amenitiesList} onUseCurrentLocation={() => navigator.geolocation?.getCurrentPosition(({ coords }) => setForm((current) => ({ ...current, latitude: coords.latitude.toFixed(6), longitude: coords.longitude.toFixed(6) })), () => toast.error("Could not access your location."))} mapSrc={mapSrc} mapLatitude={latitude} mapLongitude={longitude} />
-      <ListingImagesField imagesCount={images.length} imageLimit={imageLimit} previews={previews} error="" disabled={loading || metaLoading} onFilesChange={onFilesChange} onRemove={removeImage} />
+      {metaError && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border border-red-200 bg-red-50 p-3 text-sm text-red-800"><span>{metaError}</span><button type="button" onClick={retryInitialData} disabled={metaLoading} className="font-semibold underline">Retry</button></div>}
+      <ListingPropertyFields formData={form} errors={{}} onChange={onChange} onAmenityChange={onAmenityChange} disabled={loading || metaLoading || Boolean(metaError)} loading={loading} metaLoading={metaLoading} purposes={purposes} propertyTypes={propertyTypes} residentialTypes={residentialTypes} isResidential={isResidential} isOffice={isOffice} countyOptions={countyOptions} townOptions={townOptions} listingMeta={meta} amenitiesList={amenitiesList} onUseCurrentLocation={() => navigator.geolocation?.getCurrentPosition(({ coords }) => setForm((current) => ({ ...current, latitude: coords.latitude.toFixed(6), longitude: coords.longitude.toFixed(6) })), () => toast.error("Could not access your location."))} mapSrc={mapSrc} mapLatitude={latitude} mapLongitude={longitude} />
+      <ListingImagesField imagesCount={images.length} imageLimit={imageLimit} previews={previews} error="" disabled={loading || metaLoading || Boolean(metaError) || processingImages} onFilesChange={onFilesChange} onRemove={removeImage} />
+      {processingImages && <p role="status" className="text-sm text-[#41635A]">Preparing selected images…</p>}
       {error && <p role="alert" className="text-sm font-medium text-red-700">{error}</p>}
-      <div className="flex justify-end"><button type="submit" disabled={loading || metaLoading} className="bg-[#0D915C] px-5 py-3 font-semibold text-white disabled:opacity-50">{loading ? "Saving draft..." : "Save draft for review"}</button></div>
+      <div className="flex justify-end"><button type="submit" disabled={loading || metaLoading || Boolean(metaError) || processingImages} className="bg-[#0D915C] px-5 py-3 font-semibold text-white disabled:opacity-50">{loading ? "Saving draft..." : "Save draft for review"}</button></div>
     </form>
     <section className="border-t border-[#DDEAE3] pt-6">
       <h2 className="text-lg font-semibold text-[#013E43]">Recent drafts</h2>
-      <div className="mt-3 divide-y divide-[#DDEAE3]">{drafts.length ? drafts.map((draft) => <article key={draft._id} className="grid gap-2 py-4 sm:grid-cols-[1fr_auto_auto] sm:items-center"><div><p className="font-semibold text-[#263D35]">{draft.property?.title || "Untitled property"}</p><p className="text-sm text-[#647C75]">{draft.landlord?.name} · {draft.landlord?.email} · {draft.property?.town}, {draft.property?.county} · {draft.package}</p></div><span className={`text-xs font-semibold uppercase ${draft.status === "approved" ? "text-emerald-700" : draft.status === "rejected" ? "text-red-700" : "text-amber-700"}`}>{draft.status}</span><button type="button" onClick={() => { setSelectedDraft(draft); setReviewNote(draft.reviewNote || ""); }} className="text-sm font-semibold text-[#08764C] underline">Review</button></article>) : <p className="py-4 text-sm text-[#647C75]">No assisted drafts saved yet.</p>}</div>
+      <div className="mt-3 divide-y divide-[#DDEAE3]">{draftsError ? <p role="alert" className="py-4 text-sm text-red-700">{draftsError} <button type="button" onClick={retryInitialData} className="font-semibold underline">Retry</button></p> : drafts.length ? drafts.filter((draft) => draft?._id).map((draft) => <article key={draft._id} className="grid gap-2 py-4 sm:grid-cols-[1fr_auto_auto] sm:items-center"><div><p className="font-semibold text-[#263D35]">{draft.property?.title || "Untitled property"}</p><p className="text-sm text-[#647C75]">{draft.landlord?.name} · {draft.landlord?.email} · {draft.property?.town}, {draft.property?.county} · {draft.package}</p></div><span className={`text-xs font-semibold uppercase ${draft.status === "approved" ? "text-emerald-700" : draft.status === "rejected" ? "text-red-700" : "text-amber-700"}`}>{draft.status}</span><button type="button" onClick={() => { setSelectedDraft(draft); setReviewNote(draft.reviewNote || ""); }} className="text-sm font-semibold text-[#08764C] underline">Review</button></article>) : <p className="py-4 text-sm text-[#647C75]">No assisted drafts saved yet.</p>}</div>
     </section>
     {selectedDraft && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-3 sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !reviewing) setSelectedDraft(null); }}>
       <section role="dialog" aria-modal="true" aria-labelledby="assisted-draft-title" className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-md bg-white p-5 shadow-xl sm:p-7">

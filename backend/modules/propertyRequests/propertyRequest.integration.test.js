@@ -13,8 +13,9 @@ const ListingMatch = require("./listingMatch.model");
 const propertyRequestRoutes = require("./propertyRequest.routes");
 
 const uri = process.env.MONGO_URI_STAGING;
+const runStagingIntegration = process.env.RUN_STAGING_INTEGRATION_TESTS === "true";
 
-test("staging property request handoff persists idempotently and remains customer-scoped", { skip: !uri && "MONGO_URI_STAGING is not configured" }, async (t) => {
+test("staging property request handoff persists idempotently and remains customer-scoped", { skip: !runStagingIntegration ? "Set RUN_STAGING_INTEGRATION_TESTS=true to run staging database tests" : !uri && "MONGO_URI_STAGING is not configured" }, async (t) => {
   safeDatabaseName(uri, process.env);
   assert.ok(process.env.JWT_SECRET, "JWT_SECRET must be configured for route integration tests");
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });

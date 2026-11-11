@@ -14,8 +14,9 @@ const ListingMatch = require("./listingMatch.model");
 const propertyRequestRoutes = require("./propertyRequest.routes");
 
 const uri = process.env.MONGO_URI_STAGING;
+const runStagingIntegration = process.env.RUN_STAGING_INTEGRATION_TESTS === "true";
 
-test("staging Renda Match ranks exact listings and persists explainable versioned results", { skip: !uri && "MONGO_URI_STAGING is not configured" }, async () => {
+test("staging Renda Match ranks exact listings and persists explainable versioned results", { skip: !runStagingIntegration ? "Set RUN_STAGING_INTEGRATION_TESTS=true to run staging database tests" : !uri && "MONGO_URI_STAGING is not configured" }, async () => {
   safeDatabaseName(uri, process.env);
   assert.ok(process.env.JWT_SECRET, "JWT_SECRET must be configured for route integration tests");
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });

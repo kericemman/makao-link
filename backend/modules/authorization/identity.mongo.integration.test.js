@@ -21,8 +21,9 @@ const Subscription = require("../subscriptions/subscription.model");
 const AuditRecord = require("./auditRecord.model");
 
 const uri = process.env.MONGO_URI_STAGING;
+const runStagingIntegration = process.env.RUN_STAGING_INTEGRATION_TESTS === "true";
 
-test("staging MongoDB and Express identity authorization integration", { skip: !uri && "MONGO_URI_STAGING is not configured" }, async (t) => {
+test("staging MongoDB and Express identity authorization integration", { skip: !runStagingIntegration ? "Set RUN_STAGING_INTEGRATION_TESTS=true to run staging database tests" : !uri && "MONGO_URI_STAGING is not configured" }, async (t) => {
   const databaseName = safeDatabaseName(uri, process.env);
   assert.ok(process.env.JWT_SECRET, "JWT_SECRET must be configured for route integration tests");
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });

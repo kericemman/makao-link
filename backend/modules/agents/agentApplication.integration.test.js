@@ -13,6 +13,7 @@ const AuditRecord = require("../authorization/auditRecord.model");
 const AdminActivity = require("../admin/adminActivity.model");
 
 const uri = process.env.MONGO_URI_STAGING;
+const runStagingIntegration = process.env.RUN_STAGING_INTEGRATION_TESTS === "true";
 const sentEmails = [];
 const emailModulePath = require.resolve("../../utils/sendEmail");
 require.cache[emailModulePath] = { id: emailModulePath, filename: emailModulePath, loaded: true, exports: async (message) => { sentEmails.push(message); return { mocked: true }; } };
@@ -37,7 +38,7 @@ require.cache[applicationStoragePath] = {
 const agentRoutes = require("./agent.routes");
 const authRoutes = require("../auth/auth.routes");
 
-test("staging agent application is reviewed by admin and invitation uses a one-time password setup link", { skip: !uri && "MONGO_URI_STAGING is not configured" }, async () => {
+test("staging agent application is reviewed by admin and invitation uses a one-time password setup link", { skip: !runStagingIntegration ? "Set RUN_STAGING_INTEGRATION_TESTS=true to run staging database tests" : !uri && "MONGO_URI_STAGING is not configured" }, async () => {
   safeDatabaseName(uri, process.env);
   assert.ok(process.env.JWT_SECRET, "JWT_SECRET must be configured for route integration tests");
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });
