@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { Node } from "@tiptap/core";
+import imageCompression from "browser-image-compression";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
@@ -18,12 +19,30 @@ import {
   FiAlignJustify,
   FiEdit3,
   FiEye,
-  FiVideo
+  FiVideo,
+  FiImage
 } from "react-icons/fi";
 import { FaHeading, FaQuoteRight, FaListUl, FaListOl } from "react-icons/fa";
 import { MdCode } from "react-icons/md";
 import sanitizeHtml from "../../../utils/sanitizeHtml";
 import { getVideoEmbedUrl } from "../../../utils/videoEmbed";
+import toast from "react-hot-toast";
+
+const ArticleImage = Node.create({
+  name: "articleImage",
+  group: "block",
+  atom: true,
+  draggable: true,
+  addAttributes() {
+    return { src: { default: null }, alt: { default: "" } };
+  },
+  parseHTML() {
+    return [{ tag: "img[src]" }];
+  },
+  renderHTML({ node }) {
+    return ["img", { src: node.attrs.src, alt: node.attrs.alt || "", loading: "lazy" }];
+  }
+});
 
 const VideoEmbed = Node.create({
   name: "videoEmbed",
@@ -61,13 +80,14 @@ const VideoEmbed = Node.create({
   }
 });
 
-const ToolbarButton = ({ onClick, isActive, children, title }) => (
+const ToolbarButton = ({ onClick, isActive, children, title, disabled = false }) => (
   <button
     type="button"
     onClick={onClick}
     title={title}
     aria-label={title}
-    className={`flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors ${
+    disabled={disabled}
+    className={`flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors disabled:cursor-wait disabled:opacity-50 ${
       isActive
         ? "bg-[#0D915C] text-white"
         : "text-[#41635A] hover:bg-[#F1F7F3] hover:text-[#013E43]"
@@ -77,8 +97,10 @@ const ToolbarButton = ({ onClick, isActive, children, title }) => (
   </button>
 );
 
-const RichText = ({ value, onChange }) => {
+const RichText = ({ value, onChange, onUploadImage }) => {
   const [previewMode, setPreviewMode] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef(null);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -97,7 +119,8 @@ const RichText = ({ value, onChange }) => {
       TextAlign.configure({
         types: ["heading", "paragraph"]
       }),
-      VideoEmbed
+      VideoEmbed,
+      ArticleImage
     ],
     content: value || "",
     onUpdate: ({ editor }) => {
@@ -142,6 +165,53 @@ const RichText = ({ value, onChange }) => {
       type: "videoEmbed",
       attrs: { src, title: "Embedded property video" }
     }).run();
+  };
+
+  const addImage = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)) {
+      toast.error("Use a JPEG, PNG, WebP, or AVIF image.");
+      return;
+    }
+    const suggestedAlt = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").slice(0, 120);
+    const alt = window.prompt("Describe this image for readers and search engines", suggestedAlt)?.trim();
+    if (!alt) return;
+    if (alt.length > 180) {
+      toast.error("Keep the image description under 180 characters.");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      let uploadFile = file;
+      try {
+        const compressed = await imageCompression(file, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1800,
+          useWebWorker: true,
+          fileType: "image/webp"
+        });
+        if (compressed?.size && compressed.size < file.size && compressed.type === "image/webp") {
+          const webpName = `${file.name.replace(/\.[^.]+$/, "") || "article-image"}.webp`;
+          uploadFile = new File([compressed], webpName, { type: "image/webp", lastModified: Date.now() });
+        }
+      } catch {
+        // Keep the original file; the server validates its actual image signature and size.
+      }
+      if (uploadFile.size > 10 * 1024 * 1024) {
+        throw new Error("This image is still over 10 MB after compression. Choose a smaller image.");
+      }
+      const uploaded = await onUploadImage(uploadFile);
+      if (!uploaded?.url || !/^https:\/\//i.test(uploaded.url)) throw new Error("The image upload did not return a valid public image URL.");
+      editor?.chain().focus().insertContent({ type: "articleImage", attrs: { src: uploaded.url, alt } }).run();
+      toast.success("Image added to the article.");
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || "Image upload failed. Try a smaller image.");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   return (
@@ -257,6 +327,22 @@ const RichText = ({ value, onChange }) => {
           <ToolbarButton onClick={addVideo} title="Add YouTube or Vimeo video">
             <FiVideo />
           </ToolbarButton>
+
+          {onUploadImage && <>
+            <ToolbarButton onClick={() => imageInputRef.current?.click()} title="Upload image to article" disabled={uploadingImage}>
+              <FiImage />
+            </ToolbarButton>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif"
+              className="hidden"
+              onChange={addImage}
+              disabled={uploadingImage}
+              aria-label="Choose an article image"
+            />
+            {uploadingImage && <span role="status" className="px-2 text-xs font-medium text-[#0D915C]">Uploading image…</span>}
+          </>}
 
           <ToolbarButton
             onClick={() => editor?.chain().focus().setTextAlign("left").run()}

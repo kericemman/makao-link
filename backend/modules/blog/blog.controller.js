@@ -5,6 +5,7 @@ const {
   blogPublishedEmail,
   newsletterWelcomeEmail
 } = require("../../utils/emailTemplates");
+const { uploadBlogImage } = require("./blogMedia.storage");
 
 const slugify = (text) =>
   String(text || "")
@@ -184,6 +185,16 @@ exports.getAdminBlogById = async (req, res, next) => {
       success: true,
       blog
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.uploadBlogInlineImage = async (req, res, next) => {
+  if (!req.file) return res.status(400).json({ success: false, message: "Choose an image to upload." });
+  try {
+    const image = await uploadBlogImage(req.file);
+    res.status(201).json({ success: true, image });
   } catch (error) {
     next(error);
   }
