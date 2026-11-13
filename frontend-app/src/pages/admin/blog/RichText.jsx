@@ -97,13 +97,14 @@ const ToolbarButton = ({ onClick, isActive, children, title, disabled = false })
   </button>
 );
 
-const RichText = ({ value, onChange, onUploadImage }) => {
+const RichText = ({ value, onChange, onUploadImage, stickyToolbar = false }) => {
   const [previewMode, setPreviewMode] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageInputRef = useRef(null);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
+        link: false,
         heading: {
           levels: [1, 2, 3]
         }
@@ -215,8 +216,8 @@ const RichText = ({ value, onChange, onUploadImage }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-[#DDEAE3] overflow-hidden">
-      <div className="bg-[#F1F7F3] p-3 border-b border-[#DDEAE3]">
+    <div className={`rounded-lg border border-[#DDEAE3] bg-white shadow-sm ${stickyToolbar ? "overflow-visible" : "overflow-hidden"}`}>
+      <div className={`bg-[#F1F7F3] p-3 border-b border-[#DDEAE3] ${stickyToolbar ? "sticky top-16 z-30 rounded-t-lg shadow-sm" : ""}`}>
         <div className="flex flex-wrap items-center gap-1">
           <ToolbarButton
             onClick={() => editor?.chain().focus().toggleBold().run()}

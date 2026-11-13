@@ -62,13 +62,16 @@ const devOrigins = isProduction
       "http://127.0.0.1:5178"
     ];
 
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  ...(process.env.CLIENT_URLS || "").split(","),
-  ...devOrigins
-]
-  .map((origin) => origin && origin.trim())
-  .filter(Boolean);
+const allowedOrigins = new Set([
+  "CLIENT_URL",
+  "CLIENT_URLS",
+  "LANDLORD_CLIENT_URL",
+  "USER_CLIENT_URL",
+  "ADMIN_CLIENT_URL"
+].flatMap((key) => (process.env[key] || "").split(","))
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean)
+  .concat(devOrigins));
 
 app.use(
   cors({
@@ -77,7 +80,7 @@ app.use(
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
+      if (allowedOrigins.has(origin.replace(/\/$/, ""))) {
         return callback(null, true);
       }
 

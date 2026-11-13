@@ -338,6 +338,7 @@ const AdminBlogEditorPage = () => {
               <RichText
                 value={formData.content}
                 onUploadImage={uploadBlogImage}
+                stickyToolbar
                 onChange={(html) =>
                   setFormData((prev) => ({
                     ...prev,
