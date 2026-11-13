@@ -38,7 +38,7 @@ const documents = {
           "publish and manage property listings, review KYC or agent applications, administer subscriptions and prevent misuse;",
           "deliver searches, saved homes, property requests, matching where selected, inquiries, stay requests, viewings and support;",
           "share an inquiry or viewing request with the relevant listing advertiser and any agent authorized to handle it;",
-          "send necessary account, security, payment, inquiry, viewing and service communications, and send marketing or product updates where you have subscribed or otherwise opted in;",
+          "send necessary account, security, payment, inquiry, viewing and service communications; provide verified landlord accounts with relevant website service and listing updates; and send editorial article/newsletter or promotional emails only where you have subscribed or otherwise opted in;",
           "meet legal obligations, keep appropriate business records, resolve disputes and protect users and the platform."
         ]
       },
@@ -87,7 +87,7 @@ const documents = {
         title: "9. Your choices and rights",
         paragraphs: [
           "Under applicable Kenyan law, you may have rights to be informed about use of your personal data, access it, object to some processing, request correction of inaccurate or misleading information, and request deletion or erasure where legally available. You may withdraw consent for processing that relies on consent; withdrawal does not affect processing already carried out lawfully.",
-          "You can unsubscribe from marketing or product-update emails using the available unsubscribe option. Service and security messages needed to operate your account may still be sent.",
+          "Editorial article/newsletter and promotional emails are separate from landlord service updates. You may request a change to email preferences by contacting privacy@rendahomes.com. Account, security and listing-service messages needed to operate a landlord account may still be sent.",
           "To make a privacy request, email privacy@rendahomes.com and describe the account or information involved. We may need to verify your identity before acting. You may also raise a complaint with the Office of the Data Protection Commissioner of Kenya."
         ]
       },

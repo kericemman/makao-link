@@ -1,574 +1,374 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { getPublishedBlogBySlug } from "../../../services/blog.service";
-import {
-  FiCalendar,
-  FiUser,
-  FiClock,
-  FiBookmark,
-  FiHeart,
-  FiFacebook,
-  FiTwitter,
-  FiLinkedin,
-  FiLink,
-  FiArrowLeft,
-  FiChevronRight,
-  FiTag,
-  FiAlertCircle
-} from "react-icons/fi";
-import { FaWhatsapp } from "react-icons/fa";
-import toast from "react-hot-toast";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { FiArrowLeft, FiArrowRight, FiCalendar, FiClock, FiLink, FiShare2 } from "react-icons/fi";
+import { FaFacebook, FaWhatsapp } from "react-icons/fa";
+import { getPublishedBlogBySlug, getPublishedBlogs } from "../../../services/blog.service";
+import { useSeo } from "../../../utils/seo";
 import sanitizeHtml from "../../../utils/sanitizeHtml";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
+const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") || "";
+const SITE_NAME = "RendaHomes";
+const SITE_URL = (import.meta.env.VITE_SITE_URL || "https://rendahomes.com").replace(/\/$/, "");
 
 const getImageUrl = (image) => {
   if (!image) return "";
-
-  if (typeof image === "object" && image.url) {
-    return image.url;
-  }
-
-  if (typeof image === "string" && image.startsWith("http")) {
-    return image;
-  }
-
-  if (typeof image === "string" && image.startsWith("/")) {
-    return `${API_BASE_URL}${image}`;
-  }
-
-  return `${API_BASE_URL}/${image}`;
+  if (typeof image === "object") return image.url || image.path || "";
+  if (/^https?:\/\//i.test(image)) return image;
+  return `${API_BASE_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 };
 
-const createHeadingId = (text, index) => {
-  return `heading-${index}-${String(text)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")}`;
+const toSlug = (text) => String(text || "section")
+  .toLowerCase()
+  .normalize("NFKD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-|-$/g, "") || "section";
+
+const prepareArticle = (content) => {
+  if (typeof document === "undefined" || !content) return { html: "", headings: [] };
+  const container = document.createElement("div");
+  container.innerHTML = sanitizeHtml(content);
+  const usedIds = new Set();
+
+  container.querySelectorAll("h1, h2, h3").forEach((heading) => {
+    const authoredId = heading.id?.trim();
+    let id = authoredId && !/\s/.test(authoredId) && !usedIds.has(authoredId)
+      ? authoredId
+      : toSlug(heading.textContent);
+    let suffix = 2;
+    const base = id;
+    while (usedIds.has(id)) id = `${base}-${suffix++}`;
+    heading.id = id;
+    usedIds.add(id);
+  });
+
+  const headings = Array.from(container.querySelectorAll("h2, h3"), (heading) => ({
+    id: heading.id,
+    text: heading.textContent?.trim() || "Section",
+    level: heading.tagName.toLowerCase()
+  }));
+  return { html: container.innerHTML, headings };
 };
 
-const BlogDetailPage = () => {
+const getReadingMinutes = (content) => {
+  const text = String(content || "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ");
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
+};
+
+const formatDate = (value) => {
+  if (!value || Number.isNaN(new Date(value).getTime())) return "";
+  return new Intl.DateTimeFormat("en-KE", { day: "numeric", month: "long", year: "numeric" }).format(new Date(value));
+};
+const toIsoDate = (value) => {
+  if (!value || Number.isNaN(new Date(value).getTime())) return undefined;
+  return new Date(value).toISOString();
+};
+
+const getDiscoveryLink = (category = "") => {
+  const value = category.toLowerCase();
+  if (/short.?stay|bnb|holiday|stay/.test(value)) return "/listings?purpose=short_stay";
+  if (/buy|sale|home.?buy/.test(value)) return "/listings?purpose=sale";
+  if (/commercial|office|business/.test(value)) return "/listings?type=office";
+  if (/rent|tenant|landlord|letting/.test(value)) return "/listings?purpose=rent";
+  return "/listings";
+};
+
+function ArticleSkeleton() {
+  return (
+    <main className="animate-pulse" aria-label="Loading article">
+      <div className="bg-[#F0F7F4]">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:px-8 lg:py-14">
+          <div className="space-y-5">
+            <div className="h-4 w-40 rounded bg-[#DCEBE3]" />
+            <div className="h-5 w-32 rounded bg-[#DCEBE3]" />
+            <div className="h-12 max-w-2xl rounded bg-[#DCEBE3]" />
+            <div className="h-4 max-w-xl rounded bg-[#DCEBE3]" />
+            <div className="h-4 w-56 rounded bg-[#DCEBE3]" />
+          </div>
+          <div className="aspect-[16/10] rounded-lg bg-[#DCEBE3]" />
+        </div>
+      </div>
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[200px_minmax(0,1fr)] lg:px-8">
+        <div className="hidden space-y-4 lg:block"><div className="h-4 w-32 rounded bg-[#DCEBE3]" /><div className="h-4 w-40 rounded bg-[#DCEBE3]" /></div>
+        <div className="space-y-5"><div className="h-5 rounded bg-[#DCEBE3]" /><div className="h-5 rounded bg-[#DCEBE3]" /><div className="h-5 w-4/5 rounded bg-[#DCEBE3]" /><div className="h-48 rounded bg-[#DCEBE3]" /></div>
+      </div>
+    </main>
+  );
+}
+
+export default function BlogDetailPage() {
   const { slug } = useParams();
-
   const [blog, setBlog] = useState(null);
+  const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [activeHeading, setActiveHeading] = useState("");
-  const [headings, setHeadings] = useState([]);
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const [copyState, setCopyState] = useState("Copy link");
 
-  const fetchBlog = async () => {
+  const loadArticle = useCallback(async () => {
+    setLoading(true);
+    setError("");
     try {
-      setLoading(true);
-      const data = await getPublishedBlogBySlug(slug);
-      setBlog(data.blog);
-    } catch (error) {
-      toast.error("Failed to load blog post", {
-        style: { background: "#013E43", color: "#fff" }
-      });
+      const [articleResult, articlesResult] = await Promise.all([
+        getPublishedBlogBySlug(slug),
+        getPublishedBlogs().catch(() => ({ blogs: [] }))
+      ]);
+      const article = articleResult.blog;
+      setBlog(article);
+      const published = articlesResult.blogs || [];
+      const other = published.filter((item) => item._id !== article?._id && item.slug !== article?.slug);
+      const tags = new Set((article?.tags || []).map((tag) => tag.toLowerCase()));
+      const ranked = other.map((item) => {
+        const score = (item.category && item.category === article?.category ? 3 : 0)
+          + (item.tags || []).filter((tag) => tags.has(String(tag).toLowerCase())).length;
+        return { item, score };
+      }).sort((a, b) => b.score - a.score);
+      setRelated(ranked.slice(0, 3).map(({ item }) => item));
+    } catch (requestError) {
+      setBlog(null);
+      setError(requestError.response?.status === 404
+        ? "not-found"
+        : "We couldn't load this article. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    fetchBlog();
   }, [slug]);
 
   useEffect(() => {
-    if (!blog?.content) return;
+    window.scrollTo(0, 0);
+    loadArticle();
+  }, [loadArticle]);
 
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = sanitizeHtml(blog.content);
+  const prepared = useMemo(() => prepareArticle(blog?.content), [blog?.content]);
+  const readingMinutes = useMemo(() => getReadingMinutes(blog?.content), [blog?.content]);
+  const coverImageUrl = getImageUrl(blog?.coverImage);
+  const authorName = typeof blog?.author === "object" ? blog.author?.name : "";
+  const publishedDate = blog?.publishedAt || blog?.createdAt;
+  const canonicalUrl = `${SITE_URL}/blog/${blog?.slug || slug}`;
 
-    const headingElements = tempDiv.querySelectorAll("h1, h2, h3");
+  const jsonLd = useMemo(() => {
+    if (!blog) return null;
+    const articleUrl = `${SITE_URL}/blog/${blog.slug}`;
+    const author = blog.author?.name
+      ? { "@type": "Person", name: blog.author.name }
+      : { "@type": "Organization", name: SITE_NAME };
+    return {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BlogPosting",
+          headline: blog.title,
+          description: blog.metaDescription || blog.excerpt || undefined,
+          image: coverImageUrl || undefined,
+          author,
+          publisher: { "@type": "Organization", name: SITE_NAME },
+          datePublished: blog.publishedAt || undefined,
+          dateModified: blog.updatedAt || blog.publishedAt || undefined,
+          mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
+          url: articleUrl,
+          articleSection: blog.category || undefined,
+          keywords: Array.isArray(blog.tags) && blog.tags.length ? blog.tags.join(", ") : undefined
+        },
+        {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+            { "@type": "ListItem", position: 2, name: "Renda Insights", item: `${SITE_URL}/blog` },
+            { "@type": "ListItem", position: 3, name: blog.title, item: articleUrl }
+          ]
+        }
+      ]
+    };
+  }, [blog, coverImageUrl]);
 
-    const extractedHeadings = Array.from(headingElements).map(
-      (element, index) => {
-        const text = element.textContent || "";
+  useSeo({
+    title: blog?.metaTitle || blog?.title || "Renda Insights",
+    description: blog?.metaDescription || blog?.excerpt,
+    path: blog?.slug ? `/blog/${blog.slug}` : `/blog/${slug}`,
+    image: coverImageUrl || undefined,
+    type: "article",
+    jsonLd
+  });
 
-        return {
-          id: createHeadingId(text, index),
-          text,
-          level: element.tagName.toLowerCase()
-        };
-      }
-    );
-
-    setHeadings(extractedHeadings);
-  }, [blog]);
+  const updateActiveHeading = useCallback(() => {
+    const nodes = Array.from(document.querySelectorAll(".article-reading h2, .article-reading h3"));
+    if (!nodes.length) return;
+    const threshold = 150;
+    const passed = nodes.filter((node) => node.getBoundingClientRect().top <= threshold);
+    const current = (passed.length ? passed[passed.length - 1] : nodes[0]).id;
+    setActiveHeading((previous) => previous === current ? previous : current);
+  }, []);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const totalScroll =
-        document.documentElement.scrollHeight - window.innerHeight;
-
-      const progress =
-        totalScroll > 0 ? (window.scrollY / totalScroll) * 100 : 0;
-
-      setScrollProgress(Math.min(100, progress));
-
-      const headingElements = document.querySelectorAll(".blog-content h1, .blog-content h2, .blog-content h3");
-      const scrollPosition = window.scrollY + 120;
-
-      for (let i = headingElements.length - 1; i >= 0; i--) {
-        const element = headingElements[i];
-
-        if (element.offsetTop <= scrollPosition) {
-          setActiveHeading(element.id);
-          break;
-        }
-      }
+    if (!prepared.headings.length) return undefined;
+    let frame = 0;
+    const scheduleUpdate = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        updateActiveHeading();
+      });
     };
-
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [headings]);
-
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric"
+    const observer = new IntersectionObserver(scheduleUpdate, {
+      rootMargin: "-110px 0px -65% 0px",
+      threshold: [0, 1]
     });
-  };
+    document.querySelectorAll(".article-reading h2, .article-reading h3").forEach((node) => observer.observe(node));
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+    scheduleUpdate();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [prepared, updateActiveHeading]);
 
-  const calculateReadingTime = () => {
-    if (!blog?.content) return 1;
-
-    const wordsPerMinute = 200;
-    const wordCount = blog.content
-      .replace(/<[^>]*>/g, "")
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean).length;
-
-    return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
-  };
-
-  const processContent = () => {
-    if (!blog?.content) return "";
-
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = sanitizeHtml(blog.content);
-
-    const headingElements = tempDiv.querySelectorAll("h1, h2, h3");
-
-    headingElements.forEach((element, index) => {
-      const text = element.textContent || "";
-      element.id = createHeadingId(text, index);
-    });
-
-    return tempDiv.innerHTML;
-  };
-
-  const shareUrl = window.location.href;
-  const shareTitle = blog?.title || "Check out this article";
-
-  const handleShare = (platform) => {
-    let url = "";
-
-    switch (platform) {
-      case "facebook":
-        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-          shareUrl
-        )}`;
-        break;
-
-      case "twitter":
-        url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
-          shareUrl
-        )}&text=${encodeURIComponent(shareTitle)}`;
-        break;
-
-      case "linkedin":
-        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-          shareUrl
-        )}`;
-        break;
-
-      case "whatsapp":
-        url = `https://wa.me/?text=${encodeURIComponent(
-          `${shareTitle} ${shareUrl}`
-        )}`;
-        break;
-
-      case "copy":
-        navigator.clipboard.writeText(shareUrl);
-        toast.success("Link copied to clipboard!", {
-          style: { background: "#02BB31", color: "#fff" }
-        });
-        return;
-
-      default:
-        return;
+  const share = async (platform) => {
+    const title = blog?.title || "RendaHomes Insights";
+    const encodedUrl = encodeURIComponent(canonicalUrl);
+    const encodedTitle = encodeURIComponent(title);
+    if (platform === "copy") {
+      try {
+        await navigator.clipboard.writeText(canonicalUrl);
+        setCopyState("Copied");
+        window.setTimeout(() => setCopyState("Copy link"), 1800);
+      } catch {
+        setCopyState("Copy unavailable");
+        window.setTimeout(() => setCopyState("Copy link"), 1800);
+      }
+      return;
     }
-
-    if (url) window.open(url, "_blank");
-  };
-
-  const scrollToHeading = (id) => {
-    const element = document.getElementById(id);
-
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (platform === "native" && navigator.share) {
+      try { await navigator.share({ title, url: canonicalUrl }); } catch { /* User dismissed the share sheet. */ }
+      return;
     }
+    const targets = {
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(`${title} ${canonicalUrl}`)}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+      x: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`
+    };
+    if (targets[platform]) window.open(targets[platform], "_blank", "noopener,noreferrer");
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#A8D8C1] border-t-[#02BB31]" />
-          <p className="text-[#065A57]">Loading article...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <ArticleSkeleton />;
 
   if (!blog) {
+    const notFound = error === "not-found";
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <FiAlertCircle className="mx-auto mb-4 text-4xl text-red-500" />
-          <h2 className="mb-2 text-2xl font-bold text-[#013E43]">
-            Article not found
-          </h2>
-          <p className="mb-4 text-[#065A57]">
-            The article you're looking for doesn't exist.
-          </p>
-
-          <Link
-            to="/blog"
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#02BB31] to-[#0D915C] px-6 py-3 font-semibold text-white"
-          >
-            <FiArrowLeft />
-            Back to Blog
-          </Link>
+      <main className="mx-auto flex min-h-[55vh] max-w-3xl flex-col items-start justify-center px-4 py-16 sm:px-6 lg:px-8">
+        <h1 className="text-3xl font-bold text-[#013E43]">{notFound ? "Article not found" : "We couldn't load this article"}</h1>
+        <p className="mt-3 max-w-xl text-base leading-7 text-[#41635A]">{notFound ? "The article may have moved or is no longer available." : error}</p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          {!notFound && <button type="button" onClick={loadArticle} className="rounded-md bg-[#0D915C] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#08794b]">Try again</button>}
+          <Link to="/blog" className="inline-flex items-center gap-2 rounded-md border border-[#A8D8C1] px-4 py-2.5 text-sm font-semibold text-[#013E43] hover:bg-[#F0F7F4]"><FiArrowLeft />Back to Renda Insights</Link>
         </div>
-      </div>
+      </main>
     );
   }
 
-  const coverImageUrl = getImageUrl(blog.coverImage);
-  const processedContent = processContent();
+  const toc = prepared.headings.filter((heading) => heading.level === "h2" || heading.level === "h3");
+  const discoveryLink = getDiscoveryLink(blog.category);
 
   return (
-    <div className="min-h-screen bg-[#F0F7F4]">
-      <div className="border-b border-[#A8D8C1] bg-white">
-        <div className="mx-auto max-w-9xl px-4 py-12 sm:px-6 lg:px-8 md:py-16">
-          <Link
-            to="/blog"
-            className="mb-6 inline-flex items-center gap-2 text-[#065A57] hover:text-[#013E43]"
-          >
-            <FiArrowLeft />
-            Back to Blog
-          </Link>
-
-          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
-            <div>
-              {blog.category && (
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#02BB31]/10 px-3 py-1">
-                  <FiTag className="text-sm text-[#02BB31]" />
-                  <span className="text-sm font-medium text-[#02BB31]">
-                    {blog.category}
-                  </span>
-                </div>
-              )}
-
-              <h1 className="mb-4 font-bold text-[#013E43] text-lg md:text-4xl lg:text-5xl">
-                {blog.title}
-              </h1>
-
-              {blog.excerpt && (
-                <p className="mb-6 md:text-lg text-sm leading-relaxed text-[#065A57]">
-                  {blog.excerpt}
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center gap-6 text-sm text-[#065A57]">
-                {/* <span className="flex items-center gap-2">
-                  <FiUser className="text-[#02BB31]" />
-                  {blog.author?.name || "RendaHomes"}
-                </span> */}
-
-                <span className="flex items-center gap-2">
-                  <FiCalendar className="text-[#02BB31]" />
-                  {formatDate(blog.publishedAt || blog.createdAt)}
-                </span>
-
-                <span className="flex items-center gap-2">
-                  <FiClock className="text-[#02BB31]" />
-                  {calculateReadingTime()} min read
-                </span>
-              </div>
+    <main className="bg-white">
+      <header className="bg-[#F0F7F4]">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 md:py-12 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)] lg:items-center lg:gap-12 lg:px-8 lg:py-14">
+          <div className="min-w-0">
+            <nav aria-label="Breadcrumb" className="mb-6 flex flex-wrap items-center gap-2 text-sm text-[#41635A]">
+              <Link to="/" className="hover:text-[#0D915C]">Home</Link><span aria-hidden="true">/</span>
+              <Link to="/blog" className="hover:text-[#0D915C]">Renda Insights</Link>
+              {blog.category && <><span aria-hidden="true">/</span><span>{blog.category}</span></>}
+            </nav>
+            {blog.category && <p className="mb-3 text-xs font-bold uppercase text-[#0D915C]">{blog.category}</p>}
+            <h1 className="max-w-3xl text-3xl font-bold leading-tight text-[#013E43] sm:text-4xl lg:text-5xl">{blog.title}</h1>
+            {blog.excerpt && <p className="mt-5 max-w-2xl text-base leading-7 text-[#41635A] sm:text-lg sm:leading-8">{blog.excerpt}</p>}
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[#41635A]">
+              {authorName && <span className="font-semibold text-[#013E43]">{authorName}</span>}
+              {formatDate(publishedDate) && <time dateTime={toIsoDate(publishedDate)} className="inline-flex items-center gap-2"><FiCalendar aria-hidden="true" />{formatDate(publishedDate)}</time>}
+              <span className="inline-flex items-center gap-2"><FiClock aria-hidden="true" />{readingMinutes} min read</span>
             </div>
-
-            {coverImageUrl && (
-              <div className="overflow-hidden rounded-2xl shadow-xl">
-                <img
-                  src={coverImageUrl}
-                  alt={blog.title}
-                  className="h-[280px] w-full object-cover transition-transform duration-500 hover:scale-105 md:h-[320px]"
-                  onError={(event) => {
-                    event.currentTarget.style.display = "none";
-                  }}
-                />
-              </div>
-            )}
+          </div>
+          <div className="relative aspect-[16/10] overflow-hidden rounded-lg bg-[#DCEBE3]">
+            {coverImageUrl ? <img src={coverImageUrl} alt={blog.coverImageAlt || blog.title} fetchPriority="high" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center px-6 text-sm font-medium text-[#41635A]">RendaHomes Insights</div>}
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="mx-auto max-w-9xl px-2 py-5 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          <main className="lg:w-[70%]">
-            <div className="p-3 md:p-8">
-              <div
-                className="blog-content rich-content"
-                dangerouslySetInnerHTML={{ __html: processedContent }}
-              />
+      <section className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-14 lg:px-8">
+        <aside className="self-start lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto" aria-label="Article navigation">
+          {toc.length > 0 && <>
+            <div className="hidden lg:block">
+              <h2 className="mb-4 text-xs font-bold uppercase text-[#41635A]">On this page</h2>
+              <nav aria-label="On this page" className="space-y-1 border-l border-[#DCEBE3]">
+                {toc.map((heading) => <a key={heading.id} href={`#${encodeURIComponent(heading.id)}`} onClick={() => setActiveHeading(heading.id)} className={`block border-l-2 py-2 pr-2 text-sm leading-5 transition-colors ${heading.level === "h3" ? "pl-5" : "pl-3"} ${activeHeading === heading.id ? "-ml-px border-[#0D915C] font-semibold text-[#013E43]" : "border-transparent text-[#52716A] hover:text-[#0D915C]"}`}>{heading.text}</a>)}
+              </nav>
             </div>
-
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-[#065A57]">
-                  Share this article:
-                </span>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleShare("facebook")}
-                    className="rounded-lg bg-[#1877F2]/10 p-2 text-[#1877F2]"
-                  >
-                    <FiFacebook />
-                  </button>
-
-                  <button
-                    onClick={() => handleShare("twitter")}
-                    className="rounded-lg bg-[#1DA1F2]/10 p-2 text-[#1DA1F2]"
-                  >
-                    <FiTwitter />
-                  </button>
-
-                  <button
-                    onClick={() => handleShare("linkedin")}
-                    className="rounded-lg bg-[#0A66C2]/10 p-2 text-[#0A66C2]"
-                  >
-                    <FiLinkedin />
-                  </button>
-
-                  <button
-                    onClick={() => handleShare("whatsapp")}
-                    className="rounded-lg bg-[#25D366]/10 p-2 text-[#25D366]"
-                  >
-                    <FaWhatsapp />
-                  </button>
-
-                  <button
-                    onClick={() => handleShare("copy")}
-                    className="rounded-lg bg-[#F0F7F4] p-2 text-[#065A57]"
-                  >
-                    <FiLink />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button className="flex items-center gap-2 px-4 py-2 text-[#065A57]">
-                  <FiHeart />
-                  <span className="text-sm">Like</span>
-                </button>
-
-                <button className="flex items-center gap-2 px-4 py-2 text-[#065A57]">
-                  <FiBookmark />
-                  <span className="text-sm">Save</span>
-                </button>
-              </div>
+            <details className="rounded-md border border-[#DCEBE3] bg-[#F8FBF9] p-4 lg:hidden">
+              <summary className="cursor-pointer text-sm font-semibold text-[#013E43]">On this page</summary>
+              <nav aria-label="Article sections" className="mt-3 space-y-2">
+                {toc.map((heading) => <a key={heading.id} href={`#${encodeURIComponent(heading.id)}`} onClick={() => setActiveHeading(heading.id)} className={`block py-1 text-sm ${heading.level === "h3" ? "pl-4" : ""} ${activeHeading === heading.id ? "font-semibold text-[#0D915C]" : "text-[#41635A]"}`}>{heading.text}</a>)}
+              </nav>
+            </details>
+          </>}
+          <div className="mt-6 border-t border-[#DCEBE3] pt-4">
+            <p className="mb-3 text-xs font-bold uppercase text-[#41635A]">Share this story</p>
+            <div className="flex flex-wrap gap-2">
+              <ShareButton label="Share on WhatsApp" onClick={() => share("whatsapp")}><FaWhatsapp /></ShareButton>
+              <ShareButton label="Share on Facebook" onClick={() => share("facebook")}><FaFacebook /></ShareButton>
+              <ShareButton label="Share on X" onClick={() => share("x")}>𝕏</ShareButton>
+              <ShareButton label="Copy article link" onClick={() => share("copy")}><FiLink /></ShareButton>
+              {typeof navigator !== "undefined" && navigator.share && <ShareButton label="More sharing options" onClick={() => share("native")}><FiShare2 /></ShareButton>}
             </div>
-          </main>
+            <p aria-live="polite" className="mt-2 min-h-4 text-xs text-[#0D915C]">{copyState !== "Copy link" ? copyState : ""}</p>
+          </div>
+        </aside>
 
-          <aside className="lg:w-[30%]">
-            <div className="sticky top-24 rounded-2xl border border-[#A8D8C1] bg-white p-6 shadow-lg">
-              <h3 className="mb-4 flex items-center text-lg font-bold text-[#013E43]">
-                <FiBookmark className="mr-2 text-[#02BB31]" />
-                Table of Contents
-              </h3>
+        <article className="min-w-0">
+          <div className="article-reading rich-content" dangerouslySetInnerHTML={{ __html: prepared.html }} />
+          <section className="mt-12 rounded-lg bg-[#013E43] px-6 py-8 text-white sm:px-8" aria-labelledby="discovery-heading">
+            <p className="text-xs font-bold uppercase text-[#9AE6B4]">Discover your next space</p>
+            <h2 id="discovery-heading" className="mt-2 text-2xl font-bold leading-tight">Your next home could be one search away.</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/80">Explore homes, short stays, properties for sale and commercial spaces across Kenya.</p>
+            <Link to={discoveryLink} className="mt-5 inline-flex items-center gap-2 rounded-md bg-white px-4 py-2.5 text-sm font-semibold text-[#013E43] hover:bg-[#E9F5EE]">Browse properties <FiArrowRight /></Link>
+          </section>
+        </article>
+      </section>
 
-              {headings.length > 0 ? (
-                <nav className="max-h-[400px] space-y-2 overflow-y-auto pr-2">
-                  {headings.map((heading) => (
-                    <button
-                      key={heading.id}
-                      onClick={() => scrollToHeading(heading.id)}
-                      className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-all ${
-                        activeHeading === heading.id
-                          ? "bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white"
-                          : "text-[#065A57] hover:bg-[#F0F7F4] hover:text-[#013E43]"
-                      }`}
-                      style={{
-                        paddingLeft:
-                          heading.level === "h3"
-                            ? "2rem"
-                            : heading.level === "h2"
-                            ? "1rem"
-                            : "0.5rem"
-                      }}
-                    >
-                      <div className="flex items-start">
-                        <FiChevronRight className="mr-2 mt-0.5 shrink-0" />
-                        <span className="line-clamp-2">{heading.text}</span>
-                      </div>
-                    </button>
-                  ))}
-                </nav>
-              ) : (
-                <p className="text-sm italic text-[#065A57]">
-                  No headings found in this article
-                </p>
-              )}
-
-              <div className="mt-6 border-t border-[#A8D8C1] pt-6">
-                <div className="mb-2 flex items-center justify-between text-sm">
-                  <span className="text-[#065A57]">Reading progress</span>
-                  <span className="font-medium text-[#013E43]">
-                    {Math.round(scrollProgress)}%
-                  </span>
-                </div>
-
-                <div className="h-2 w-full overflow-hidden rounded-full bg-[#F0F7F4]">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#02BB31] to-[#0D915C]"
-                    style={{ width: `${scrollProgress}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          </aside>
+      {related.length > 0 && <section className="bg-[#F0F7F4]" aria-labelledby="related-heading">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div><p className="text-xs font-bold uppercase text-[#0D915C]">Keep reading</p><h2 id="related-heading" className="mt-2 text-2xl font-bold text-[#013E43]">More from Renda Insights</h2></div>
+            <Link to="/blog" className="hidden items-center gap-2 text-sm font-semibold text-[#0D915C] hover:text-[#08794b] sm:inline-flex">All articles <FiArrowRight /></Link>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {related.map((item) => <RelatedArticle key={item._id} article={item} />)}
+          </div>
+          <Link to="/blog" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#0D915C] sm:hidden">All articles <FiArrowRight /></Link>
         </div>
-      </div>
-
-      <style>{`
-        .blog-content {
-          color: #065A57;
-          line-height: 1.8;
-        }
-
-        .blog-content h1 {
-          font-size: 2em;
-          font-weight: 700;
-          margin: 1.5em 0 0.75em;
-          color: #013E43;
-        }
-
-        .blog-content h1:first-child {
-          margin-top: 0;
-        }
-
-        .blog-content h2 {
-          font-size: 1.5em;
-          font-weight: 700;
-          margin: 1.25em 0 0.75em;
-          color: #013E43;
-          padding-bottom: 0.5em;
-          border-bottom: 2px solid #A8D8C1;
-        }
-
-        .blog-content h3 {
-          font-size: 1.25em;
-          font-weight: 700;
-          margin: 1em 0 0.5em;
-          color: #013E43;
-        }
-
-        .blog-content p {
-          margin: 1em 0;
-          line-height: 1.8;
-        }
-
-        .blog-content ul {
-          list-style-type: disc;
-          padding-left: 2em;
-          margin: 1em 0;
-        }
-
-        .blog-content ol {
-          list-style-type: decimal;
-          padding-left: 2em;
-          margin: 1em 0;
-        }
-
-        .blog-content li {
-          display: list-item;
-          margin: 0.5em 0;
-        }
-
-        .blog-content blockquote {
-          border-left: 4px solid #02BB31;
-          margin: 1.5em 0;
-          padding: 0.5em 0 0.5em 1.5em;
-          font-style: italic;
-          color: #065A57;
-          background: #F0F7F4;
-          border-radius: 0 8px 8px 0;
-        }
-
-        .blog-content code {
-          background: #F0F7F4;
-          color: #02BB31;
-          padding: 0.2em 0.4em;
-          border-radius: 4px;
-          font-family: monospace;
-          font-size: 0.9em;
-        }
-
-        .blog-content pre {
-          background: #013E43;
-          color: #F0F7F4;
-          padding: 1em;
-          border-radius: 8px;
-          overflow-x: auto;
-          margin: 1.5em 0;
-        }
-
-        .blog-content pre code {
-          background: transparent;
-          color: inherit;
-          padding: 0;
-        }
-
-        .blog-content a {
-          color: #02BB31;
-          text-decoration: underline;
-        }
-
-        .blog-content img {
-          max-width: 100%;
-          height: auto;
-          border-radius: 12px;
-          margin: 1.5em 0;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-        }
-
-        .blog-content hr {
-          border: none;
-          border-top: 2px solid #A8D8C1;
-          margin: 2em 0;
-        }
-
-        .blog-content strong {
-          font-weight: 700;
-          color: #013E43;
-        }
-
-        .blog-content em {
-          font-style: italic;
-        }
-      `}</style>
-    </div>
+      </section>}
+    </main>
   );
-};
+}
 
-export default BlogDetailPage;
+function ShareButton({ label, onClick, children }) {
+  return <button type="button" onClick={onClick} aria-label={label} title={label} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#DCEBE3] bg-white text-[#065A57] transition hover:border-[#0D915C] hover:text-[#0D915C] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0D915C]">{children}</button>;
+}
+
+function RelatedArticle({ article }) {
+  const image = getImageUrl(article.coverImage);
+  return <Link to={`/blog/${article.slug}`} className="group flex min-w-0 flex-col overflow-hidden rounded-lg border border-[#D7E8DF] bg-white transition-colors hover:border-[#0D915C] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0D915C]">
+    <div className="aspect-[16/10] overflow-hidden bg-[#DCEBE3]">{image ? <img src={image} alt={article.coverImageAlt || article.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center text-sm text-[#52716A]">RendaHomes Insights</div>}</div>
+    <div className="flex flex-1 flex-col p-5">
+      {article.category && <p className="text-xs font-bold uppercase text-[#0D915C]">{article.category}</p>}
+      <h3 className="mt-2 line-clamp-2 text-lg font-bold leading-snug text-[#013E43]">{article.title}</h3>
+      {article.excerpt && <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#52716A]">{article.excerpt}</p>}
+      <div className="mt-auto flex items-center gap-3 pt-4 text-xs text-[#52716A]">
+        {formatDate(article.publishedAt || article.createdAt) && <time dateTime={toIsoDate(article.publishedAt || article.createdAt)}>{formatDate(article.publishedAt || article.createdAt)}</time>}
+        <span>{getReadingMinutes(article.content)} min read</span>
+      </div>
+    </div>
+  </Link>;
+}

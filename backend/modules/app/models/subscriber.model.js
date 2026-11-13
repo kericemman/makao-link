@@ -14,6 +14,10 @@ const subscriberSchema = new mongoose.Schema(
       enum: ["mobile_app", "website"],
       default: "mobile_app"
     },
+    sources: {
+      type: [{ type: String, enum: ["mobile_app", "website"] }],
+      default: []
+    },
     isActive: { type: Boolean, default: true }
   },
   { timestamps: true }

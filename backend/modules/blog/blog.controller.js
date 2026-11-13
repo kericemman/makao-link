@@ -7,7 +7,7 @@ const {
 } = require("../../utils/emailTemplates");
 
 const slugify = (text) =>
-  text
+  String(text || "")
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9\s-]/g, "")
@@ -18,13 +18,27 @@ const normalizeTags = (tags) => {
   if (!tags) return [];
 
   if (Array.isArray(tags)) {
-    return tags.map((tag) => String(tag).trim()).filter(Boolean);
+    return [...new Set(tags.map((tag) => String(tag).trim().slice(0, 32)).filter(Boolean))].slice(0, 12);
   }
 
   return String(tags)
     .split(",")
     .map((tag) => tag.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((tag) => tag.slice(0, 32))
+    .filter((tag, index, all) => all.indexOf(tag) === index)
+    .slice(0, 12);
+};
+
+const getArticleValidationMessage = ({ title, excerpt, content, category, status }, requirePublishDetails = status === "published") => {
+  if (!String(title || "").trim()) return "Add an article title before saving.";
+  if (String(title).trim().length > 180) return "Article title must be 180 characters or fewer.";
+  if (requirePublishDetails && status === "published") {
+    if (!String(excerpt || "").trim()) return "Add a short summary before publishing.";
+    if (!String(content || "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim()) return "Add article content before publishing.";
+    if (!String(category || "").trim()) return "Choose a category before publishing.";
+  }
+  return "";
 };
 
 const getUploadedFileUrl = (file) => {
@@ -188,13 +202,11 @@ exports.createBlog = async (req, res, next) => {
       metaDescription
     } = req.body;
 
-    if (!title || !excerpt || !content) {
-      return res.status(400).json({
-        message: "Title, excerpt, and content are required"
-      });
-    }
+    const nextStatus = status === "published" ? "published" : "draft";
+    const validationMessage = getArticleValidationMessage({ title, excerpt, content, category, status: nextStatus });
+    if (validationMessage) return res.status(400).json({ success: false, message: validationMessage });
 
-    let slug = slugify(title);
+    let slug = slugify(title).slice(0, 160) || "article";
 
     const existingSlug = await Blog.findOne({ slug });
 
@@ -207,16 +219,17 @@ exports.createBlog = async (req, res, next) => {
     const blog = await Blog.create({
       title,
       slug,
-      excerpt,
-      content,
+      excerpt: String(excerpt || "").trim(),
+      content: String(content || ""),
       coverImage,
+      coverImageAlt: String(req.body.coverImageAlt || "").trim(),
       category: category || "",
       tags: normalizeTags(tags),
       metaTitle: metaTitle || "",
       metaDescription: metaDescription || "",
       author: req.user._id,
-      status: status === "published" ? "published" : "draft",
-      publishedAt: status === "published" ? new Date() : null
+      status: nextStatus,
+      publishedAt: nextStatus === "published" ? new Date() : null
     });
 
     if (blog.status === "published") {
@@ -254,21 +267,8 @@ exports.updateBlog = async (req, res, next) => {
 
     const wasDraft = blog.status === "draft";
 
-    if (title && title !== blog.title) {
-      let newSlug = slugify(title);
-
-      const existingSlug = await Blog.findOne({
-        slug: newSlug,
-        _id: { $ne: blog._id }
-      });
-
-      if (existingSlug) {
-        newSlug = `${newSlug}-${Date.now()}`;
-      }
-
-      blog.title = title;
-      blog.slug = newSlug;
-    }
+    // Keep article URLs stable when editorial copy is revised.
+    if (title) blog.title = title;
 
     if (typeof excerpt === "string") blog.excerpt = excerpt;
     if (typeof content === "string") blog.content = content;
@@ -278,6 +278,7 @@ exports.updateBlog = async (req, res, next) => {
     if (typeof metaDescription === "string") {
       blog.metaDescription = metaDescription;
     }
+    if (typeof req.body.coverImageAlt === "string") blog.coverImageAlt = req.body.coverImageAlt.trim();
 
     const uploadedCover = getUploadedFileUrl(req.file);
 
@@ -288,6 +289,12 @@ exports.updateBlog = async (req, res, next) => {
     if (status && ["draft", "published"].includes(status)) {
       blog.status = status;
     }
+
+    const validationMessage = getArticleValidationMessage(
+      blog.toObject(),
+      wasDraft && blog.status === "published"
+    );
+    if (validationMessage) return res.status(400).json({ success: false, message: validationMessage });
 
     if (blog.status === "published" && !blog.publishedAt) {
       blog.publishedAt = new Date();
@@ -308,6 +315,8 @@ exports.updateBlog = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getArticleValidationMessage = getArticleValidationMessage;
 
 exports.deleteBlog = async (req, res, next) => {
   try {

@@ -233,6 +233,10 @@ export const resendAdminManagerInvitation = async (id) =>
   (await api.post(`/admin/managers/${id}/resend-invitation`)).data;
 export const getLandlordOnboarding = async (params = {}) =>
   (await api.get("/admin/landlord-onboarding", { params })).data;
+export const getLandlordOnboardingDetail = async (userId) =>
+  (await api.get(`/admin/landlord-onboarding/${userId}`)).data;
+export const sendManualLandlordOnboardingEmail = async (userId, payload) =>
+  (await api.post(`/admin/landlord-onboarding/${userId}/send-email`, payload)).data;
 export const retryLandlordFollowup = async (userId) =>
   (await api.post(`/admin/landlord-onboarding/${userId}/retry-followup`)).data;
 

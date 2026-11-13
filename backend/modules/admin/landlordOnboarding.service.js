@@ -23,7 +23,7 @@ const deriveOnboardingStage = ({ user, subscription, listingCounts = {} }) => {
   return "listing_in_progress";
 };
 
-const buildWhatsAppSupportUrl = (value) => {
+const buildWhatsAppUrl = (value, message = "") => {
   let phone;
   try {
     phone = normalizeKenyanPhone(value).slice(1);
@@ -32,9 +32,14 @@ const buildWhatsAppSupportUrl = (value) => {
     phone = match?.[1] || "";
   }
   if (!phone) return "";
-  const message = "Hi RendaHomes, I need help completing my landlord setup.";
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  const text = String(message || "").trim().slice(0, 1500);
+  return text
+    ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+    : `https://wa.me/${phone}`;
 };
+
+const buildWhatsAppSupportUrl = (value) =>
+  buildWhatsAppUrl(value, "Hi RendaHomes, I need help completing my landlord setup.");
 
 const ensureFollowup = async ({ user, FollowupModel = Followup }) => {
   try {
@@ -195,6 +200,7 @@ const retryFailedFollowup = async ({ userId, actorId, models = {}, send = sendEm
 
 module.exports = {
   CAMPAIGN,
+  buildWhatsAppUrl,
   buildWhatsAppSupportUrl,
   deriveOnboardingStage,
   ensureFollowup,

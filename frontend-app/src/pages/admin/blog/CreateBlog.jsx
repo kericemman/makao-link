@@ -22,6 +22,18 @@ import {
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 
+const ARTICLE_CATEGORIES = [
+  "Getting Started",
+  "Landlord Guide",
+  "Tenant Guide",
+  "Property Management",
+  "Property Tips",
+  "Market Insights",
+  "Market News",
+  "Safety & Legal",
+  "Relocation"
+];
+
 const AdminBlogEditorPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -35,8 +47,10 @@ const AdminBlogEditorPage = () => {
     category: "",
     tags: "",
     metaTitle: "",
-    metaDescription: ""
+    metaDescription: "",
+    coverImageAlt: ""
   });
+  const articleCategories = [...new Set([...ARTICLE_CATEGORIES, formData.category].filter(Boolean))];
 
   const [coverImage, setCoverImage] = useState(null);
   const [existingCover, setExistingCover] = useState("");
@@ -62,7 +76,8 @@ const AdminBlogEditorPage = () => {
         category: blog?.category || "",
         tags: blog?.tags?.join(", ") || "",
         metaTitle: blog?.metaTitle || "",
-        metaDescription: blog?.metaDescription || ""
+        metaDescription: blog?.metaDescription || "",
+        coverImageAlt: blog?.coverImageAlt || ""
       });
 
       setExistingCover(blog?.coverImage || "");
@@ -95,13 +110,15 @@ const AdminBlogEditorPage = () => {
     return () => URL.revokeObjectURL(objectUrl);
   }, [coverImage, existingCover]);
 
-  const cleanText = formData.content?.replace(/<[^>]*>/g, "").trim() || "";
+  const cleanText = formData.content?.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim() || "";
 
   const wordCount = cleanText
     ? cleanText.split(/\s+/).filter(Boolean).length
     : 0;
 
   const characterCount = cleanText.length;
+  const searchPreviewTitle = formData.metaTitle.trim() || formData.title.trim() || "Article title";
+  const searchPreviewDescription = formData.metaDescription.trim() || formData.excerpt.trim() || "Your article summary will appear here when it is added.";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -142,8 +159,22 @@ const AdminBlogEditorPage = () => {
       return false;
     }
 
-    if (!formData.content || !cleanText) {
-      toast.error("Please enter blog content", {
+    if (formData.status === "published" && !cleanText) {
+      toast.error("Add article content before publishing. You can save this as a draft meanwhile.", {
+        style: { background: "#013E43", color: "#fff" }
+      });
+      return false;
+    }
+
+    if (formData.status === "published" && !formData.excerpt.trim()) {
+      toast.error("Add a short summary before publishing.", {
+        style: { background: "#013E43", color: "#fff" }
+      });
+      return false;
+    }
+
+    if (formData.status === "published" && !formData.category) {
+      toast.error("Choose a category before publishing.", {
         style: { background: "#013E43", color: "#fff" }
       });
       return false;
@@ -171,6 +202,7 @@ const AdminBlogEditorPage = () => {
       payload.append("tags", formData.tags);
       payload.append("metaTitle", formData.metaTitle);
       payload.append("metaDescription", formData.metaDescription);
+      payload.append("coverImageAlt", formData.coverImageAlt);
 
       if (coverImage) {
         payload.append("coverImage", coverImage);
@@ -267,9 +299,11 @@ const AdminBlogEditorPage = () => {
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="Enter blog title"
+                maxLength={180}
                 className="w-full rounded-lg border-2 border-[#DDEAE3] px-4 py-3 text-xl outline-none transition-colors focus:border-[#0D915C]"
                 required
               />
+              <p className="mt-2 text-right text-xs text-[#41635A]">{formData.title.length}/180</p>
             </div>
 
             <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
@@ -284,11 +318,13 @@ const AdminBlogEditorPage = () => {
                 onChange={handleChange}
                 rows="3"
                 placeholder="Short description of the blog post"
+                maxLength={300}
                 className="w-full resize-none rounded-lg border-2 border-[#DDEAE3] px-4 py-3 outline-none transition-colors focus:border-[#0D915C]"
               />
 
-              <p className="mt-1 text-xs text-[#41635A]">
-                A brief summary that will appear in blog listings.
+              <p className="mt-1 flex justify-between text-xs text-[#41635A]">
+                <span>A useful summary shown on article cards and search previews.</span>
+                <span>{formData.excerpt.length}/300</span>
               </p>
             </div>
 
@@ -380,8 +416,20 @@ const AdminBlogEditorPage = () => {
               />
 
               <p className="mt-1 text-xs text-[#41635A]">
-                PNG, JPG, JFIF, WEBP, or AVIF up to 20MB.
+                Use a clear, landscape image. PNG, JPG, WEBP, or AVIF up to 20MB.
               </p>
+
+              <label className="mt-4 block text-sm font-medium text-[#013E43]">
+                Image description (alt text)
+                <input
+                  name="coverImageAlt"
+                  value={formData.coverImageAlt}
+                  onChange={handleChange}
+                  maxLength={180}
+                  placeholder="Describe the cover image for readers using assistive technology"
+                  className="mt-1 w-full rounded-lg border-2 border-[#DDEAE3] px-3 py-2 text-sm outline-none focus:border-[#0D915C]"
+                />
+              </label>
 
               {coverPreview ? (
                 <div className="mt-4">
@@ -412,11 +460,9 @@ const AdminBlogEditorPage = () => {
                     className="w-full rounded-lg border-2 border-[#DDEAE3] px-4 py-2 outline-none transition-colors focus:border-[#0D915C]"
                   >
                     <option value="">Select a category</option>
-                    <option value="Property Tips">Property Tips</option>
-                    <option value="Market News">Market News</option>
-                    <option value="Tenant Guide">Tenant Guide</option>
-                    <option value="Landlord Guide">Landlord Guide</option>
-                    <option value="Relocation">Relocation</option>
+                    {articleCategories.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -439,6 +485,16 @@ const AdminBlogEditorPage = () => {
               </div>
             </div>
 
+            <div className="border-y border-[#DDEAE3] py-4">
+              <h3 className="text-sm font-semibold text-[#013E43]">Publishing readiness</h3>
+              <ul className="mt-3 space-y-2 text-sm text-[#41635A]">
+                <li className="flex items-center justify-between"><span>Title</span><span className={formData.title.trim() ? "text-[#0D915C]" : "text-[#9A5B13]"}>{formData.title.trim() ? "Ready" : "Needed"}</span></li>
+                <li className="flex items-center justify-between"><span>Article content</span><span className={cleanText ? "text-[#0D915C]" : "text-[#9A5B13]"}>{cleanText ? `${wordCount} words` : "Needed to publish"}</span></li>
+                <li className="flex items-center justify-between"><span>Summary and category</span><span className={formData.excerpt.trim() && formData.category ? "text-[#0D915C]" : "text-[#9A5B13]"}>{formData.excerpt.trim() && formData.category ? "Ready" : "Needed to publish"}</span></li>
+                <li className="flex items-center justify-between"><span>Cover image</span><span className={coverPreview ? "text-[#0D915C]" : "text-[#41635A]"}>{coverPreview ? "Added" : "Optional"}</span></li>
+              </ul>
+            </div>
+
             <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
               <h2 className="mb-4 flex items-center text-lg font-semibold text-[#013E43]">
                 <FiEye className="mr-2 text-[#0D915C]" />
@@ -455,8 +511,10 @@ const AdminBlogEditorPage = () => {
                     value={formData.metaTitle}
                     onChange={handleChange}
                     placeholder="SEO title"
+                    maxLength={70}
                     className="w-full rounded-lg border-2 border-[#DDEAE3] px-4 py-2 outline-none transition-colors focus:border-[#0D915C]"
                   />
+                  <p className="mt-1 text-right text-xs text-[#41635A]">{formData.metaTitle.length}/70</p>
                 </div>
 
                 <div>
@@ -469,8 +527,16 @@ const AdminBlogEditorPage = () => {
                     onChange={handleChange}
                     rows="3"
                     placeholder="SEO description"
+                    maxLength={170}
                     className="w-full resize-none rounded-lg border-2 border-[#DDEAE3] px-4 py-2 outline-none transition-colors focus:border-[#0D915C]"
                   />
+                  <p className="mt-1 text-right text-xs text-[#41635A]">{formData.metaDescription.length}/170</p>
+                </div>
+                <div className="rounded-md border border-[#DDEAE3] bg-[#F8FBF9] p-4" aria-live="polite">
+                  <p className="text-xs font-semibold text-[#41635A]">Search result preview</p>
+                  <p className="mt-2 truncate text-lg font-medium text-[#1A0DAB]">{searchPreviewTitle}</p>
+                  <p className="mt-1 line-clamp-2 text-sm leading-5 text-[#4D5156]">{searchPreviewDescription}</p>
+                  <p className="mt-2 text-xs text-[#41635A]">Uses the article title and summary when custom metadata is blank.</p>
                 </div>
               </div>
             </div>
@@ -500,7 +566,7 @@ const AdminBlogEditorPage = () => {
               ) : (
                 <>
                   <FiSave className="mr-2" />
-                  {isEdit ? "Update Blog" : "Publish Blog"}
+                  {formData.status === "draft" ? "Save Draft" : isEdit ? "Update Article" : "Publish Article"}
                 </>
               )}
             </button>
@@ -529,7 +595,7 @@ const AdminBlogEditorPage = () => {
               {coverPreview ? (
                 <img
                   src={coverPreview}
-                  alt={formData.title}
+                  alt={formData.coverImageAlt || formData.title}
                   className="mb-6 h-64 w-full rounded-lg object-cover"
                 />
               ) : null}
@@ -537,6 +603,8 @@ const AdminBlogEditorPage = () => {
               <h1 className="mb-4 text-3xl font-bold text-[#013E43]">
                 {formData.title || "Blog Title"}
               </h1>
+
+              {formData.category && <p className="mb-3 text-sm font-semibold text-[#0D915C]">{formData.category}</p>}
 
               {formData.excerpt ? (
                 <p className="mb-6 text-lg italic text-[#41635A]">
@@ -558,7 +626,10 @@ const AdminBlogEditorPage = () => {
       <style>{`
         .ProseMirror {
           outline: none;
-          min-height: 400px;
+          min-height: 460px;
+          max-width: 100%;
+          overflow-wrap: anywhere;
+          padding: 1rem;
         }
 
         .ProseMirror p {
@@ -622,6 +693,10 @@ const AdminBlogEditorPage = () => {
           border-radius: 0.5em;
           font-family: monospace;
           overflow-x: auto;
+        }
+
+        @media (max-width: 640px) {
+          .ProseMirror { min-height: 320px; padding: 0.75rem; }
         }
       `}</style>
     </div>

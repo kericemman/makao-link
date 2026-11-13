@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
+import { Node } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
@@ -16,11 +17,49 @@ import {
   FiAlignRight,
   FiAlignJustify,
   FiEdit3,
-  FiEye
+  FiEye,
+  FiVideo
 } from "react-icons/fi";
 import { FaHeading, FaQuoteRight, FaListUl, FaListOl } from "react-icons/fa";
 import { MdCode } from "react-icons/md";
 import sanitizeHtml from "../../../utils/sanitizeHtml";
+import { getVideoEmbedUrl } from "../../../utils/videoEmbed";
+
+const VideoEmbed = Node.create({
+  name: "videoEmbed",
+  group: "block",
+  atom: true,
+  selectable: true,
+  draggable: true,
+  addAttributes() {
+    return {
+      src: { default: null },
+      title: { default: "Embedded property video" }
+    };
+  },
+  parseHTML() {
+    return [{
+      tag: "div[data-video-embed]",
+      getAttrs: (element) => {
+        const iframe = element.querySelector("iframe");
+        const src = getVideoEmbedUrl(iframe?.getAttribute("src"));
+        return src ? { src, title: iframe?.getAttribute("title") || "Embedded property video" } : false;
+      }
+    }];
+  },
+  renderHTML({ node }) {
+    const src = getVideoEmbedUrl(node.attrs.src);
+    if (!src) return ["div", { "data-video-invalid": "true" }];
+    return ["div", { "data-video-embed": "true", class: "article-video-embed" }, ["iframe", {
+      src,
+      title: node.attrs.title || "Embedded property video",
+      loading: "lazy",
+      referrerpolicy: "strict-origin-when-cross-origin",
+      allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
+      allowfullscreen: "true"
+    }]];
+  }
+});
 
 const ToolbarButton = ({ onClick, isActive, children, title }) => (
   <button
@@ -57,7 +96,8 @@ const RichText = ({ value, onChange }) => {
       }),
       TextAlign.configure({
         types: ["heading", "paragraph"]
-      })
+      }),
+      VideoEmbed
     ],
     content: value || "",
     onUpdate: ({ editor }) => {
@@ -88,6 +128,20 @@ const RichText = ({ value, onChange }) => {
       .extendMarkRange("link")
       .setLink({ href: url })
       .run();
+  };
+
+  const addVideo = () => {
+    const input = window.prompt("Paste a YouTube or Vimeo video link");
+    if (!input) return;
+    const src = getVideoEmbedUrl(input);
+    if (!src) {
+      window.alert("Use a valid HTTPS YouTube or Vimeo video link.");
+      return;
+    }
+    editor?.chain().focus().insertContent({
+      type: "videoEmbed",
+      attrs: { src, title: "Embedded property video" }
+    }).run();
   };
 
   return (
@@ -198,6 +252,10 @@ const RichText = ({ value, onChange }) => {
             title="Add Link"
           >
             <FiLink />
+          </ToolbarButton>
+
+          <ToolbarButton onClick={addVideo} title="Add YouTube or Vimeo video">
+            <FiVideo />
           </ToolbarButton>
 
           <ToolbarButton

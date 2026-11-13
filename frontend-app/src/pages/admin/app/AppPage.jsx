@@ -289,7 +289,7 @@ export default function AppUpdatesPage() {
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {[
                   ["mobile_app", "Mobile app subscribers"],
-                  ["website", "Website subscribers"],
+                  ["website", "Website & landlord accounts"],
                   ["all", "Both audiences"],
                 ].map(([value, label]) => (
                   <label key={value} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-3 text-sm transition ${form.emailAudience === value ? "border-[#0D915C] bg-[#F1F7F3] text-[#013E43]" : "border-[#DDEAE3] text-[#526760] hover:bg-[#F8FAF8]"}`}>
@@ -305,7 +305,7 @@ export default function AppUpdatesPage() {
                   </label>
                 ))}
               </div>
-              <p className="mt-1.5 text-xs text-[#647C75]">Publishing sends one email per unique address in the selected audience.</p>
+              <p className="mt-1.5 text-xs text-[#647C75]">Website updates include verified landlord accounts automatically. Article emails remain a separate opt-in. Publishing sends one email per unique address in the selected audience.</p>
               {editingId && form.isPublished && (
                 <p className="mt-1 text-xs font-medium text-amber-800">This update is already published. Changing the audience will not resend its email.</p>
               )}
