@@ -74,11 +74,6 @@ body {
 .article-reading table { display: block; max-width: 100%; overflow-x: auto; }
 .article-reading iframe { max-width: 100%; }
 
-html { scroll-behavior: smooth; }
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-}
-
 @media (max-width: 640px) {
   .rich-content h1 { font-size: 1.75rem; }
   .rich-content h2 { font-size: 1.375rem; }
