@@ -41,7 +41,7 @@ export default function BlogDetails() {
         ) : (
           <>
             {blog?.coverImage ? <img src={blog.coverImage} alt={blog.title} className="mt-6 max-h-[460px] w-full rounded-2xl object-cover" /> : null}
-            <h1 className="mt-7 text-4xl font-extrabold tracking-tight text-[#013E43]">{blog?.title}</h1>
+            <h1 className="mt-7 text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#013E43]">{blog?.title}</h1>
             <p className="mt-3 text-sm font-semibold text-[#065A57]">{blog?.publishedAt ? new Date(blog.publishedAt).toLocaleDateString() : "RendaHomes"}</p>
             <div
               className="rich-content mt-8"

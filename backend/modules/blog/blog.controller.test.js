@@ -1,12 +1,20 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { getArticleValidationMessage } = require("./blog.controller");
+const { getArticleValidationMessage, normalizeAuthorImage } = require("./blog.controller");
 const Blog = require("./blog.model");
 
 test("article metadata and accessible cover text are persisted by the schema", () => {
-  for (const field of ["category", "tags", "metaTitle", "metaDescription", "coverImageAlt"]) {
+  for (const field of ["category", "tags", "metaTitle", "metaDescription", "coverImageAlt", "authorName", "authorImage"]) {
     assert.ok(Blog.schema.path(field), `${field} should be a schema field`);
   }
+});
+
+test("author image accepts only secure, bounded URLs and can be cleared", () => {
+  assert.equal(normalizeAuthorImage(""), "");
+  assert.equal(normalizeAuthorImage("https://cdn.example.test/author.webp"), "https://cdn.example.test/author.webp");
+  assert.throws(() => normalizeAuthorImage("http://cdn.example.test/author.webp"), /HTTPS/);
+  assert.throws(() => normalizeAuthorImage("javascript:alert(1)"), /HTTPS/);
+  assert.throws(() => normalizeAuthorImage(`https://example.test/${"x".repeat(2050)}`), /too long/);
 });
 
 test("article drafts can be saved with a title before body and summary are ready", () => {

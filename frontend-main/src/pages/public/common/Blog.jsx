@@ -15,6 +15,7 @@ import { FaBlog, FaTwitter, FaFacebook, FaLinkedinIn, FaInstagram, FaTiktok } fr
 import toast from "react-hot-toast";
 import { useSeo } from "../../../utils/seo";
 import { landlordListPropertyUrl } from "../../../config/portals";
+import LoadingScreen from "../../../components/common/LoadingScreen";
 
 const BlogPage = () => {
   useEffect(() => {
@@ -126,18 +127,9 @@ const BlogPage = () => {
 
   const categories = [...new Set(blogs.map(blog => blog.category).filter(Boolean))];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A8D8C1] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading articles...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
+    <>
+    {loading && <LoadingScreen />}
     <div className="min-h-screen bg-[#F0F7F4]">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-[#013E43] text-white">
@@ -252,7 +244,7 @@ const BlogPage = () => {
                       src={blog.coverImage}
                       alt={blog.coverImageAlt || blog.title}
                       loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      className="h-full w-full object-contain"
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center bg-[#013E43]">
@@ -373,6 +365,7 @@ const BlogPage = () => {
       </div>
 
     </div>
+    </>
   );
 };
 

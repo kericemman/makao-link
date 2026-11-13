@@ -52,6 +52,9 @@ const blogSchema = new mongoose.Schema(
       required: true
     },
 
+    authorName: { type: String, trim: true, maxlength: 120, default: "" },
+    authorImage: { type: String, trim: true, maxlength: 2048, default: "" },
+
     status: {
       type: String,
       enum: ["draft", "published"],

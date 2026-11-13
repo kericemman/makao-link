@@ -1,7 +1,76 @@
 const express = require("express");
+const fs = require("fs/promises");
+const path = require("path");
+const mongoose = require("mongoose");
 const router = express.Router();
 const Listing = require("../listings/listings.model");
 const Blog = require("../blog/blog.model");
+const { buildSocialPreviewHtml, imageUrl, plainText } = require("./socialPreview");
+
+const mainSiteUrl = () => (process.env.CLIENT_URL || "https://rendahomes.com").replace(/\/$/, "");
+const mainSiteHtmlPath = path.resolve(__dirname, "../../../frontend-main/index.html");
+const defaultPreviewImage = () => `${mainSiteUrl()}/assets/renda.png`;
+
+const sendSocialPreview = async (res, metadata) => {
+  const html = await fs.readFile(mainSiteHtmlPath, "utf8");
+  const page = buildSocialPreviewHtml({ html, ...metadata });
+  res
+    .type("html")
+    .set("Cache-Control", "public, max-age=300")
+    .send(page);
+};
+
+router.get("/listings/:id", async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).send("Listing not found");
+    const listing = await Listing.findOne({
+      _id: req.params.id,
+      status: "approved",
+      isActive: true,
+      availability: "available",
+      isDeleted: { $ne: true }
+    }).select("title description purpose price bedrooms bathrooms county town area images").lean();
+
+    if (!listing) return res.status(404).send("Listing not found");
+
+    const location = [listing.area, listing.town, listing.county].filter(Boolean).join(", ");
+    const facts = [
+      listing.bedrooms ? `${listing.bedrooms} bedrooms` : "",
+      listing.bathrooms ? `${listing.bathrooms} bathrooms` : "",
+      listing.price ? `KES ${Number(listing.price).toLocaleString("en-KE")}` : ""
+    ].filter(Boolean).join(" · ");
+    const baseUrl = mainSiteUrl();
+    return sendSocialPreview(res, {
+      title: listing.title,
+      description: [facts, location, plainText(listing.description, 220)].filter(Boolean).join(" · "),
+      url: `${baseUrl}/listings/${listing._id}`,
+      image: imageUrl(listing.images?.find(Boolean), baseUrl, defaultPreviewImage()),
+      type: "website"
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/blog/:slug", async (req, res, next) => {
+  try {
+    const blog = await Blog.findOne({ slug: req.params.slug, status: "published" })
+      .select("title metaTitle metaDescription excerpt coverImage slug")
+      .lean();
+    if (!blog) return res.status(404).send("Article not found");
+
+    const baseUrl = mainSiteUrl();
+    return sendSocialPreview(res, {
+      title: blog.metaTitle || blog.title,
+      description: blog.metaDescription || blog.excerpt,
+      url: `${baseUrl}/blog/${encodeURIComponent(blog.slug)}`,
+      image: imageUrl(blog.coverImage, baseUrl, defaultPreviewImage()),
+      type: "article"
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 const staticPages = [
   { path: "", changefreq: "daily", priority: "1.0" },

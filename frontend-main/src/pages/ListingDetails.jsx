@@ -140,7 +140,24 @@ export default function ListingDetails() {
   }, [listing]);
 
   if (loading) {
-    return <LoadingScreen label="Loading listing" />;
+    return (
+      <>
+        <main className="min-h-screen bg-[#F0F7F4]">
+          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="aspect-[16/9] w-full rounded-2xl bg-white shadow-sm" />
+            <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
+              <div className="space-y-4">
+                <div className="h-8 w-2/3 rounded bg-white" />
+                <div className="h-5 w-1/3 rounded bg-white" />
+                <div className="h-28 rounded bg-white" />
+              </div>
+              <div className="h-64 rounded-2xl bg-white" />
+            </div>
+          </div>
+        </main>
+        <LoadingScreen />
+      </>
+    );
   }
 
   if (!listing) {

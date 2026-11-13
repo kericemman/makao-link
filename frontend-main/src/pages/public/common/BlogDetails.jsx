@@ -5,6 +5,7 @@ import { FaFacebook, FaWhatsapp } from "react-icons/fa";
 import { getPublishedBlogBySlug, getPublishedBlogs } from "../../../services/blog.service";
 import { useSeo } from "../../../utils/seo";
 import sanitizeHtml from "../../../utils/sanitizeHtml";
+import LoadingScreen from "../../../components/common/LoadingScreen";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") || "";
 const SITE_NAME = "RendaHomes";
@@ -74,29 +75,6 @@ const getDiscoveryLink = (category = "") => {
   return "/listings";
 };
 
-function ArticleSkeleton() {
-  return (
-    <main className="animate-pulse" aria-label="Loading article">
-      <div className="bg-[#F0F7F4]">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:px-8 lg:py-14">
-          <div className="space-y-5">
-            <div className="h-4 w-40 rounded bg-[#DCEBE3]" />
-            <div className="h-5 w-32 rounded bg-[#DCEBE3]" />
-            <div className="h-12 max-w-2xl rounded bg-[#DCEBE3]" />
-            <div className="h-4 max-w-xl rounded bg-[#DCEBE3]" />
-            <div className="h-4 w-56 rounded bg-[#DCEBE3]" />
-          </div>
-          <div className="aspect-[16/10] rounded-lg bg-[#DCEBE3]" />
-        </div>
-      </div>
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[200px_minmax(0,1fr)] lg:px-8">
-        <div className="hidden space-y-4 lg:block"><div className="h-4 w-32 rounded bg-[#DCEBE3]" /><div className="h-4 w-40 rounded bg-[#DCEBE3]" /></div>
-        <div className="space-y-5"><div className="h-5 rounded bg-[#DCEBE3]" /><div className="h-5 rounded bg-[#DCEBE3]" /><div className="h-5 w-4/5 rounded bg-[#DCEBE3]" /><div className="h-48 rounded bg-[#DCEBE3]" /></div>
-      </div>
-    </main>
-  );
-}
-
 export default function BlogDetailPage() {
   const { slug } = useParams();
   const [blog, setBlog] = useState(null);
@@ -143,15 +121,17 @@ export default function BlogDetailPage() {
   const prepared = useMemo(() => prepareArticle(blog?.content), [blog?.content]);
   const readingMinutes = useMemo(() => getReadingMinutes(blog?.content), [blog?.content]);
   const coverImageUrl = getImageUrl(blog?.coverImage);
-  const authorName = typeof blog?.author === "object" ? blog.author?.name : "";
+  const authorName = blog?.authorName || (typeof blog?.author === "object" ? blog.author?.name : "");
+  const authorImageUrl = getImageUrl(blog?.authorImage);
   const publishedDate = blog?.publishedAt || blog?.createdAt;
   const canonicalUrl = `${SITE_URL}/blog/${blog?.slug || slug}`;
 
   const jsonLd = useMemo(() => {
     if (!blog) return null;
     const articleUrl = `${SITE_URL}/blog/${blog.slug}`;
-    const author = blog.author?.name
-      ? { "@type": "Person", name: blog.author.name }
+    const authorName = blog.authorName || blog.author?.name;
+    const author = authorName
+      ? { "@type": "Person", name: authorName, image: getImageUrl(blog.authorImage) || undefined }
       : { "@type": "Organization", name: SITE_NAME };
     return {
       "@context": "https://schema.org",
@@ -253,7 +233,30 @@ export default function BlogDetailPage() {
     if (targets[platform]) window.open(targets[platform], "_blank", "noopener,noreferrer");
   };
 
-  if (loading) return <ArticleSkeleton />;
+  if (loading) {
+    return (
+      <>
+        <main className="min-h-screen bg-white">
+          <header className="bg-[#F0F7F4]">
+            <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+              <div className="h-4 w-32 rounded bg-white" />
+              <div className="mt-8 h-12 max-w-3xl rounded bg-white" />
+              <div className="mt-4 h-5 max-w-xl rounded bg-white" />
+              <div className="mt-10 aspect-[16/8] rounded-2xl bg-white" />
+            </div>
+          </header>
+          <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+            <div className="space-y-4">
+              <div className="h-5 rounded bg-[#F0F7F4]" />
+              <div className="h-5 rounded bg-[#F0F7F4]" />
+              <div className="h-5 w-4/5 rounded bg-[#F0F7F4]" />
+            </div>
+          </div>
+        </main>
+        <LoadingScreen />
+      </>
+    );
+  }
 
   if (!blog) {
     const notFound = error === "not-found";
@@ -283,16 +286,16 @@ export default function BlogDetailPage() {
               {blog.category && <><span aria-hidden="true">/</span><span>{blog.category}</span></>}
             </nav>
             {blog.category && <p className="mb-3 text-xs font-bold uppercase text-[#0D915C]">{blog.category}</p>}
-            <h1 className="max-w-3xl text-3xl font-bold leading-tight text-[#013E43] sm:text-4xl lg:text-5xl">{blog.title}</h1>
+            <h1 className="max-w-3xl text-3xl font-bold leading-tight text-[#013E43] sm:text-4xl">{blog.title}</h1>
             {blog.excerpt && <p className="mt-5 max-w-2xl text-base leading-7 text-[#41635A] sm:text-lg sm:leading-8">{blog.excerpt}</p>}
             <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[#41635A]">
-              {authorName && <span className="font-semibold text-[#013E43]">{authorName}</span>}
+            {authorName && <span className="inline-flex items-center gap-2 font-semibold text-[#013E43]">{authorImageUrl && <img src={authorImageUrl} alt="" aria-hidden="true" className="h-9 w-9 rounded-full object-cover" />}{authorName}</span>}
               {formatDate(publishedDate) && <time dateTime={toIsoDate(publishedDate)} className="inline-flex items-center gap-2"><FiCalendar aria-hidden="true" />{formatDate(publishedDate)}</time>}
               <span className="inline-flex items-center gap-2"><FiClock aria-hidden="true" />{readingMinutes} min read</span>
             </div>
           </div>
           <div className="relative aspect-[16/10] overflow-hidden rounded-lg bg-[#DCEBE3]">
-            {coverImageUrl ? <img src={coverImageUrl} alt={blog.coverImageAlt || blog.title} fetchPriority="high" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center px-6 text-sm font-medium text-[#41635A]">RendaHomes Insights</div>}
+            {coverImageUrl ? <img src={coverImageUrl} alt={blog.coverImageAlt || blog.title} fetchPriority="high" className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center px-6 text-sm font-medium text-[#41635A]">RendaHomes Insights</div>}
           </div>
         </div>
       </header>
@@ -360,7 +363,7 @@ function ShareButton({ label, onClick, children }) {
 function RelatedArticle({ article }) {
   const image = getImageUrl(article.coverImage);
   return <Link to={`/blog/${article.slug}`} className="group flex min-w-0 flex-col overflow-hidden rounded-lg border border-[#D7E8DF] bg-white transition-colors hover:border-[#0D915C] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0D915C]">
-    <div className="aspect-[16/10] overflow-hidden bg-[#DCEBE3]">{image ? <img src={image} alt={article.coverImageAlt || article.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center text-sm text-[#52716A]">RendaHomes Insights</div>}</div>
+    <div className="aspect-[16/10] overflow-hidden bg-[#DCEBE3]">{image ? <img src={image} alt={article.coverImageAlt || article.title} loading="lazy" className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center text-sm text-[#52716A]">RendaHomes Insights</div>}</div>
     <div className="flex flex-1 flex-col p-5">
       {article.category && <p className="text-xs font-bold uppercase text-[#0D915C]">{article.category}</p>}
       <h3 className="mt-2 line-clamp-2 text-lg font-bold leading-snug text-[#013E43]">{article.title}</h3>

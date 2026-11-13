@@ -26,8 +26,12 @@ const sendEmail = async ({ to, subject, html }) => {
   }
 
   const resend = getResend();
+  const configuredFrom = String(process.env.EMAIL_FROM || "hello@rendahomes.com").trim();
+  const from = configuredFrom.includes("<")
+    ? configuredFrom.replace(/^RendaHomes\s*</, "Renda Homes <")
+    : `Renda Homes <${configuredFrom}>`;
   return resend.emails.send({
-    from: `RendaHomes <${process.env.EMAIL_FROM || "hello@rendahomes.com"}>`,
+    from,
     to,
     subject,
     html,

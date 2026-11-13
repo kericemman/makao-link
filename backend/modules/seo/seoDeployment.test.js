@@ -21,6 +21,12 @@ test("main-site Nginx serves the backend-generated dynamic sitemap", () => {
   assert.doesNotMatch(mainHost, /location = \/sitemap\.xml\s*\{[^}]*try_files/s);
 });
 
+test("public listing and article paths reach server-rendered social metadata", () => {
+  const config = read("deploy/hostinger-nginx.conf");
+  const mainHost = serverBlockFor(config, "rendahomes.com www.rendahomes.com");
+  assert.match(mainHost, /location ~ \^\/\(listings\|blog\)\/\[\^\/\]\+\$\s*\{[^}]*proxy_pass http:\/\/127\.0\.0\.1:5000;/s);
+});
+
 test("landlord, user, and admin portals expose noindex to crawlers", () => {
   const config = read("deploy/hostinger-nginx.conf");
   for (const [host, htmlPath, robotsPath] of [

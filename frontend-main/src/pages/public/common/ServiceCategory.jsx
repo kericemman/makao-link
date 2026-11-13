@@ -22,6 +22,7 @@ import {
 import { FaWhatsapp, FaBuilding, FaHandshake, FaToolbox, FaChair, FaIntercom, FaSquarespace } from "react-icons/fa";
 import { MdCleaningServices } from "react-icons/md";
 import toast from "react-hot-toast";
+import LoadingScreen from "../../../components/common/LoadingScreen";
 
 const categoryTitles = {
   movers: "Moving Services",
@@ -130,18 +131,9 @@ const ServiceCategoryPage = () => {
     return phone?.replace(/^0/, "254");
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A8D8C1] border-t-[#02BB31] mx-auto mb-4"></div>
-          <p className="text-[#065A57]">Loading service partners...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
+    <>
+    {loading && <LoadingScreen />}
     <div className="min-h-screen bg-[#F0F7F4]">
       {/* Hero Section with Background Image */}
       <div className="relative bg-gradient-to-r from-[#013E43] to-[#005C57] text-white overflow-hidden">
@@ -365,6 +357,7 @@ const ServiceCategoryPage = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

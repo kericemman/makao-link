@@ -30,7 +30,6 @@ export default function Listings() {
   const [pagination, setPagination] = useState(null);
   const [meta, setMeta] = useState({ counties: [], countyTowns: {}, listingTypes: [] });
   const [loading, setLoading] = useState(true);
-  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState("");
 
   const filters = useMemo(
@@ -81,7 +80,6 @@ export default function Listings() {
         setError(getApiErrorMessage(err, "Could not load listings from the backend."));
       } finally {
         setLoading(false);
-        setInitialLoading(false);
       }
     };
 
@@ -112,11 +110,9 @@ export default function Listings() {
   const page = Number(filters.page || 1);
   const pages = Number(pagination?.pages || 1);
 
-  if (initialLoading) {
-    return <LoadingScreen label="Loading listings" />;
-  }
-
   return (
+    <>
+    {loading && <LoadingScreen />}
     <div className="bg-[#F0F7F4]">
       <section className="border-b border-[#A8D8C1] bg-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -165,7 +161,7 @@ export default function Listings() {
           listings={listings}
           filters={filters}
           pagination={pagination}
-          loading={loading}
+          loading={loading && listings.length === 0}
           error={error}
           page={page}
           pages={pages}
@@ -174,5 +170,6 @@ export default function Listings() {
         />
       </div>
     </div>
+    </>
   );
 }

@@ -3,8 +3,19 @@ import { Link } from "react-router-dom";
 import { FiArrowRight, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import PropertyCard from "../PropertyCard";
 
-export default function ListingRail({ title, eyebrow, listings = [], viewAllTo, emptyText = "No listings available yet.", gridOnMobile = false }) {
+export default function ListingRail({
+  title,
+  eyebrow,
+  listings = [],
+  viewAllTo,
+  emptyText = "No listings available yet.",
+  gridOnMobile = false,
+  loading = false,
+  error = "",
+  onRetry
+}) {
   const railRef = useRef(null);
+  const layoutClass = `listing-rail gap-3 pb-2 sm:gap-5 ${gridOnMobile ? "listing-rail--mobile-grid grid grid-cols-2 sm:flex sm:overflow-x-auto" : "flex overflow-x-auto"}`;
 
   const scrollRail = (direction) => {
     railRef.current?.scrollBy({
@@ -47,10 +58,30 @@ export default function ListingRail({ title, eyebrow, listings = [], viewAllTo, 
           </div>
         </div>
 
-        {listings.length ? (
+        {loading ? (
+          <div className={layoutClass} role="status" aria-label={`Loading ${title}`}>
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className={gridOnMobile ? "min-w-0 sm:w-[min(86vw,360px)] sm:shrink-0 sm:snap-start" : "w-[min(86vw,360px)] shrink-0 snap-start"}>
+                <div className="h-full overflow-hidden rounded-[1.35rem] border border-[#A8D8C1] bg-white">
+                  <div className="aspect-[1.1] animate-pulse bg-[#DCEBE3] sm:aspect-[1.35]" />
+                  <div className="min-h-[112px] space-y-3 p-3 sm:min-h-[144px] sm:p-5">
+                    <div className="h-4 w-2/3 animate-pulse rounded bg-[#E7F0EB]" />
+                    <div className="h-4 w-4/5 animate-pulse rounded bg-[#E7F0EB]" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-[#E7F0EB]" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div role="alert" className="flex min-h-24 flex-col items-center justify-center gap-3 rounded-2xl border border-red-200 bg-white p-6 text-center">
+            <p className="text-sm font-semibold text-[#065A57]">{error}</p>
+            {onRetry ? <button type="button" onClick={onRetry} className="text-sm font-bold text-[#0D915C] underline underline-offset-4">Try again</button> : null}
+          </div>
+        ) : listings.length ? (
           <div
             ref={railRef}
-            className={`listing-rail gap-3 pb-2 sm:gap-5 ${gridOnMobile ? "listing-rail--mobile-grid grid grid-cols-2 sm:flex sm:overflow-x-auto" : "flex overflow-x-auto"}`}
+            className={layoutClass}
           >
             {listings.map((listing) => (
               <div key={listing._id} className={gridOnMobile ? "min-w-0 sm:w-[min(86vw,360px)] sm:shrink-0 sm:snap-start" : "w-[min(86vw,360px)] shrink-0 snap-start"}>

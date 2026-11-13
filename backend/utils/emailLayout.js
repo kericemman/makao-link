@@ -22,7 +22,7 @@ const buildEmailLayout = ({
   secondaryCtaUrl = "",
   footerNote = "",
   preheader = "",
-  brandName = "RendaHomes",
+  brandName = "Renda Homes",
   accentColor = "#013E43",
   highlightColor = "#0D915C",
   mutedColor = "#647C75",
@@ -44,10 +44,10 @@ const buildEmailLayout = ({
     <title>${title || brandName}</title>
     <style>
       @media only screen and (max-width: 640px) {
-        .rh-wrapper { padding: 18px 10px !important; }
-        .rh-card { width: 100% !important; border-radius: 18px !important; }
-        .rh-content { padding: 26px 20px !important; }
-        .rh-header { padding: 22px 20px !important; }
+        .rh-wrapper { padding: 10px 6px !important; }
+        .rh-card { width: 100% !important; border-radius: 14px !important; }
+        .rh-content { padding: 18px 14px !important; }
+        .rh-header { padding: 16px 14px !important; }
         .rh-title { font-size: 24px !important; line-height: 31px !important; }
         .rh-button { display: block !important; width: 100% !important; box-sizing: border-box !important; }
       }
@@ -61,18 +61,13 @@ const buildEmailLayout = ({
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#EEF6F1; margin:0; padding:0;">
       <tr>
         <td align="center" class="rh-wrapper" style="padding:40px 16px;">
-          <table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" class="rh-card" style="width:640px; max-width:640px; background:#ffffff; border:1px solid #DDEAE3; border-radius:24px; overflow:hidden;">
+          <table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" class="rh-card" style="width:640px; max-width:640px; background:#ffffff; border-radius:24px; overflow:hidden;">
             <tr>
               <td class="rh-header" style="padding:26px 34px; background:${accentColor};">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                   <tr>
                     <td align="left" style="vertical-align:middle;">
                       <span style="font-size:22px; font-weight:700; color:#ffffff;">${brandName}</span>
-                    </td>
-                    <td align="right" style="vertical-align:middle;">
-                      <span style="display:inline-block; padding:7px 11px; border:1px solid rgba(255,255,255,0.2); border-radius:999px; color:#DFF4E8; font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;">
-                        Find. Rent. Live.
-                      </span>
                     </td>
                   </tr>
                 </table>
@@ -114,7 +109,7 @@ const buildEmailLayout = ({
 
                 ${
                   footerNote
-                    ? `<div style="margin:30px 0 0; padding:14px 16px; border-left:4px solid ${highlightColor}; background:#F5FAF7; border-radius:10px; color:${mutedColor}; font-size:13px; line-height:21px;">${footerNote}</div>`
+                    ? `<div style="margin:30px 0 0; padding:14px 16px; background:#F5FAF7; border-radius:10px; color:${mutedColor}; font-size:13px; line-height:21px;">${footerNote}</div>`
                     : ""
                 }
               </td>
@@ -126,7 +121,7 @@ const buildEmailLayout = ({
                   <tr>
                     <td style="padding:0 42px 24px;">
                       <p style="margin:0; color:${mutedColor}; font-size:12px; line-height:20px;">
-                        Follow RendaHomes:
+                        Follow Renda Homes:
                         ${socialLinks.facebook ? `<a href="${socialLinks.facebook}" style="color:${accentColor}; font-weight:700; text-decoration:none;">Facebook</a>` : ""}
                         ${socialLinks.instagram ? ` &nbsp; <a href="${socialLinks.instagram}" style="color:${accentColor}; font-weight:700; text-decoration:none;">Instagram</a>` : ""}
                         ${socialLinks.linkedin ? ` &nbsp; <a href="${socialLinks.linkedin}" style="color:${accentColor}; font-weight:700; text-decoration:none;">LinkedIn</a>` : ""}
@@ -139,12 +134,12 @@ const buildEmailLayout = ({
             }
 
             <tr>
-              <td style="padding:24px 42px 30px; background:#F8FAF8; border-top:1px solid #DDEAE3;">
+              <td style="padding:24px 42px 30px; background:#F8FAF8;">
                 <p style="margin:0 0 8px; color:${mutedColor}; font-size:12px; line-height:19px;">
-                  © ${year} ${brandName}. All rights reserved.
+                  © ${year} Renda Homes LTD. All rights reserved.
                 </p>
                 <p style="margin:0; color:#8A9C96; font-size:11px; line-height:18px;">
-                  You received this email because you use RendaHomes or contacted our team.
+                  You received this email because you use Renda Homes or contacted our team.
                   ${unsubscribeUrl ? `<br /><a href="${unsubscribeUrl}" style="color:${mutedColor}; text-decoration:underline;">Unsubscribe</a>` : ""}
                 </p>
               </td>

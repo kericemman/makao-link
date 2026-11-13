@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import imageCompression from "browser-image-compression";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   createBlog,
@@ -19,7 +20,8 @@ import {
   FiImage,
   FiFileText,
   FiType,
-  FiXCircle
+  FiXCircle,
+  FiLoader
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 
@@ -49,13 +51,17 @@ const AdminBlogEditorPage = () => {
     tags: "",
     metaTitle: "",
     metaDescription: "",
-    coverImageAlt: ""
+    coverImageAlt: "",
+    authorName: "",
+    authorImage: ""
   });
   const articleCategories = [...new Set([...ARTICLE_CATEGORIES, formData.category].filter(Boolean))];
 
   const [coverImage, setCoverImage] = useState(null);
   const [existingCover, setExistingCover] = useState("");
   const [coverPreview, setCoverPreview] = useState("");
+  const [authorImageFile, setAuthorImageFile] = useState(null);
+  const [authorImagePreview, setAuthorImagePreview] = useState("");
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -78,10 +84,13 @@ const AdminBlogEditorPage = () => {
         tags: blog?.tags?.join(", ") || "",
         metaTitle: blog?.metaTitle || "",
         metaDescription: blog?.metaDescription || "",
-        coverImageAlt: blog?.coverImageAlt || ""
+        coverImageAlt: blog?.coverImageAlt || "",
+        authorName: blog?.authorName || blog?.author?.name || "",
+        authorImage: blog?.authorImage || ""
       });
 
       setExistingCover(blog?.coverImage || "");
+      setAuthorImageFile(null);
     } catch (err) {
       const message = err.response?.data?.message || "Failed to load blog";
       setError(message);
@@ -110,6 +119,28 @@ const AdminBlogEditorPage = () => {
 
     return () => URL.revokeObjectURL(objectUrl);
   }, [coverImage, existingCover]);
+
+  useEffect(() => {
+    if (!authorImageFile) {
+      setAuthorImagePreview(formData.authorImage);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(authorImageFile);
+    setAuthorImagePreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [authorImageFile, formData.authorImage]);
+
+  useEffect(() => {
+    if (!loading) return undefined;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+    };
+  }, [loading]);
 
   const cleanText = formData.content?.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim() || "";
 
@@ -150,6 +181,21 @@ const AdminBlogEditorPage = () => {
     }
 
     setCoverImage(file);
+  };
+
+  const handleAuthorImage = (event) => {
+    const file = event.target.files?.[0] || null;
+    event.target.value = "";
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)) {
+      toast.error("Use a JPEG, PNG, WebP, or AVIF author image.");
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Author image must be smaller than 20 MB.");
+      return;
+    }
+    setAuthorImageFile(file);
   };
 
   const validateForm = () => {
@@ -204,6 +250,30 @@ const AdminBlogEditorPage = () => {
       payload.append("metaTitle", formData.metaTitle);
       payload.append("metaDescription", formData.metaDescription);
       payload.append("coverImageAlt", formData.coverImageAlt);
+      payload.append("authorName", formData.authorName);
+
+      let authorImageUrl = formData.authorImage;
+      if (authorImageFile) {
+        let uploadFile = authorImageFile;
+        try {
+          const compressed = await imageCompression(authorImageFile, {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1200,
+            useWebWorker: true,
+            fileType: "image/webp"
+          });
+          if (compressed?.size && compressed.size < authorImageFile.size && compressed.type === "image/webp") {
+            uploadFile = new File([compressed], "author-image.webp", { type: "image/webp", lastModified: Date.now() });
+          }
+        } catch {
+          // The upload endpoint validates the original image type and size.
+        }
+        if (uploadFile.size > 10 * 1024 * 1024) throw new Error("Author image is over the 10 MB upload limit after compression.");
+        const uploaded = await uploadBlogImage(uploadFile);
+        if (!uploaded?.url || !/^https:\/\//i.test(uploaded.url)) throw new Error("Author image upload did not return a secure image URL.");
+        authorImageUrl = uploaded.url;
+      }
+      payload.append("authorImage", authorImageUrl);
 
       if (coverImage) {
         payload.append("coverImage", coverImage);
@@ -235,10 +305,10 @@ const AdminBlogEditorPage = () => {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#DDEAE3] border-t-[#0D915C]" />
-          <p className="text-[#41635A]">Loading blog editor...</p>
+      <div role="status" aria-live="polite" className="fixed inset-0 z-[100] grid h-[100dvh] place-items-center overflow-hidden bg-[#013E43]/75 px-4 backdrop-blur-sm">
+        <div className="text-center text-white drop-shadow-lg">
+          <FiLoader aria-hidden="true" className="mx-auto h-10 w-10 animate-spin" />
+          <p className="mt-4 text-sm font-semibold">Loading</p>
         </div>
       </div>
     );
@@ -407,6 +477,40 @@ const AdminBlogEditorPage = () => {
 
             <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
               <h2 className="mb-4 flex items-center text-lg font-semibold text-[#013E43]">
+                <FiType className="mr-2 text-[#0D915C]" />
+                Author
+              </h2>
+              <label className="block text-sm font-medium text-[#013E43]">
+                Display name
+                <input
+                  name="authorName"
+                  value={formData.authorName}
+                  onChange={handleChange}
+                  maxLength={120}
+                  placeholder="Leave blank to use your account name"
+                  className="mt-1 w-full rounded-lg border-2 border-[#DDEAE3] px-3 py-2 text-sm outline-none focus:border-[#0D915C]"
+                />
+              </label>
+              <label className="mt-4 block text-sm font-medium text-[#013E43]">
+                Author photo
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  onChange={handleAuthorImage}
+                  className="mt-1 w-full rounded-lg border-2 border-[#DDEAE3] px-3 py-2 text-sm outline-none focus:border-[#0D915C]"
+                />
+              </label>
+              <p className="mt-1 text-xs text-[#41635A]">Optional. The image is compressed and uploaded to R2.</p>
+              {authorImagePreview && (
+                <div className="mt-3 flex items-center gap-3">
+                  <img src={authorImagePreview} alt="Author preview" className="h-14 w-14 rounded-full border border-[#DDEAE3] object-cover" />
+                  <button type="button" onClick={() => { setAuthorImageFile(null); setFormData((current) => ({ ...current, authorImage: "" })); }} className="text-sm font-medium text-red-700 hover:underline">Remove author photo</button>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-lg border border-[#DDEAE3] bg-white p-6 shadow-none">
+              <h2 className="mb-4 flex items-center text-lg font-semibold text-[#013E43]">
                 <FiImage className="mr-2 text-[#0D915C]" />
                 Cover Image
               </h2>
@@ -439,7 +543,7 @@ const AdminBlogEditorPage = () => {
                   <img
                     src={coverPreview}
                     alt="Cover preview"
-                    className="h-32 w-full rounded-lg border-2 border-[#DDEAE3] object-cover"
+                    className="h-32 w-full rounded-lg border-2 border-[#DDEAE3] bg-[#F1F7F3] object-contain"
                   />
                 </div>
               ) : null}
@@ -599,7 +703,7 @@ const AdminBlogEditorPage = () => {
                 <img
                   src={coverPreview}
                   alt={formData.coverImageAlt || formData.title}
-                  className="mb-6 h-64 w-full rounded-lg object-cover"
+                  className="mb-6 h-64 w-full rounded-lg bg-[#F1F7F3] object-contain"
                 />
               ) : null}
 
@@ -608,6 +712,11 @@ const AdminBlogEditorPage = () => {
               </h1>
 
               {formData.category && <p className="mb-3 text-sm font-semibold text-[#0D915C]">{formData.category}</p>}
+
+              <div className="mb-5 flex items-center gap-3 text-sm font-semibold text-[#013E43]">
+                {authorImagePreview && <img src={authorImagePreview} alt="" className="h-10 w-10 rounded-full object-cover" />}
+                <span>{formData.authorName.trim() || "Author name"}</span>
+              </div>
 
               {formData.excerpt ? (
                 <p className="mb-6 text-lg italic text-[#41635A]">

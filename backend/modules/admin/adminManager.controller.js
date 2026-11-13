@@ -6,10 +6,24 @@ const { adminManagerInvitationEmail } = require("../../utils/emailTemplates");
 const { recordAuthorizationChange } = require("../authorization/audit.service");
 const { effectiveRoles } = require("../authorization/authorization.service");
 const { ADMIN_PERMISSION_CATALOG, ADMIN_PERMISSION_KEYS } = require("./adminPermissions");
+const { normalizeKenyanPhone } = require("../../utils/kenyanPhone");
+
+const normalizeOptionalManagerPhone = (value) => {
+  const input = String(value || "").trim().slice(0, 32);
+  return input ? normalizeKenyanPhone(input) : "";
+};
 
 const normalizePermissions = (value) => {
   if (!Array.isArray(value) || value.some((permission) => !ADMIN_PERMISSION_KEYS.includes(permission))) return null;
   return [...new Set(value)];
+};
+
+const managerEmailConflict = (user) => {
+  if (!user) return "";
+  if (effectiveRoles(user).includes("admin")) return "A super admin account cannot be converted into an admin manager.";
+  if (user.adminManagerStatus === "active") return "This account is already an active admin manager.";
+  if (user.adminManagerStatus === "revoked") return "";
+  return "This email is already linked to a RendaHomes account. Use a new, unused email address for an admin manager.";
 };
 
 const serializeManager = (user) => ({
@@ -60,7 +74,12 @@ exports.getAdminManagers = async (_req, res, next) => {
 exports.createAdminManager = async (req, res, next) => {
   const name = String(req.body?.name || "").trim().slice(0, 120);
   const email = String(req.body?.email || "").trim().toLowerCase();
-  const phone = String(req.body?.phone || "").trim().slice(0, 32);
+  let phone;
+  try {
+    phone = normalizeOptionalManagerPhone(req.body?.phone);
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
   const permissions = normalizePermissions(req.body?.permissions);
   if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
     return res.status(400).json({ success: false, message: "Enter a valid manager name and email." });
@@ -77,11 +96,9 @@ exports.createAdminManager = async (req, res, next) => {
     session = await mongoose.startSession();
     await session.withTransaction(async () => {
       let user = await User.findOne({ email }).session(session);
-      if (user && effectiveRoles(user).includes("admin")) {
-        throw Object.assign(new Error("A super admin account cannot be converted into an admin manager."), { status: 409 });
-      }
-      if (user?.adminManagerStatus === "active") {
-        throw Object.assign(new Error("This account is already an active admin manager."), { status: 409 });
+      const emailConflict = managerEmailConflict(user);
+      if (emailConflict) {
+        throw Object.assign(new Error(emailConflict), { status: 409 });
       }
       const wasRevoked = user?.adminManagerStatus === "revoked";
       const oldPermissions = user?.adminPermissions || [];
@@ -91,7 +108,7 @@ exports.createAdminManager = async (req, res, next) => {
         user = new User({
           name,
           email,
-          phone,
+          ...(phone ? { phone } : {}),
           password: crypto.randomBytes(32).toString("base64url"),
           role: "admin_manager",
           roles: ["admin_manager"],
@@ -233,3 +250,5 @@ exports.resendAdminManagerInvitation = async (req, res, next) => {
 };
 
 exports.normalizePermissions = normalizePermissions;
+exports.normalizeOptionalManagerPhone = normalizeOptionalManagerPhone;
+exports.managerEmailConflict = managerEmailConflict;

@@ -55,6 +55,24 @@ const getUploadedFileUrl = (file) => {
   );
 };
 
+const normalizeAuthorImage = (value) => {
+  const image = String(value || "").trim();
+  if (!image) return "";
+  try {
+    if (new URL(image).protocol !== "https:") throw new Error();
+  } catch {
+    const error = new Error("Author image must be a valid HTTPS image URL.");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (image.length > 2048) {
+    const error = new Error("Author image URL is too long.");
+    error.statusCode = 400;
+    throw error;
+  }
+  return image;
+};
+
 const sendBlogNotificationToSubscribers = async (blog) => {
   const subscribers = await NewsletterSubscriber.find({ isActive: true });
 
@@ -64,11 +82,13 @@ const sendBlogNotificationToSubscribers = async (blog) => {
     try {
       await sendEmail({
         to: subscriber.email,
-        subject: `New on RendaHomes Insights: ${blog.title}`,
+        subject: blog.title,
         html: blogPublishedEmail({
           title: blog.title,
           excerpt: blog.excerpt,
-          slug: blog.slug
+          slug: blog.slug,
+          coverImage: blog.coverImage,
+          coverImageAlt: blog.coverImageAlt
         })
       });
     } catch (error) {
@@ -210,7 +230,9 @@ exports.createBlog = async (req, res, next) => {
       category,
       tags,
       metaTitle,
-      metaDescription
+      metaDescription,
+      authorName,
+      authorImage
     } = req.body;
 
     const nextStatus = status === "published" ? "published" : "draft";
@@ -238,6 +260,8 @@ exports.createBlog = async (req, res, next) => {
       tags: normalizeTags(tags),
       metaTitle: metaTitle || "",
       metaDescription: metaDescription || "",
+      authorName: String(authorName || "").trim().slice(0, 120),
+      authorImage: normalizeAuthorImage(authorImage),
       author: req.user._id,
       status: nextStatus,
       publishedAt: nextStatus === "published" ? new Date() : null
@@ -290,6 +314,8 @@ exports.updateBlog = async (req, res, next) => {
       blog.metaDescription = metaDescription;
     }
     if (typeof req.body.coverImageAlt === "string") blog.coverImageAlt = req.body.coverImageAlt.trim();
+    if (typeof req.body.authorName === "string") blog.authorName = req.body.authorName.trim().slice(0, 120);
+    if (typeof req.body.authorImage === "string") blog.authorImage = normalizeAuthorImage(req.body.authorImage);
 
     const uploadedCover = getUploadedFileUrl(req.file);
 
@@ -328,6 +354,7 @@ exports.updateBlog = async (req, res, next) => {
 };
 
 exports.getArticleValidationMessage = getArticleValidationMessage;
+exports.normalizeAuthorImage = normalizeAuthorImage;
 
 exports.deleteBlog = async (req, res, next) => {
   try {

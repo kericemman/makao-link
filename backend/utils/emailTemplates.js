@@ -4,31 +4,33 @@ const clientUrl = process.env.CLIENT_URL || "https://rendahomes.com";
 const landlordClientUrl = process.env.LANDLORD_CLIENT_URL || "https://landlord.rendahomes.com";
 const adminClientUrl = process.env.ADMIN_CLIENT_URL || clientUrl;
 const userClientUrl = process.env.USER_CLIENT_URL || "https://user.rendahomes.com";
+const landlordListingGuideUrl = "https://rendahomes.com/blog/how-to-list-your-property-on-renda-a-step-by-step-guide-for-landlords-and-property-owners-in-kenya";
 const escapeHtml = (value = "") => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 
 exports.welcomeEmail = ({ name, planName, isFreePlan }) => {
   return buildEmailLayout({
-    title: "Welcome to RendaHomes",
+    title: "Welcome to Renda Homes",
     greeting: `Hello ${escapeHtml(name)}`,
-    intro: `
-      Finding the right tenants shouldn't feel like a gamble.
-
-      RendaHomes is built to help landlords like you list properties faster, reach serious tenants, and reduce the time your units stay vacant. 
-      Instead of relying on agents and uncertain referrals, you now have a direct platform to showcase your property and stay in control.
-    `,
+    intro: `Welcome to RendaHomes, a Kenyan property platform where people can discover homes for rent, properties for sale, and short stays. Your landlord dashboard lets you create and manage listings, update availability, review tenant inquiries, and manage your plan. RendaHomes helps you present your property to people searching online; listing does not guarantee an inquiry or a completed rental or sale.`,
     body: `
-      <p><strong>Selected plan:</strong> ${planName}</p>
-      <p>
-        ${
-          isFreePlan
-            ? "You can now log in and list your first property immediately. Start getting inquiries from potential tenants without delays."
-            : "Your account is ready. Complete payment to activate your plan and unlock full access to list and manage your properties."
-        }
-      </p>
+      <p style="padding:12px 14px;background:#F2F8F4;border-radius:10px;"><strong>Your selected plan:</strong> ${escapeHtml(planName || "Free")}</p>
+      <p>${isFreePlan ? "Your Free plan currently includes up to two property listings. You can review your plan and listing allowance in your dashboard." : "Your account is ready. Complete the plan payment from your dashboard to activate its listing allowance and features."}</p>
+      <h2 style="margin:26px 0 10px;color:#013E43;font-size:19px;line-height:26px;">Your first listing, step by step</h2>
+      <ol style="padding-left:22px;">
+        <li style="margin:0 0 9px;"><strong>Sign in</strong> to your landlord dashboard using the button below.</li>
+        <li style="margin:0 0 9px;"><strong>Open Add Property</strong> and choose whether the property is for rent, sale, or a short stay.</li>
+        <li style="margin:0 0 9px;"><strong>Add accurate details:</strong> title, property type, county and town, price, bedrooms, amenities, and a clear description.</li>
+        <li style="margin:0 0 9px;"><strong>Upload clear property photos</strong> and check that your contact and location details are correct.</li>
+        <li style="margin:0 0 9px;"><strong>Submit for review.</strong> Follow the listing status in your dashboard; approved listings can then appear on the public site.</li>
+        <li><strong>Manage inquiries and availability</strong> from your dashboard as people contact you.</li>
+      </ol>
+      <p>For the full walkthrough, use the step-by-step guide linked below. If you get stuck, contact Renda Homes support at <a href="mailto:info@rendahomes.com" style="color:#0D915C;font-weight:700;">info@rendahomes.com</a>.</p>
     `,
-    ctaText: "Go to RendaHomes",
+    ctaText: "Open Your Landlord Dashboard",
     ctaUrl: `${landlordClientUrl}/login`,
-    footerNote: "If you did not create this account, you can ignore this email."
+    secondaryCtaText: "Read the step-by-step listing guide",
+    secondaryCtaUrl: landlordListingGuideUrl,
+    footerNote: "Never share your password or verification code by email. If you did not create this account, contact Renda Homes support."
   });
 };
 
@@ -56,8 +58,8 @@ exports.adminManagerInvitationEmail = ({ name, setupUrl, loginUrl, permissions =
     intro: isNewAccount
       ? "A RendaHomes super admin has invited you to a limited-access admin manager account."
       : "A RendaHomes super admin has granted admin manager access to your account.",
-    body: `<p><strong>Your assigned access:</strong> ${safePermissions || "No admin areas assigned"}</p>${isNewAccount ? "<p>Set your password with the single-use link below. It expires in 30 minutes. Email verification will still be required when you sign in.</p>" : "<p>Sign in with your existing account. Your access is limited to the areas listed above.</p>"}`,
-    ctaText: isNewAccount ? "Set Password" : "Open Admin Portal",
+    body: `<p><strong>Your assigned access:</strong> ${safePermissions || "No admin areas assigned"}</p>${isNewAccount ? "<p>Use the single-use link below to create your password and verify your email. It expires in 30 minutes. After setup, sign in to the Admin Portal using this email address.</p>" : "<p>Sign in with your existing manager account. Your access is limited to the areas listed above.</p>"}`,
+    ctaText: isNewAccount ? "Create Password & Verify Email" : "Open Admin Portal",
     ctaUrl: setupUrl || loginUrl,
     footerNote: "If you did not expect this access, contact a RendaHomes super admin."
   });
@@ -346,17 +348,25 @@ exports.partnerRejectedEmail = ({ contactPerson, companyName }) => {
   });
 };
 
-exports.blogPublishedEmail = ({ title, excerpt, slug }) => {
+exports.blogPublishedEmail = ({ title, excerpt, slug, coverImage = "", coverImageAlt = "" }) => {
+  const articleUrl = `${clientUrl}/blog/${encodeURIComponent(String(slug || ""))}`;
+  let safeCoverImage = "";
+  try {
+    const parsedImageUrl = new URL(String(coverImage || ""));
+    if (parsedImageUrl.protocol === "https:") safeCoverImage = parsedImageUrl.href;
+  } catch {
+    safeCoverImage = "";
+  }
+
   return buildEmailLayout({
-    title: "New Blog Post on RendaHomes",
-    greeting: "Hi there",
-    intro: `We just published a new article: <strong>${title}</strong>.`,
+    title: escapeHtml(title || "New article from Renda Homes"),
+    intro: "",
+    preheader: escapeHtml(excerpt || title || "Read the latest from Renda Homes."),
     body: `
-      <p>${excerpt}</p>
-      
-    `,
-    ctaText: "Read Full Article",
-    ctaUrl: `${clientUrl}/blog/${slug}`
+      ${safeCoverImage ? `<p style="margin:0 0 20px;"><a href="${escapeHtml(articleUrl)}" target="_blank"><img src="${escapeHtml(safeCoverImage)}" alt="${escapeHtml(coverImageAlt || title || "Renda Homes article cover")}" style="display:block;width:100%;max-width:560px;height:auto;max-height:360px;object-fit:cover;border-radius:12px;" /></a></p>` : ""}
+      ${excerpt ? `<p style="margin:0 0 18px;">${escapeHtml(excerpt)}</p>` : ""}
+      <p style="margin:0;"><a href="${escapeHtml(articleUrl)}" target="_blank" style="color:#0D915C;font-weight:700;text-decoration:underline;">Read More</a></p>
+    `
   });
 };
 
@@ -421,7 +431,7 @@ exports.agentInviteEmail = ({ name, agentCode, landlordLink, loginUrl, setupUrl 
     body: `
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;">
         <tr>
-          <td style="padding:12px 14px; border:1px solid #DDEAE3; border-radius:10px; background:#F8FAF8;">
+          <td style="padding:12px 14px; border-radius:10px; background:#F8FAF8;">
             <p style="margin:0 0 8px; color:#647C75; font-size:13px;">Agent code</p>
             <p style="margin:0; color:#013E43; font-size:20px; font-weight:800; letter-spacing:1px;">${safeAgentCode}</p>
           </td>

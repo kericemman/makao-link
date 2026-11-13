@@ -1,13 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../../api/api";
+import LoadingScreen from "../../../components/common/LoadingScreen";
 
 const PartnerPaymentCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -42,8 +41,6 @@ const PartnerPaymentCallback = () => {
         );
 
         navigate("/services");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -51,19 +48,16 @@ const PartnerPaymentCallback = () => {
   }, [navigate, searchParams]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-14 w-14 border-4 border-[#02BB31] border-t-transparent mx-auto mb-4"></div>
-
-        <h2 className="text-xl font-semibold text-[#013E43]">
-          Verifying Payment...
-        </h2>
-
-        <p className="text-[#065A57] mt-2">
-          Please wait while we confirm your transaction.
-        </p>
-      </div>
-    </div>
+    <>
+      <main className="grid min-h-[55vh] place-items-center bg-[#F0F7F4] px-4">
+        <div className="w-full max-w-lg rounded-xl bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto h-12 w-12 rounded-full bg-[#DCEBE3]" />
+          <div className="mx-auto mt-5 h-5 w-48 rounded bg-[#F0F7F4]" />
+          <div className="mx-auto mt-3 h-4 w-64 max-w-full rounded bg-[#F0F7F4]" />
+        </div>
+      </main>
+      <LoadingScreen />
+    </>
   );
 };
 

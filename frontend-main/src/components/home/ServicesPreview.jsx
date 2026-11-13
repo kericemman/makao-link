@@ -1,6 +1,6 @@
 import { FiArrowUpRight, FiBriefcase } from "react-icons/fi";
 
-export default function ServicesPreview({ categories = [] }) {
+export default function ServicesPreview({ categories = [], loading = false, error = "", onRetry }) {
   return (
     <section id="services" className="border-b border-[#A8D8C1] bg-white">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -16,7 +16,25 @@ export default function ServicesPreview({ categories = [] }) {
           </div>
         </div>
 
-        {categories.length ? (
+        {loading ? (
+          <div className="listing-rail flex gap-5 overflow-x-auto scroll-smooth pb-2" role="status" aria-label="Loading services">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div key={index} className="w-[min(84vw,340px)] shrink-0 overflow-hidden rounded-[1.35rem] border border-[#A8D8C1] bg-white">
+                <div className="aspect-[4/3] animate-pulse bg-[#DCEBE3]" />
+                <div className="space-y-3 p-4">
+                  <div className="h-5 w-2/3 animate-pulse rounded bg-[#E7F0EB]" />
+                  <div className="h-4 animate-pulse rounded bg-[#E7F0EB]" />
+                  <div className="h-4 w-4/5 animate-pulse rounded bg-[#E7F0EB]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div role="alert" className="flex min-h-24 flex-col items-center justify-center gap-3 rounded-2xl border border-red-200 bg-[#F0F7F4] p-6 text-center">
+            <p className="text-sm font-semibold text-[#065A57]">{error}</p>
+            {onRetry ? <button type="button" onClick={onRetry} className="text-sm font-bold text-[#0D915C] underline underline-offset-4">Try again</button> : null}
+          </div>
+        ) : categories.length ? (
           <div className="listing-rail flex gap-5 overflow-x-auto scroll-smooth pb-2">
             {categories.map((category) => (
               <ServiceCard key={category.key} category={category} />
@@ -24,7 +42,7 @@ export default function ServicesPreview({ categories = [] }) {
           </div>
         ) : (
           <div className="rounded-[1.5rem] border border-dashed border-[#02BB31] bg-[#F0F7F4] p-8 text-center">
-            <p className="text-sm font-semibold text-[#065A57]">Service categories will appear here once the backend responds.</p>
+            <p className="text-sm font-semibold text-[#065A57]">No service categories are available right now.</p>
           </div>
         )}
       </div>

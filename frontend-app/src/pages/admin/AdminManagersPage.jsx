@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import toast from "react-hot-toast";
-import { FiRefreshCw, FiSave, FiShield, FiUserPlus, FiUserX } from "react-icons/fi";
+import { FiAlertCircle, FiCheckCircle, FiRefreshCw, FiSave, FiShield, FiUserPlus, FiUserX } from "react-icons/fi";
 import {
   createAdminManager,
   getAdminManagers,
@@ -11,6 +10,64 @@ import {
 import { normalizeAdminPermissions } from "../../utils/adminPermissions";
 
 const emptyInvite = { name: "", email: "", phone: "", permissions: [] };
+const getRequestError = (error, fallback) => {
+  if (error.response?.data?.message) return error.response.data.message;
+  if (error.isAxiosError && !error.response) {
+    return "Could not reach the server. Check your connection and try again.";
+  }
+  return error.message || fallback;
+};
+
+const FeedbackNotice = ({ feedback }) => {
+  if (!feedback) return null;
+  const isError = feedback.type === "error";
+  const isWarning = feedback.type === "warning";
+  const Icon = isError || isWarning ? FiAlertCircle : FiCheckCircle;
+  const colors = isError
+    ? "border-red-200 bg-red-50 text-red-800"
+    : isWarning
+      ? "border-amber-200 bg-amber-50 text-amber-900"
+      : "border-emerald-200 bg-emerald-50 text-emerald-800";
+
+  return (
+    <div role={isError ? "alert" : "status"} aria-live={isError ? "assertive" : "polite"} className={`flex items-start gap-2 rounded-md border px-3 py-2.5 text-sm ${colors}`}>
+      <Icon className="mt-0.5 shrink-0" aria-hidden="true" />
+      <span>{feedback.message}</span>
+    </div>
+  );
+};
+
+const PermissionChoices = ({ value, onChange, idPrefix, catalog }) => {
+  const selectedPermissions = normalizeAdminPermissions(value);
+
+  const togglePermission = (permission) => {
+    onChange((current) => {
+      const selected = normalizeAdminPermissions(current);
+      return selected.includes(permission)
+        ? selected.filter((key) => key !== permission)
+        : [...selected, permission];
+    });
+  };
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      {catalog.map((permission) => (
+        <label key={`${idPrefix}-${permission.key}`} className="flex cursor-pointer items-start gap-2 rounded-md border border-[#DDEAE3] p-3 hover:bg-[#F7FBF8]">
+          <input
+            type="checkbox"
+            checked={selectedPermissions.includes(permission.key)}
+            onChange={() => togglePermission(permission.key)}
+            className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#0D915C]"
+          />
+          <span>
+            <span className="block text-sm font-semibold text-[#013E43]">{permission.label}</span>
+            <span className="mt-0.5 block text-xs leading-5 text-[#55706A]">{permission.description}</span>
+          </span>
+        </label>
+      ))}
+    </div>
+  );
+};
 
 export default function AdminManagersPage() {
   const [managers, setManagers] = useState([]);
@@ -20,10 +77,13 @@ export default function AdminManagersPage() {
   const [editPermissions, setEditPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [feedback, setFeedback] = useState(null);
 
   const activeCount = useMemo(() => managers.filter((manager) => manager.status === "active").length, [managers]);
 
   const loadManagers = async () => {
+    setLoadError("");
     try {
       setLoading(true);
       const data = await getAdminManagers();
@@ -37,7 +97,7 @@ export default function AdminManagersPage() {
         ? data.permissions.filter((permission) => permission && typeof permission.key === "string")
         : []);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Could not load admin managers.");
+      setLoadError(getRequestError(error, "Could not load admin managers. Check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -45,26 +105,27 @@ export default function AdminManagersPage() {
 
   useEffect(() => { loadManagers(); }, []);
 
-  const togglePermission = (permission, target, setTarget) => {
-    setTarget((current) => {
-      const selected = normalizeAdminPermissions(current);
-      return selected.includes(permission)
-        ? selected.filter((key) => key !== permission)
-        : [...selected, permission];
-    });
-  };
-
   const invite = async (event) => {
     event.preventDefault();
-    if (!form.permissions.length) return toast.error("Select at least one permission.");
+    setFeedback(null);
+    if (!form.permissions.length) {
+      setFeedback({ type: "error", message: "Select at least one permission before creating the manager." });
+      return;
+    }
     try {
       setSaving(true);
       const result = await createAdminManager(form);
-      toast[result.inviteSent ? "success" : "error"](result.message);
+      if (!result.success) throw new Error(result.message || "The manager could not be created.");
+      setFeedback({
+        type: result.inviteSent ? "success" : "warning",
+        message: result.message || (result.inviteSent
+          ? "Manager created and setup email sent."
+          : "Manager access was saved, but the setup email was not sent. Use Resend setup email after checking email service configuration.")
+      });
       setForm(emptyInvite);
       await loadManagers();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Could not create the admin manager.");
+      setFeedback({ type: "error", message: getRequestError(error, "Could not create the admin manager. Check the details and try again.") });
     } finally { setSaving(false); }
   };
 
@@ -74,7 +135,11 @@ export default function AdminManagersPage() {
   };
 
   const savePermissions = async (manager) => {
-    if (!editPermissions.length) return toast.error("Select at least one permission.");
+    setFeedback(null);
+    if (!editPermissions.length) {
+      setFeedback({ type: "error", message: "Select at least one permission before saving access." });
+      return;
+    }
     try {
       setSaving(true);
       if (manager.status === "revoked") {
@@ -84,64 +149,52 @@ export default function AdminManagersPage() {
           phone: manager.phone,
           permissions: editPermissions
         });
-        toast[result.inviteSent ? "success" : "error"](result.message);
+        if (!result.success) throw new Error(result.message || "Manager access could not be reactivated.");
+        setFeedback({
+          type: result.inviteSent ? "success" : "warning",
+          message: result.message || (result.inviteSent
+            ? "Manager access reactivated and setup email sent."
+            : "Manager access was reactivated, but the setup email was not sent. Use Resend setup email after checking email service configuration.")
+        });
       } else {
         await updateAdminManagerPermissions(manager._id, editPermissions);
-        toast.success("Manager permissions updated.");
+        setFeedback({ type: "success", message: "Manager permissions updated successfully." });
       }
       setEditing("");
       await loadManagers();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Could not update permissions.");
+      setFeedback({ type: "error", message: getRequestError(error, "Could not update manager access. Your changes were not confirmed; try again.") });
     } finally { setSaving(false); }
   };
 
   const resendInvite = async (manager) => {
+    setFeedback(null);
     try {
       setSaving(true);
       const result = await resendAdminManagerInvitation(manager._id);
-      toast.success(result.message || "Setup email sent.");
+      if (!result.success) throw new Error(result.message || "The setup email could not be sent.");
+      setFeedback({ type: "success", message: result.message || "A new setup link was emailed." });
     } catch (error) {
-      toast.error(error.response?.data?.message || "Could not resend setup email.");
+      setFeedback({ type: "error", message: getRequestError(error, "Could not resend setup email. Check email service configuration and try again.") });
     } finally { setSaving(false); }
   };
 
   const revoke = async (manager) => {
     if (!window.confirm(`Revoke admin manager access for ${manager.name}?`)) return;
+    setFeedback(null);
     try {
       setSaving(true);
       await revokeAdminManager(manager._id);
-      toast.success("Manager access revoked.");
+      setFeedback({ type: "success", message: `Admin manager access revoked for ${manager.name}.` });
       await loadManagers();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Could not revoke access.");
+      setFeedback({ type: "error", message: getRequestError(error, "Could not revoke manager access. Try again.") });
     } finally { setSaving(false); }
-  };
-
-  const PermissionChoices = ({ value, onChange, idPrefix }) => {
-    const selectedPermissions = normalizeAdminPermissions(value);
-    return (
-    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-      {catalog.map((permission) => (
-        <label key={permission.key} className="flex cursor-pointer items-start gap-2 rounded-md border border-[#DDEAE3] p-3 hover:bg-[#F7FBF8]">
-          <input
-            type="checkbox"
-            checked={selectedPermissions.includes(permission.key)}
-            onChange={() => togglePermission(permission.key, idPrefix, onChange)}
-            className="mt-1 accent-[#0D915C]"
-          />
-          <span>
-            <span className="block text-sm font-semibold text-[#013E43]">{permission.label}</span>
-            <span className="mt-0.5 block text-xs leading-5 text-[#55706A]">{permission.description}</span>
-          </span>
-        </label>
-      ))}
-    </div>
-    );
   };
 
   return (
     <div className="space-y-6">
+      <FeedbackNotice feedback={feedback} />
       <header className="flex flex-col gap-3 border-b border-[#DDEAE3] pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#0D915C]">Access control</p>
@@ -164,10 +217,11 @@ export default function AdminManagersPage() {
         <form onSubmit={invite} className="space-y-4">
           <div className="grid gap-3 md:grid-cols-3">
             <input required maxLength={120} placeholder="Full name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="rounded-md border border-[#C8D8D0] px-3 py-2.5 text-sm outline-none focus:border-[#0D915C]" />
-            <input required type="email" maxLength={254} placeholder="Email address" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className="rounded-md border border-[#C8D8D0] px-3 py-2.5 text-sm outline-none focus:border-[#0D915C]" />
+            <input required type="email" maxLength={254} placeholder="New, unused email address" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className="rounded-md border border-[#C8D8D0] px-3 py-2.5 text-sm outline-none focus:border-[#0D915C]" />
             <input type="tel" maxLength={32} placeholder="Phone (optional)" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} className="rounded-md border border-[#C8D8D0] px-3 py-2.5 text-sm outline-none focus:border-[#0D915C]" />
           </div>
-          <PermissionChoices value={form.permissions} onChange={(value) => setForm((current) => ({ ...current, permissions: value }))} idPrefix="invite" />
+          <p className="text-xs text-[#55706A]">Use an email that is not already registered with RendaHomes. The invitee receives a single-use password setup link that expires after 30 minutes.</p>
+          <PermissionChoices value={form.permissions} onChange={(update) => setForm((current) => ({ ...current, permissions: update(current.permissions) }))} idPrefix="invite" catalog={catalog} />
           <button disabled={saving} className="inline-flex items-center gap-2 rounded-md bg-[#0D915C] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#08764A] disabled:opacity-50">
             <FiUserPlus /> {saving ? "Saving..." : "Create manager and send setup email"}
           </button>
@@ -179,7 +233,12 @@ export default function AdminManagersPage() {
           <FiShield className="text-[#0D915C]" />
           <h3 className="font-semibold text-[#013E43]">Manager access</h3>
         </div>
-        {loading ? <p className="py-8 text-sm text-[#55706A]">Loading managers...</p> : managers.length === 0 ? (
+        {loadError ? (
+          <div className="flex flex-col items-start gap-3 py-6 sm:flex-row sm:items-center sm:justify-between">
+            <p role="alert" className="flex items-start gap-2 text-sm text-red-700"><FiAlertCircle className="mt-0.5 shrink-0" />{loadError}</p>
+            <button onClick={loadManagers} disabled={loading} className="inline-flex items-center gap-2 rounded-md border border-[#C8D8D0] px-3 py-2 text-sm font-medium text-[#013E43] hover:bg-white disabled:opacity-50"><FiRefreshCw className={loading ? "animate-spin" : ""} /> Try again</button>
+          </div>
+        ) : loading ? <p className="py-8 text-sm text-[#55706A]">Loading managers...</p> : managers.length === 0 ? (
           <p className="py-8 text-sm text-[#55706A]">No admin managers yet.</p>
         ) : (
           <div className="divide-y divide-[#DDEAE3] border-y border-[#DDEAE3]">
@@ -207,7 +266,7 @@ export default function AdminManagersPage() {
                 </div>
                 {editing === manager._id && (
                   <div className="mt-4 space-y-3 border-t border-[#DDEAE3] pt-4">
-                    <PermissionChoices value={editPermissions} onChange={setEditPermissions} idPrefix={manager._id} />
+                    <PermissionChoices value={editPermissions} onChange={setEditPermissions} idPrefix={manager._id} catalog={catalog} />
                     <div className="flex justify-end">
                       <button onClick={() => savePermissions(manager)} disabled={saving} className="inline-flex items-center gap-2 rounded-md bg-[#0D915C] px-3 py-2 text-sm font-semibold text-white hover:bg-[#08764A] disabled:opacity-50"><FiSave /> Save access</button>
                     </div>
@@ -218,7 +277,7 @@ export default function AdminManagersPage() {
           </div>
         )}
       </section>
-      <p className="text-xs leading-5 text-[#667B75]">New managers receive a single-use password setup link that expires after 30 minutes. Existing accounts keep their current password. Email verification remains required at sign-in.</p>
+      <p className="text-xs leading-5 text-[#667B75]">New managers set a password and verify their email from a single-use link that expires after 30 minutes, then sign in to the Admin Portal. Reactivated managers use their existing account.</p>
     </div>
   );
 }

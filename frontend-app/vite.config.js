@@ -14,6 +14,6 @@ export default defineConfig({
   server: {
     port: 5177,
     strictPort: true,
-    fs: { allow: [path.resolve(appRoot, "../frontend-landlord")] }
+    fs: { allow: [appRoot, path.resolve(appRoot, "../frontend-landlord")] }
   }
 });

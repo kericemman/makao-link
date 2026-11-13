@@ -12,7 +12,7 @@ const getListingImage = (listing) => {
   return image?.url || image?.path || null;
 };
 
-export default function HeroSearch({ listings = [] }) {
+export default function HeroSearch({ listings = [], listingsLoading = false, listingsError = "", onRetryListings }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [purpose, setPurpose] = useState("rent");
@@ -144,7 +144,14 @@ export default function HeroSearch({ listings = [] }) {
           </div>
 
           <div className="min-w-0">
-            <HeroListingShowcase listings={listings} selectedListingId={selectedListing?._id} onSelectListing={setSelectedListingId} />
+            <HeroListingShowcase
+              listings={listings}
+              selectedListingId={selectedListing?._id}
+              onSelectListing={setSelectedListingId}
+              loading={listingsLoading}
+              error={listingsError}
+              onRetry={onRetryListings}
+            />
           </div>
         </div>
 

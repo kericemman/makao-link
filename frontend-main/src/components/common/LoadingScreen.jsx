@@ -1,14 +1,23 @@
+import { useEffect } from "react";
 import { FiLoader } from "react-icons/fi";
 
-export default function LoadingScreen({ label = "Loading RendaHomes" }) {
+export default function LoadingScreen() {
+  useEffect(() => {
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+    };
+  }, []);
+
   return (
-    <div className="grid min-h-[calc(100vh-5rem)] place-items-center bg-[#F0F7F4] px-4">
-      <div className="text-center">
-        <FiLoader aria-hidden="true" className="mx-auto h-9 w-9 animate-spin text-[#0D915C]" />
-        <div className="mx-auto mt-5 h-1.5 w-36 overflow-hidden rounded-full bg-[#A8D8C1]/50">
-          <div className="loading-bar h-full rounded-full bg-[#02BB31]" />
-        </div>
-        <p className="mt-4 text-sm font-extrabold text-[#013E43]">{label}</p>
+    <div role="status" aria-live="polite" className="fixed inset-0 z-[100] grid h-[100dvh] place-items-center overflow-hidden bg-[#013E43]/75 px-4 backdrop-blur-sm">
+      <div className="text-center text-white drop-shadow-lg">
+        <FiLoader aria-hidden="true" className="mx-auto h-10 w-10 animate-spin" />
+        <p className="mt-4 text-sm font-semibold">Loading</p>
       </div>
     </div>
   );

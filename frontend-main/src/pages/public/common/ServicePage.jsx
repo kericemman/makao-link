@@ -18,6 +18,7 @@ import {
 import { FaBuilding, FaBus, FaHandshake, FaKey, FaWhatsapp } from "react-icons/fa";
 import { MdCleaningServices } from "react-icons/md";
 import toast from "react-hot-toast";
+import LoadingScreen from "../../../components/common/LoadingScreen";
 
 // Category icons mapping
 const categoryIcons = {
@@ -87,6 +88,8 @@ const ServicesPage = () => {
   const fallbackImage = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
 
   return (
+    <>
+    {loading && <LoadingScreen />}
     <div className="min-h-screen bg-[#F0F7F4]">
       {/* Hero Section with Gradient */}
       <section className="relative bg-gradient-to-br from-[#013E43] via-[#005C57] to-[#013E43] text-white overflow-hidden">
@@ -141,20 +144,7 @@ const ServicesPage = () => {
           </h2>
         </div>
 
-        {loading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-white rounded-2xl shadow-lg border border-[#A8D8C1] animate-pulse">
-                <div className="h-48 bg-gray-200 rounded-t-2xl"></div>
-                <div className="p-6 space-y-3">
-                  <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-full"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : categories.length === 0 ? (
+        {categories.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-[#A8D8C1]">
             <div className="w-20 h-20 bg-[#F0F7F4] rounded-full flex items-center justify-center mx-auto mb-4">
               <FiHome className="text-3xl text-[#A8D8C1]" />
@@ -250,6 +240,7 @@ const ServicesPage = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 

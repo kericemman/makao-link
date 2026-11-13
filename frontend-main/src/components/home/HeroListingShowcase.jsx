@@ -22,7 +22,7 @@ const imageFor = (listing) => {
   return first.url || first.path || null;
 };
 
-export default function HeroListingShowcase({ listings = [], selectedListingId, onSelectListing }) {
+export default function HeroListingShowcase({ listings = [], selectedListingId, onSelectListing, loading = false, error = "", onRetry }) {
   const railRef = useRef(null);
   const displayListings = listings.slice(0, 8);
   const mainListing = displayListings.find((listing) => listing._id === selectedListingId) || displayListings[0];
@@ -44,7 +44,7 @@ export default function HeroListingShowcase({ listings = [], selectedListingId, 
         </Link>
       </div>
 
-      {mainListing ? <FeaturedHeroCard listing={mainListing} /> : <EmptyFeaturedCard />}
+      {loading ? <FeaturedSkeleton /> : mainListing ? <FeaturedHeroCard listing={mainListing} /> : error ? <ErrorFeaturedCard message={error} onRetry={onRetry} /> : <EmptyFeaturedCard />}
 
       <div className="mt-3 flex items-center justify-between">
         <p className="text-sm font-extrabold text-[#013E43]">Explore recent homes</p>
@@ -71,7 +71,12 @@ export default function HeroListingShowcase({ listings = [], selectedListingId, 
       </div>
 
       <div ref={railRef} className="hero-listing-rail mt-2 flex gap-3 overflow-x-auto scroll-smooth pb-1">
-        {railListings.length ? (
+        {loading ? (
+          <>
+            <div className="h-36 w-[230px] shrink-0 animate-pulse rounded-2xl bg-[#DCEBE3]" />
+            <div className="h-36 w-[230px] shrink-0 animate-pulse rounded-2xl bg-[#DCEBE3]" />
+          </>
+        ) : railListings.length ? (
           railListings.map((listing) => (
             <MiniHeroCard
               key={listing._id}
@@ -175,6 +180,19 @@ function EmptyFeaturedCard() {
         <p className="text-lg font-extrabold text-[#013E43]">Recent listings will appear here</p>
         {/* <p className="mt-2 text-sm leading-6 text-[#065A57]">Start the backend and approved listings will populate this showcase.</p> */}
       </div>
+    </div>
+  );
+}
+
+function FeaturedSkeleton() {
+  return <div aria-hidden="true" className="aspect-[16/10] min-h-[260px] max-h-[360px] animate-pulse rounded-[1.35rem] bg-[#DCEBE3]" />;
+}
+
+function ErrorFeaturedCard({ message, onRetry }) {
+  return (
+    <div role="alert" className="flex min-h-[300px] flex-col items-center justify-center rounded-[1.35rem] border border-red-200 bg-[#F0F7F4] p-8 text-center">
+      <p className="text-sm font-semibold text-[#065A57]">{message}</p>
+      {onRetry ? <button type="button" onClick={onRetry} className="mt-3 text-sm font-bold text-[#0D915C] underline underline-offset-4">Try again</button> : null}
     </div>
   );
 }
