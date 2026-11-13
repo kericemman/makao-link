@@ -8,6 +8,7 @@ import {
   revokeAdminManager,
   updateAdminManagerPermissions
 } from "../../services/admin.service";
+import { normalizeAdminPermissions } from "../../utils/adminPermissions";
 
 const emptyInvite = { name: "", email: "", phone: "", permissions: [] };
 
@@ -26,8 +27,15 @@ export default function AdminManagersPage() {
     try {
       setLoading(true);
       const data = await getAdminManagers();
-      setManagers(Array.isArray(data.managers) ? data.managers : []);
-      setCatalog(Array.isArray(data.permissions) ? data.permissions : []);
+      setManagers(Array.isArray(data.managers)
+        ? data.managers.filter((manager) => manager && typeof manager === "object").map((manager) => ({
+            ...manager,
+            permissions: normalizeAdminPermissions(manager.permissions)
+          }))
+        : []);
+      setCatalog(Array.isArray(data.permissions)
+        ? data.permissions.filter((permission) => permission && typeof permission.key === "string")
+        : []);
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not load admin managers.");
     } finally {
@@ -38,9 +46,12 @@ export default function AdminManagersPage() {
   useEffect(() => { loadManagers(); }, []);
 
   const togglePermission = (permission, target, setTarget) => {
-    setTarget((current) => current.includes(permission)
-      ? current.filter((key) => key !== permission)
-      : [...current, permission]);
+    setTarget((current) => {
+      const selected = normalizeAdminPermissions(current);
+      return selected.includes(permission)
+        ? selected.filter((key) => key !== permission)
+        : [...selected, permission];
+    });
   };
 
   const invite = async (event) => {
@@ -59,7 +70,7 @@ export default function AdminManagersPage() {
 
   const beginEdit = (manager) => {
     setEditing(manager._id);
-    setEditPermissions(manager.permissions || []);
+    setEditPermissions(normalizeAdminPermissions(manager.permissions));
   };
 
   const savePermissions = async (manager) => {
@@ -107,13 +118,15 @@ export default function AdminManagersPage() {
     } finally { setSaving(false); }
   };
 
-  const PermissionChoices = ({ value, onChange, idPrefix }) => (
+  const PermissionChoices = ({ value, onChange, idPrefix }) => {
+    const selectedPermissions = normalizeAdminPermissions(value);
+    return (
     <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
       {catalog.map((permission) => (
         <label key={permission.key} className="flex cursor-pointer items-start gap-2 rounded-md border border-[#DDEAE3] p-3 hover:bg-[#F7FBF8]">
           <input
             type="checkbox"
-            checked={value.includes(permission.key)}
+            checked={selectedPermissions.includes(permission.key)}
             onChange={() => togglePermission(permission.key, idPrefix, onChange)}
             className="mt-1 accent-[#0D915C]"
           />
@@ -124,7 +137,8 @@ export default function AdminManagersPage() {
         </label>
       ))}
     </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6">

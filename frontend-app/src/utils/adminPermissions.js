@@ -47,21 +47,34 @@ export const getAdminPermissionForPath = (path = "") => {
   return null;
 };
 
-export const hasSuperAdminRole = (user) => [user?.role, ...(user?.roles || [])].includes("admin");
+export const normalizeAdminPermissions = (permissions) =>
+  Array.isArray(permissions)
+    ? permissions.filter((permission) => typeof permission === "string")
+    : [];
+
+const getUserRoles = (user) => [
+  user?.role,
+  ...(Array.isArray(user?.roles) ? user.roles : [])
+].filter((role) => typeof role === "string");
+
+const userHasPermission = (user, permission) =>
+  normalizeAdminPermissions(user?.adminPermissions).includes(permission);
+
+export const hasSuperAdminRole = (user) => getUserRoles(user).includes("admin");
 export const canAccessAdminPath = (user, path) => {
   if (hasSuperAdminRole(user)) return true;
-  if (![user?.role, ...(user?.roles || [])].includes("admin_manager")) return false;
+  if (!getUserRoles(user).includes("admin_manager")) return false;
   const permission = getAdminPermissionForPath(path);
   return Boolean(user?.adminManagerStatus === "active" && (
     Array.isArray(permission)
-      ? permission.some((key) => user?.adminPermissions?.includes(key))
-      : permission && user?.adminPermissions?.includes(permission)
+      ? permission.some((key) => userHasPermission(user, key))
+      : permission && userHasPermission(user, permission)
   ));
 };
 
 export const getAdminHomePath = (user) => {
-  if (hasSuperAdminRole(user) || user?.adminPermissions?.includes("dashboard.read")) return "/admin/dashboard";
-  const first = ADMIN_PERMISSION_CATALOG.find(({ key }) => user?.adminPermissions?.includes(key));
+  if (hasSuperAdminRole(user) || userHasPermission(user, "dashboard.read")) return "/admin/dashboard";
+  const first = ADMIN_PERMISSION_CATALOG.find(({ key }) => userHasPermission(user, key));
   const paths = {
     "listings.read": "/admin/listings",
     "listings.review": "/admin/listings/pending",
