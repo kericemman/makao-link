@@ -3,29 +3,21 @@ const AppTicket = require("../models/appTicket.model");
 const ContactInfo = require("../models/contactInfo.model");
 const AppUpdate = require("../models/appUpdate.model");
 const Subscriber = require("../models/subscriber.model");
-const NewsletterSubscriber = require("../../blog/NewsletterSubscriber.model");
+const User = require("../../users/user.model");
 const PolicyPage = require("../models/policyPage.model");
 const HelpRequest = require("../models/helpRequest.model");
 const sendEmail = require("../../../utils/sendEmail");
 const { appUpdatePublishedEmail } = require("../../../utils/emailTemplates");
 const { recordAdminActivity } = require("../../admin/adminActivity.service");
+const { getServiceUpdateRecipients, mergeServiceUpdateSubscribers } = require("../services/serviceUpdateAudience.service");
 
 const sendUpdateNotificationToSubscribers = async (update) => {
   const audience = update.emailAudience || "mobile_app";
-  const includeWebsite = audience === "website" || audience === "all";
-  const includeMobile = audience === "mobile_app" || audience === "all";
-  const subscriberQueries = [];
-
-  if (includeMobile) {
-    subscriberQueries.push(Subscriber.find({ isActive: true, source: "mobile_app" }).select("email"));
-  }
-  if (includeWebsite) {
-    subscriberQueries.push(Subscriber.find({ isActive: true, source: "website" }).select("email"));
-    subscriberQueries.push(NewsletterSubscriber.find({ isActive: true }).select("email"));
-  }
-
-  const subscriberGroups = await Promise.all(subscriberQueries);
-  const uniqueEmails = [...new Set(subscriberGroups.flat().map((subscriber) => subscriber.email?.toLowerCase()).filter(Boolean))];
+  const uniqueEmails = await getServiceUpdateRecipients({
+    audience,
+    SubscriberModel: Subscriber,
+    UserModel: User
+  });
 
   for (const email of uniqueEmails) {
     try {
@@ -249,40 +241,12 @@ exports.deleteUpdate = async (req, res) => {
 
 /* SUBSCRIBERS */
 exports.getSubscribers = async (req, res) => {
-  const [appSubscribers, websiteNewsletterSubscribers] = await Promise.all([
-    Subscriber.find().sort({ createdAt: -1 }),
-    NewsletterSubscriber.find().sort({ createdAt: -1 })
+  const [appSubscribers, landlords] = await Promise.all([
+    Subscriber.find().sort({ createdAt: -1 }).lean(),
+    User.find({ isEmailVerified: true, $or: [{ role: "landlord" }, { roles: "landlord" }] })
+      .select("email createdAt").lean()
   ]);
-  const subscriberMap = new Map();
-
-  const addSubscriber = (subscriber, source) => {
-    const email = subscriber.email?.trim().toLowerCase();
-    if (!email) return;
-
-    const existing = subscriberMap.get(email) || {
-      _id: email,
-      email,
-      sources: [],
-      isActive: false,
-      createdAt: subscriber.subscribedAt || subscriber.createdAt
-    };
-    if (!existing.sources.includes(source)) existing.sources.push(source);
-    existing.isActive = existing.isActive || subscriber.isActive;
-    const createdAt = subscriber.subscribedAt || subscriber.createdAt;
-    if (createdAt && (!existing.createdAt || new Date(createdAt) < new Date(existing.createdAt))) {
-      existing.createdAt = createdAt;
-    }
-    subscriberMap.set(email, existing);
-  };
-
-  appSubscribers.forEach((subscriber) => {
-    addSubscriber(subscriber, subscriber.source === "website" ? "website" : "mobile_app");
-  });
-  websiteNewsletterSubscribers.forEach((subscriber) => addSubscriber(subscriber, "website"));
-
-  const subscribers = [...subscriberMap.values()].sort(
-    (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-  );
+  const subscribers = mergeServiceUpdateSubscribers({ subscribers: appSubscribers, landlords });
   res.json({ subscribers });
 };
 
@@ -292,14 +256,17 @@ exports.updateSubscriberStatus = async (req, res) => {
     return res.status(400).json({ message: "Email and subscriber status are required" });
   }
 
-  const [appResult, websiteResult] = await Promise.all([
-    Subscriber.updateMany({ email }, { $set: { isActive: req.body.isActive } }),
-    NewsletterSubscriber.updateMany({ email }, { $set: { isActive: req.body.isActive } })
-  ]);
-
-  if (!appResult.matchedCount && !websiteResult.matchedCount) {
-    return res.status(404).json({ message: "Subscriber not found" });
-  }
+  const existing = await Subscriber.findOne({ email }).select("source sources").lean();
+  const sources = [...new Set([...(existing?.sources || []), existing?.source, "website"].filter(Boolean))];
+  await Subscriber.findOneAndUpdate(
+    { email },
+    {
+      $set: { email, isActive: req.body.isActive },
+      $setOnInsert: { source: "website" },
+      $addToSet: { sources: { $each: sources } }
+    },
+    { upsert: true, new: true, runValidators: true }
+  );
 
   res.json({ success: true, email, isActive: req.body.isActive });
 };

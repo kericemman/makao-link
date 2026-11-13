@@ -118,6 +118,14 @@ export const useSeo = ({
       identity: { name: "twitter:image" },
       values: { content: image || defaultImage }
     });
+    setMeta('meta[name="twitter:card"]', {
+      identity: { name: "twitter:card" },
+      values: { content: "summary_large_image" }
+    });
+    setMeta('meta[property="og:site_name"]', {
+      identity: { property: "og:site_name" },
+      values: { content: siteName }
+    });
 
     setJsonLd("page-jsonld", jsonLd);
   }, [description, image, jsonLd, path, title, type]);

@@ -174,6 +174,8 @@
 .rich-content pre code { background: transparent; padding: 0; color: inherit; }
 .rich-content hr { margin: 2em 0; border: 0; border-top: 2px solid #a8d8c1; }
 .rich-content img { display: block; max-width: 100%; height: auto; margin: 1.5em auto; border-radius: 0.5rem; }
+.rich-content div[data-video-embed] { position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 1.75rem 0; overflow: hidden; border-radius: 0.5rem; background: #013e43; }
+.rich-content div[data-video-embed] iframe { display: block; width: 100%; height: 100%; border: 0; }
 
 @media (max-width: 640px) {
   .rich-content h1 { font-size: 1.75rem; }

@@ -5,6 +5,7 @@ import {
   FiCheckCircle,
   FiDownload,
   FiGlobe,
+  FiHome,
   FiMail,
   FiRefreshCw,
   FiSearch,
@@ -138,7 +139,7 @@ export default function AdminSubscribersPage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0D915C]">Audience</p>
           <h1 className="mt-1 text-2xl font-semibold text-[#013E43]">Subscribers</h1>
-          <p className="mt-1 text-sm text-[#647C75]">Website and mobile app update audiences, combined by email address.</p>
+          <p className="mt-1 text-sm text-[#647C75]">Website service updates include verified landlord accounts automatically. Article emails remain a separate opt-in.</p>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={loadSubscribers} title="Refresh subscribers" aria-label="Refresh subscribers" className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#DDEAE3] text-[#41635A] transition hover:bg-[#F1F7F3]">
@@ -207,6 +208,7 @@ export default function AdminSubscribersPage() {
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {subscriber.sources?.includes("website") && <span className="inline-flex items-center gap-1 rounded-full bg-[#E8F0F0] px-2.5 py-1 text-xs font-medium text-[#013E43]"><FiGlobe aria-hidden="true" /> Website</span>}
+                {subscriber.landlordAccounts && <span className="inline-flex items-center gap-1 rounded-full bg-[#EAF5EF] px-2.5 py-1 text-xs font-medium text-[#08764C]"><FiHome aria-hidden="true" /> Landlord account</span>}
                 {subscriber.sources?.includes("mobile_app") && <span className="inline-flex items-center gap-1 rounded-full bg-[#EAF5EF] px-2.5 py-1 text-xs font-medium text-[#08764C]"><FiSmartphone aria-hidden="true" /> Mobile app</span>}
               </div>
               <div className="flex items-center justify-between gap-3 sm:justify-end">

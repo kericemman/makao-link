@@ -4,21 +4,17 @@ import { getPublishedBlogs, subscribeToNewsletter } from "../../../services/blog
 import { 
   FiSearch, 
   FiCalendar, 
-  FiUser, 
   FiClock, 
   FiTag,
-  FiTrendingUp,
   FiArrowRight,
   FiMail,
   FiSend,
   FiBookOpen,
-  FiStar,
-  FiEye,
-  FiX,
-  FiBell
 } from "react-icons/fi";
-import { FaBlog, FaWhatsapp, FaTwitter, FaFacebook, FaLinkedin, FaTiktok, FaLinkedinIn, FaInstagram } from "react-icons/fa";
+import { FaBlog, FaTwitter, FaFacebook, FaLinkedinIn, FaInstagram } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { useSeo } from "../../../utils/seo";
+import { landlordListPropertyUrl } from "../../../config/portals";
 
 const BlogPage = () => {
   useEffect(() => {
@@ -28,17 +24,18 @@ const BlogPage = () => {
   const [blogs, setBlogs] = useState([]);
   const [filteredBlogs, setFilteredBlogs] = useState([]);
   const [email, setEmail] = useState("");
-  const [popupEmail, setPopupEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [subscribing, setSubscribing] = useState(false);
-  const [popupSubscribing, setPopupSubscribing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [showPopup, setShowPopup] = useState(false);
-  const [popupMessage, setPopupMessage] = useState("");
-  const [popupError, setPopupError] = useState("");
+
+  useSeo({
+    title: "Property Guides & Landlord Resources",
+    description: "Practical guides for listing, renting, buying, and managing property in Kenya with RendaHomes.",
+    path: "/blog"
+  });
 
   const fetchBlogs = async () => {
     try {
@@ -46,14 +43,6 @@ const BlogPage = () => {
       const data = await getPublishedBlogs();
       setBlogs(data.blogs || []);
       
-      // Show popup after 2 seconds (only once per session)
-      const hasSeenPopup = sessionStorage.getItem("blogPopupSeen");
-      if (!hasSeenPopup) {
-        setTimeout(() => {
-          setShowPopup(true);
-          sessionStorage.setItem("blogPopupSeen", "true");
-        }, 2000);
-      }
     } catch (err) {
       toast.error("Failed to load blog posts", {
         style: { background: "#013E43", color: "#fff" }
@@ -121,43 +110,6 @@ const BlogPage = () => {
     }
   };
 
-  const handlePopupSubscribe = async (e) => {
-    e.preventDefault();
-
-    if (!popupEmail) {
-      toast.error("Please enter your email address", {
-        style: { background: "#013E43", color: "#fff" }
-      });
-      return;
-    }
-
-    try {
-      setPopupSubscribing(true);
-      setPopupError("");
-      setPopupMessage("");
-
-      const data = await subscribeToNewsletter({ email: popupEmail });
-      setPopupMessage(data.message);
-      
-      toast.success("Subscribed successfully!", {
-        style: { background: "#02BB31", color: "#fff" }
-      });
-      
-      // Close popup after successful subscription
-      setTimeout(() => {
-        setShowPopup(false);
-        setPopupEmail("");
-      }, 1500);
-    } catch (err) {
-      setPopupError(err.response?.data?.message || "Failed to subscribe");
-      toast.error("Failed to subscribe", {
-        style: { background: "#013E43", color: "#fff" }
-      });
-    } finally {
-      setPopupSubscribing(false);
-    }
-  };
-
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -188,7 +140,7 @@ const BlogPage = () => {
   return (
     <div className="min-h-screen bg-[#F0F7F4]">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-[#013E43] to-[#005C57] text-white overflow-hidden">
+      <div className="relative overflow-hidden bg-[#013E43] text-white">
         <div className="absolute inset-0 opacity-20">
           <img
             src="https://res.cloudinary.com/dhlz0p70t/image/upload/v1776349042/closeup-shot-several-newspapers-stacked-top-each-other_1_wyx1no.jpg"
@@ -197,14 +149,16 @@ const BlogPage = () => {
           />
         </div>
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+          <div className="grid items-end gap-8 lg:grid-cols-[1fr_360px]">
             <div>
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5">
                 <FaBlog className="text-[#02BB31] text-sm" />
-                <span className="text-xs font-medium">Insights & Updates</span>
+                <span className="text-xs font-semibold">RENDAHOMES GUIDES</span>
               </div>
-              
+              <h1 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">Learn to list, rent and manage with confidence</h1>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-white/80 sm:text-base">Clear, practical advice for Kenyan landlords, tenants and home seekers, including step-by-step help using RendaHomes.</p>
+              <a href={landlordListPropertyUrl()} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white underline decoration-[#02BB31] underline-offset-4 hover:text-[#a8d8c1]">Ready to list a property? <FiArrowRight /></a>
             </div>
 
             {/* Search Bar */}
@@ -216,7 +170,7 @@ const BlogPage = () => {
                   placeholder="Search articles..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 rounded-xl border-2 border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-[#A8D8C1] focus:outline-none focus:border-[#02BB31] transition-colors"
+                  className="w-full rounded-lg border border-white/20 bg-white/10 py-3 pl-11 pr-4 text-white placeholder-[#A8D8C1] outline-none focus:border-[#02BB31]"
                 />
               </div>
             </div>
@@ -224,7 +178,7 @@ const BlogPage = () => {
         </div>
       </div>
 
-      <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Categories Filter */}
         {categories.length > 0 && (
           <div className="flex flex-wrap gap-3 mb-8">
@@ -289,39 +243,40 @@ const BlogPage = () => {
               <Link
                 key={blog._id}
                 to={`/blog/${blog.slug}`}
-                className="group bg-white rounded-2xl shadow-lg border border-[#A8D8C1] overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1"
+                className="group flex h-full flex-col overflow-hidden rounded-lg border border-[#D7E8DF] bg-white transition-colors hover:border-[#0D915C]"
               >
                 {/* Blog Image */}
-                <div className="relative overflow-hidden bg-gradient-to-r from-[#013E43] to-[#005C57]">
-                  {/* {blog.coverImage ? (
+                <div className="relative aspect-[16/10] overflow-hidden bg-[#DDEAE3]">
+                  {blog.coverImage ? (
                     <img
                       src={blog.coverImage}
-                      alt={blog.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      alt={blog.coverImageAlt || blog.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <FaBlog className="text-5xl text-white opacity-50" />
+                    <div className="flex h-full items-center justify-center bg-[#013E43]">
+                      <FiBookOpen className="text-4xl text-white/60" />
                     </div>
-                  )} */}
+                  )}
                   
                   {blog.category && (
-                    <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1 bg-[#02BB31] text-white text-xs font-medium rounded-full">
+                    <div className="absolute left-3 top-3">
+                      <span className="rounded bg-[#013E43] px-2.5 py-1 text-xs font-semibold text-white">
                         {blog.category}
                       </span>
                     </div>
                   )}
                 </div>
 
-                <div className="p-5">
+                <div className="flex flex-1 flex-col p-5">
                   {/* Title */}
-                  <h3 className="text-xl font-bold text-[#013E43] mb-2 line-clamp-2 group-hover:text-[#02BB31] transition-colors">
+                  <h3 className="mb-2 line-clamp-2 text-lg font-bold leading-snug text-[#013E43] group-hover:text-[#0D915C]">
                     {blog.title}
                   </h3>
 
                   {/* Meta Info */}
-                  <div className="flex items-center gap-4 mb-3 text-xs text-[#065A57]">
+                  <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#065A57]">
                     <span className="flex items-center gap-1">
                       <FiCalendar className="text-[#02BB31]" />
                       {formatDate(blog.publishedAt || blog.createdAt)}
@@ -333,12 +288,12 @@ const BlogPage = () => {
                   </div>
 
                   {/* Excerpt */}
-                  <p className="text-[#065A57] text-sm mb-4 line-clamp-3">
-                    {blog.excerpt || blog.content?.replace(/<[^>]*>/g, '').slice(0, 150)}...
+                  <p className="mb-5 line-clamp-3 text-sm leading-6 text-[#065A57]">
+                    {blog.excerpt || blog.content?.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').trim().slice(0, 150)}
                   </p>
 
                   {/* Read More */}
-                  <div className="flex items-center justify-end">
+                  <div className="mt-auto flex items-center justify-end border-t border-[#E4EEE8] pt-3">
                     <span className="text-[#02BB31] text-sm font-medium flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                       Read More
                       <FiArrowRight className="text-sm" />
@@ -417,108 +372,6 @@ const BlogPage = () => {
         </div>
       </div>
 
-      {/* Subscription Popup Modal */}
-      {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-slide-up">
-            {/* Close Button */}
-            <button
-              onClick={() => setShowPopup(false)}
-              className="absolute top-4 right-4 p-2 text-[#065A57] hover:text-[#013E43] transition-colors z-10"
-            >
-              <FiX className="text-xl" />
-            </button>
-
-            {/* Content */}
-            <div className="p-6 sm:p-8 text-center">
-              {/* Icon */}
-              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-[#02BB31] to-[#0D915C] rounded-full flex items-center justify-center">
-                <FiBell className="text-3xl text-white" />
-              </div>
-
-              {/* Title */}
-              <h3 className="text-2xl font-bold text-[#013E43] mb-2">Stay Updated!</h3>
-              
-              {/* Description */}
-              <p className="text-[#065A57] mb-6">
-                Subscribe to our newsletter and never miss out on the latest property tips, market news, and exclusive offers.
-              </p>
-
-              {/* Benefits */}
-              <div className="flex flex-col gap-2 mb-6 text-left">
-                <div className="flex items-center gap-2 text-sm text-[#065A57]">
-                  <FiStar className="text-[#02BB31] flex-shrink-0" />
-                  <span>Weekly property market insights</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[#065A57]">
-                  <FiStar className="text-[#02BB31] flex-shrink-0" />
-                  <span>Exclusive landlord tips</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[#065A57]">
-                  <FiStar className="text-[#02BB31] flex-shrink-0" />
-                  <span>New listing alerts</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[#065A57]">
-                  <FiStar className="text-[#02BB31] flex-shrink-0" />
-                  <span>Special offers and discounts</span>
-                </div>
-              </div>
-
-              {/* Form */}
-              <form onSubmit={handlePopupSubscribe} className="space-y-4">
-                <input
-                  type="email"
-                  value={popupEmail}
-                  onChange={(e) => setPopupEmail(e.target.value)}
-                  placeholder="Enter your email address"
-                  className="w-full px-4 py-3 border-2 border-[#A8D8C1] rounded-lg focus:border-[#02BB31] outline-none transition-colors"
-                  required
-                />
-                
-                {popupMessage && (
-                  <p className="text-sm text-green-600">{popupMessage}</p>
-                )}
-                {popupError && (
-                  <p className="text-sm text-red-600">{popupError}</p>
-                )}
-                
-                <button
-                  type="submit"
-                  disabled={popupSubscribing}
-                  className="w-full py-3 bg-gradient-to-r from-[#02BB31] to-[#0D915C] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
-                >
-                  {popupSubscribing ? "Subscribing..." : "Subscribe Now"}
-                </button>
-              </form>
-
-              {/* No thanks link */}
-              <button
-                onClick={() => setShowPopup(false)}
-                className="mt-4 text-sm text-[#065A57] hover:text-[#02BB31] transition-colors"
-              >
-                No thanks, I'll do it later
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Custom Animation */}
-      <style jsx>{`
-        @keyframes slide-up {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-slide-up {
-          animation: slide-up 0.3s ease-out forwards;
-        }
-      `}</style>
     </div>
   );
 };

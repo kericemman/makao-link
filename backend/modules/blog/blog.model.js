@@ -5,7 +5,8 @@ const blogSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
+      maxlength: 180
     },
 
     slug: {
@@ -18,19 +19,32 @@ const blogSchema = new mongoose.Schema(
 
     excerpt: {
       type: String,
-      required: true,
-      trim: true
+      default: "",
+      trim: true,
+      maxlength: 300
     },
 
     content: {
       type: String,
-      required: true
+      default: ""
     },
 
     coverImage: {
       type: String,
       default: ""
     },
+
+    coverImageAlt: {
+      type: String,
+      trim: true,
+      maxlength: 180,
+      default: ""
+    },
+
+    category: { type: String, trim: true, maxlength: 60, default: "" },
+    tags: { type: [String], default: [] },
+    metaTitle: { type: String, trim: true, maxlength: 70, default: "" },
+    metaDescription: { type: String, trim: true, maxlength: 170, default: "" },
 
     author: {
       type: mongoose.Schema.Types.ObjectId,
@@ -51,5 +65,7 @@ const blogSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+blogSchema.index({ status: 1, publishedAt: -1 });
 
 module.exports = mongoose.model("Blog", blogSchema);

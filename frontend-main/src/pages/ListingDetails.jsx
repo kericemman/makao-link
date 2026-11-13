@@ -12,6 +12,7 @@ import { mainRoutes, portalLinks } from "../config/portals";
 import { getApiErrorMessage } from "../utils/apiError";
 import { buildListingJsonLd, seoText, useSeo } from "../utils/seo";
 import { createStayRequest } from "../services/stays.service";
+import { getVideoEmbedUrl } from "../utils/videoEmbed";
 
 const formatPrice = (price, purpose) => {
   const amount = new Intl.NumberFormat("en-KE", {
@@ -159,6 +160,7 @@ export default function ListingDetails() {
   const hero = images[selectedImage] || null;
   const location = [listing.area, listing.town, listing.county].filter(Boolean).join(", ") || listing.location || "Location on request";
   const amenities = normalizeAmenities(listing.amenities);
+  const videoEmbedUrl = getVideoEmbedUrl(listing.video);
   const landlordPhone = listing.contactPhone || listing.landlord?.phone || "";
   const isShortStay = listing.purpose === "short_stay";
   const today = formatDateInput(new Date());
@@ -251,6 +253,23 @@ export default function ListingDetails() {
                     ))}
                   </div>
                 </div>
+              ) : null}
+
+              {videoEmbedUrl ? (
+                <section className="mt-4 rounded-xl border border-[#DCEBE3] bg-white p-4 sm:mt-5 sm:p-6" aria-labelledby="virtual-tour-heading">
+                  <h2 id="virtual-tour-heading" className="text-lg font-extrabold text-[#013E43]">Virtual tour</h2>
+                  <div className="mt-3 aspect-video overflow-hidden rounded-lg bg-[#F0F7F4]">
+                    <iframe
+                      src={videoEmbedUrl}
+                      title={`Virtual tour of ${listing.title}`}
+                      className="h-full w-full"
+                      loading="lazy"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  </div>
+                </section>
               ) : null}
 
               <article className="mt-3 rounded-xl border border-[#DCEBE3] bg-white p-4 sm:mt-4 sm:p-6">

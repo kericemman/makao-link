@@ -78,6 +78,22 @@ exports.landlordOnboardingFollowupEmail = ({ name, whatsappUrl = "" }) => {
   });
 };
 
+exports.landlordManualOnboardingEmail = ({ name, subject, message }) => {
+  const body = String(message || "")
+    .split(/\n{2,}/)
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br />")}</p>`)
+    .join("");
+  return buildEmailLayout({
+    title: escapeHtml(subject || "A note from RendaHomes"),
+    greeting: `Hello ${escapeHtml(name || "")}`,
+    intro: "A member of the RendaHomes team sent you a message about your landlord account.",
+    body,
+    ctaText: "Open your landlord dashboard",
+    ctaUrl: `${landlordClientUrl}/login`,
+    footerNote: "You received this service message about your RendaHomes landlord account."
+  });
+};
+
 exports.assistedLandlordSetupEmail = ({ name, planName, setupUrl, loginUrl, isPaidPlan = false }) => {
   return buildEmailLayout({
     title: "Your RendaHomes landlord account is ready",
@@ -357,13 +373,14 @@ exports.newsletterWelcomeEmail = () => {
   });
 };
 
-exports.appSubscriptionConfirmedEmail = () => {
+exports.appSubscriptionConfirmedEmail = ({ source = "mobile_app" } = {}) => {
+  const isWebsite = source === "website";
   return buildEmailLayout({
-    title: "App Updates Subscription Confirmed",
+    title: "RendaHomes Updates Subscription Confirmed",
     greeting: "Hello",
-    intro: "Thanks for subscribing to RendaHomes app updates.",
+    intro: `Thanks for subscribing to RendaHomes ${isWebsite ? "website" : "mobile app"} updates.`,
     body: `
-      <p>You’ll receive an email when we post important mobile app updates, announcements, and maintenance notices.</p>
+      <p>You’ll receive email when we post relevant ${isWebsite ? "website" : "mobile app"} service updates, announcements, and maintenance notices. Article newsletter emails are managed separately.</p>
     `,
     ctaText: "Open RendaHomes",
     ctaUrl: clientUrl
@@ -385,7 +402,10 @@ exports.appUpdatePublishedEmail = ({ title, body, category, audience = "mobile_a
     intro: `We just posted a new ${category || "platform"} update for ${updateChannel}: <strong>${title}</strong>.`,
     body: body || "",
     ctaText: isWebsite ? "Visit RendaHomes" : "Open RendaHomes",
-    ctaUrl: clientUrl
+    ctaUrl: clientUrl,
+    footerNote: isWebsite || isBoth
+      ? "Website service updates are sent to verified landlord accounts and people subscribed to website updates. Article newsletter emails are separate and optional. To request an email preference change, contact privacy@rendahomes.com."
+      : undefined
   });
 };
 

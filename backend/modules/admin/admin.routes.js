@@ -57,6 +57,8 @@ router.patch("/managers/:id/permissions", protect, requireRole("admin"), adminMa
 router.post("/managers/:id/revoke", protect, requireRole("admin"), adminManagers.revokeAdminManager);
 router.post("/managers/:id/resend-invitation", protect, requireRole("admin"), adminManagers.resendAdminManagerInvitation);
 router.get("/landlord-onboarding", protect, requireRole("admin"), landlordOnboarding.getLandlordOnboarding);
+router.get("/landlord-onboarding/:userId", protect, requireRole("admin"), landlordOnboarding.getLandlordOnboardingDetail);
+router.post("/landlord-onboarding/:userId/send-email", protect, requireRole("admin"), landlordOnboarding.sendManualLandlordOnboardingEmail);
 router.post("/landlord-onboarding/:userId/retry-followup", protect, requireRole("admin"), landlordOnboarding.retryLandlordFollowup);
 router.get("/assisted-listing-drafts", protect, requireRole("admin"), getAssistedListingDrafts);
 router.post("/assisted-listing-drafts", protect, requireRole("admin"), allowAdminDraftImageCount, listingUpload, createAssistedListingDraft);

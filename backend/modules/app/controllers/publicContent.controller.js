@@ -131,18 +131,20 @@ exports.getUpdates = async (req, res) => {
 };
 
 exports.subscribe = async (req, res) => {
-  const { email, source } = req.body;
+  const { email } = req.body;
+  const requestedSource = String(req.body.source || "mobile_app");
+  const source = ["mobile_app", "website"].includes(requestedSource) ? requestedSource : null;
 
-  if (!email) {
-    return res.status(400).json({ message: "Email is required" });
+  if (!email || !source) {
+    return res.status(400).json({ message: "A valid email and update audience are required" });
   }
 
-  const normalizedEmail = email.toLowerCase();
+  const normalizedEmail = String(email).trim().toLowerCase();
   const existingSubscriber = await Subscriber.findOne({ email: normalizedEmail });
 
   const subscriber = await Subscriber.findOneAndUpdate(
     { email: normalizedEmail },
-    { email: normalizedEmail, source: source || "mobile_app", isActive: true },
+    { $set: { email: normalizedEmail, source, isActive: true }, $addToSet: { sources: source } },
     { new: true, upsert: true }
   );
 
@@ -151,7 +153,7 @@ exports.subscribe = async (req, res) => {
       await sendEmail({
         to: subscriber.email,
         subject: "You’re subscribed to RendaHomes app updates",
-        html: appSubscriptionConfirmedEmail()
+        html: appSubscriptionConfirmedEmail({ source })
       });
     } catch (error) {
       console.error("Failed to send app subscription email:", error.message);

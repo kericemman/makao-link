@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FiExternalLink, FiRefreshCw, FiSend } from "react-icons/fi";
 import { getLandlordOnboarding, retryLandlordFollowup } from "../../services/admin.service";
@@ -111,7 +112,7 @@ export default function AdminLandlordOnboardingPage() {
           <div className="divide-y divide-[#DDEAE3] border-y border-[#DDEAE3]">
             {records.map((record) => (
               <article key={record._id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
+                <Link to={`/admin/onboarding/${record._id}`} className="min-w-0 rounded-sm outline-none hover:text-[#0D915C] focus-visible:ring-2 focus-visible:ring-[#0D915C]">
                   <div className="flex flex-wrap items-center gap-2">
                     <h4 className="truncate font-semibold text-[#013E43]">{record.name}</h4>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${stageStyle[record.stage] || "bg-slate-100 text-slate-700"}`}>{stages[record.stage] || record.stage}</span>
@@ -122,7 +123,7 @@ export default function AdminLandlordOnboardingPage() {
                     {` · ${record.listingCounts.total} total listing${record.listingCounts.total === 1 ? "" : "s"}`}
                     {` · Follow-up: ${followupLabel(record)}`}
                   </p>
-                </div>
+                </Link>
                 {record.followup?.status === "failed" && <button onClick={() => retry(record)} disabled={retryingId === record._id} className="inline-flex items-center gap-2 self-start rounded-md border border-[#C8D8D0] px-3 py-2 text-sm font-semibold text-[#013E43] hover:bg-[#F7FBF8] disabled:opacity-50"><FiSend /> {retryingId === record._id ? "Retrying..." : "Retry failed email"}</button>}
                 {record.followup?.status === "unknown" && <span className="self-start text-xs text-amber-800">Not retried to avoid duplicate delivery.</span>}
               </article>

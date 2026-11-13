@@ -36,6 +36,7 @@ import SupportHelpPage from "../pages/admin/app/SupportHelpPage";
 import AdminStayRequestsPage from "../pages/admin/AdminStayRequestsPage";
 import AdminManagersPage from "../pages/admin/AdminManagersPage";
 import AdminLandlordOnboardingPage from "../pages/admin/AdminLandlordOnboardingPage";
+import AdminLandlordOnboardingDetailPage from "../pages/admin/AdminLandlordOnboardingDetailPage";
 import AdminTrafficPage from "../pages/admin/AdminTrafficPage";
 
 const AppRoutes = () => {
@@ -53,6 +54,7 @@ const AppRoutes = () => {
             <Route path="/admin/traffic" element={<AdminTrafficPage />} />
             <Route path="/admin/managers" element={<AdminManagersPage />} />
             <Route path="/admin/onboarding" element={<AdminLandlordOnboardingPage />} />
+            <Route path="/admin/onboarding/:userId" element={<AdminLandlordOnboardingDetailPage />} />
             <Route path="/admin/listings" element={<AdminAllListingsPage />} />
             <Route path="/admin/listings/pending" element={<PendingListingsPage />} />
             <Route path="/admin/listings/reports" element={<AdminListingReportsPage />} />

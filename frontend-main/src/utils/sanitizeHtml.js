@@ -1,3 +1,5 @@
+import { getVideoEmbedUrl } from "./videoEmbed";
+
 const allowedTags = new Set([
   "a",
   "blockquote",
@@ -12,6 +14,7 @@ const allowedTags = new Set([
   "h5",
   "h6",
   "hr",
+  "iframe",
   "img",
   "li",
   "ol",
@@ -23,7 +26,7 @@ const allowedTags = new Set([
   "ul"
 ]);
 
-const allowedAttrs = new Set(["alt", "class", "href", "id", "rel", "src", "style", "target", "title"]);
+const allowedAttrs = new Set(["alt", "class", "data-video-embed", "href", "id", "rel", "src", "style", "target", "title"]);
 const urlAttrs = new Set(["href", "src"]);
 const alignedTags = new Set(["h1", "h2", "h3", "p"]);
 
@@ -49,6 +52,23 @@ export default function sanitizeHtml(html = "") {
 
     if (!allowedTags.has(tagName)) {
       element.replaceWith(...element.childNodes);
+      return;
+    }
+
+    if (tagName === "iframe") {
+      const safeSrc = getVideoEmbedUrl(element.getAttribute("src"));
+      if (!safeSrc) {
+        element.remove();
+        return;
+      }
+      const title = element.getAttribute("title")?.slice(0, 160) || "Embedded property video";
+      [...element.attributes].forEach((attribute) => element.removeAttribute(attribute.name));
+      element.setAttribute("src", safeSrc);
+      element.setAttribute("title", title);
+      element.setAttribute("loading", "lazy");
+      element.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+      element.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
+      element.setAttribute("allowfullscreen", "");
       return;
     }
 
