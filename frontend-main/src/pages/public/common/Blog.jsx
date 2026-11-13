@@ -11,7 +11,7 @@ import {
   FiSend,
   FiBookOpen,
 } from "react-icons/fi";
-import { FaBlog, FaTwitter, FaFacebook, FaLinkedinIn, FaInstagram } from "react-icons/fa";
+import { FaBlog, FaTwitter, FaFacebook, FaLinkedinIn, FaInstagram, FaTiktok } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { useSeo } from "../../../utils/seo";
 import { landlordListPropertyUrl } from "../../../config/portals";
