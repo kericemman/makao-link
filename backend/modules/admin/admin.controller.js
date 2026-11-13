@@ -10,6 +10,7 @@ const {
 const User = require("../users/user.model");
 const Subscription = require("../subscriptions/subscription.model");
 const Payment = require("../payments/payment.model");
+const { getReportablePaymentFilter } = require("../payments/paymentEnvironment");
 const WhatsAppListingAddon = require("../payments/whatsappListingAddon.model");
 const plans = require("../payments/plan.config");
 const Inquiry = require("../inquiries/inquiry.model");
@@ -189,7 +190,6 @@ exports.getAdminSummary = async (req, res, next) => {
       landlords,
       totalInquiries,
       activeSubscriptions,
-      pendingPayments,
       totalSupportTickets,
       openSupportTickets,
       pendingKycReviews,
@@ -210,7 +210,6 @@ exports.getAdminSummary = async (req, res, next) => {
       User.countDocuments({ role: "landlord" }),
       Inquiry.countDocuments(),
       Subscription.countDocuments({ status: "active" }),
-      Subscription.countDocuments({ status: "pending_payment" }),
       SupportTicket.countDocuments(),
       SupportTicket.countDocuments({ status: { $in: ["open", "in_progress"] } }),
       Kyc.countDocuments({ status: "pending" }),
@@ -225,7 +224,7 @@ exports.getAdminSummary = async (req, res, next) => {
       Payment.aggregate([
         {
           $match: {
-            status: "success"
+            ...getReportablePaymentFilter()
           }
         },
         {
@@ -250,7 +249,6 @@ exports.getAdminSummary = async (req, res, next) => {
         totalInquiries,
         totalRevenue,
         activeSubscriptions,
-        pendingPayments,
         totalSupportTickets,
         openSupportTickets,
         pendingKycReviews,
@@ -308,7 +306,7 @@ exports.getAdminOverviewTrends = async (req, res, next) => {
       countByDate(Inquiry, {}),
       countByDate(StayBooking, {}),
       Payment.aggregate([
-        { $match: { status: "success", paidAt: { $gte: startDate, $lte: now } } },
+        { $match: getReportablePaymentFilter({ paidAt: { $gte: startDate, $lte: now } }) },
         { $group: { _id: dateGroup("paidAt"), amount: { $sum: "$amount" } } }
       ])
     ]);
@@ -357,15 +355,16 @@ exports.getAdminCommercialOverview = async (req, res, next) => {
         { $match: { role: "landlord", onboardedByAgent: { $ne: null } } },
         { $group: { _id: "$onboardedByAgent", count: { $sum: 1 } } }
       ]),
-      Subscription.aggregate([
-        { $match: { status: { $in: ["active", "grace"] }, plan: { $ne: "normal" } } },
-        { $lookup: { from: User.collection.name, localField: "user", foreignField: "_id", as: "landlord" } },
-        { $unwind: "$landlord" },
-        { $match: { "landlord.role": "landlord", "landlord.onboardedByAgent": { $ne: null } } },
-        { $group: { _id: "$landlord.onboardedByAgent", count: { $sum: 1 } } }
+      Payment.aggregate([
+        { $match: getReportablePaymentFilter() },
+        { $lookup: { from: User.collection.name, localField: "user", foreignField: "_id", as: "payer" } },
+        { $unwind: "$payer" },
+        { $match: { "payer.role": "landlord", "payer.onboardedByAgent": { $ne: null } } },
+        { $group: { _id: { agent: "$payer.onboardedByAgent", landlord: "$payer._id" } } },
+        { $group: { _id: "$_id.agent", count: { $sum: 1 } } }
       ]),
       Payment.aggregate([
-        { $match: { status: "success" } },
+        { $match: getReportablePaymentFilter() },
         { $lookup: { from: User.collection.name, localField: "user", foreignField: "_id", as: "payer" } },
         { $unwind: "$payer" },
         { $match: { "payer.role": "landlord", "payer.onboardedByAgent": { $ne: null } } },
@@ -510,7 +509,7 @@ exports.getRecentActivity = async (req, res, next) => {
   try {
     const [recentListings, recentPayments, recentInquiries, recentSupport, recentReports, recentStays, recentHelpRequests, recentAppTickets, recentKycs, recentApplications, recentAgents, recentAppUpdates] = await Promise.all([
       Listing.find({ isDeleted: { $ne: true } }).sort({ createdAt: -1 }).limit(5).populate("landlord", "name"),
-      Payment.find({ status: "success" }).sort({ createdAt: -1 }).limit(5),
+      Payment.find(getReportablePaymentFilter()).sort({ createdAt: -1 }).limit(5),
       Inquiry.find().sort({ createdAt: -1 }).limit(5),
       SupportTicket.find().sort({ updatedAt: -1 }).limit(5).populate("landlord", "name"),
       ListingReport.find({ status: { $in: ["new", "reviewing"] } })
@@ -736,110 +735,6 @@ exports.getLandlords = async (req, res, next) => {
     res.json({
       success: true,
       landlords: enrichedLandlords
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-exports.getAdminPayments = async (req, res, next) => {
-  try {
-    const landlords = await User.find({ role: "landlord" })
-      .populate("subscription")
-      .sort({ createdAt: -1 });
-
-    const records = await Promise.all(
-      landlords.map(async (landlord) => {
-        const latestPayment = await Payment.findOne({
-          user: landlord._id
-        }).sort({ createdAt: -1 });
-
-        const totalPaidAgg = await Payment.aggregate([
-          {
-            $match: {
-              user: landlord._id,
-              status: "success"
-            }
-          },
-          {
-            $group: {
-              _id: "$user",
-              total: { $sum: "$amount" }
-            }
-          }
-        ]);
-
-        const totalPaid = totalPaidAgg[0]?.total || 0;
-
-        const activeListings = await Listing.countDocuments({
-          landlord: landlord._id,
-          isActive: true,
-          availability: "available"
-        });
-
-        const totalListings = await Listing.countDocuments({
-          landlord: landlord._id
-        });
-
-        const subscription = landlord.subscription;
-        const planConfig = subscription ? plans[subscription.plan] : null;
-
-        return {
-          _id: landlord._id,
-          landlord: {
-            _id: landlord._id,
-            name: landlord.name,
-            email: landlord.email,
-            phone: landlord.phone
-          },
-          subscription: subscription
-            ? {
-                plan: subscription.plan,
-                status: subscription.status,
-                currentPeriodStart: subscription.currentPeriodStart,
-                currentPeriodEnd: subscription.currentPeriodEnd,
-                gracePeriodEnd: subscription.gracePeriodEnd,
-                listingLimit: planConfig?.listingLimit || 0
-              }
-            : null,
-          activeListings,
-          totalListings,
-          totalPaid,
-          latestPayment: latestPayment
-            ? {
-                reference: latestPayment.reference,
-                amount: latestPayment.amount,
-                currency: latestPayment.currency,
-                plan: latestPayment.plan,
-                status: latestPayment.status,
-                paidAt: latestPayment.paidAt,
-                createdAt: latestPayment.createdAt
-              }
-            : null
-        };
-      })
-    );
-
-    const totalRevenueAgg = await Payment.aggregate([
-      {
-        $match: {
-          status: "success"
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$amount" }
-        }
-      }
-    ]);
-
-    const totalRevenue = totalRevenueAgg[0]?.total || 0;
-
-    res.json({
-      success: true,
-      totalRevenue,
-      records
     });
   } catch (error) {
     next(error);
@@ -1460,16 +1355,33 @@ exports.getPlatformHealth = async (req, res, next) => {
 
 exports.getAdminPayments = async (req, res, next) => {
   try {
-    const landlords = await User.find({ role: "landlord" })
+    const [landlords, payments, revenueAgg, successfulCount, unclassifiedSuccessfulCount] = await Promise.all([
+      User.find({ role: "landlord" })
       .populate("subscription")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 }),
+      Payment.find(getReportablePaymentFilter()).sort({ paidAt: -1, createdAt: -1 }).lean(),
+      Payment.aggregate([
+        { $match: getReportablePaymentFilter() },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      Payment.countDocuments(getReportablePaymentFilter()),
+      Payment.countDocuments({
+        status: "success",
+        $or: [{ paymentEnvironment: "unknown" }, { paymentEnvironment: { $exists: false } }]
+      })
+    ]);
+
+    const latestPayments = new Map();
+    const lifetimeTotals = new Map();
+    payments.forEach((payment) => {
+      const userId = String(payment.user);
+      if (!latestPayments.has(userId)) latestPayments.set(userId, payment);
+      lifetimeTotals.set(userId, (lifetimeTotals.get(userId) || 0) + Number(payment.amount || 0));
+    });
 
     const records = await Promise.all(
-      landlords.map(async (landlord) => {
-        const latestPayment = await Payment.findOne({
-          user: landlord._id,
-          paymentType: "subscription"
-        }).sort({ createdAt: -1 });
+      landlords.filter((landlord) => latestPayments.has(String(landlord._id))).map(async (landlord) => {
+        const latestPayment = latestPayments.get(String(landlord._id));
 
         const activeListings = await Listing.countDocuments({
           landlord: landlord._id,
@@ -1503,6 +1415,7 @@ exports.getAdminPayments = async (req, res, next) => {
             : null,
           activeListings,
           totalListings,
+          totalPaid: lifetimeTotals.get(String(landlord._id)) || 0,
           latestPayment: latestPayment
             ? {
                 reference: latestPayment.reference,
@@ -1510,6 +1423,7 @@ exports.getAdminPayments = async (req, res, next) => {
                 currency: latestPayment.currency,
                 plan: latestPayment.plan,
                 status: latestPayment.status,
+                paymentEnvironment: latestPayment.paymentEnvironment,
                 paidAt: latestPayment.paidAt,
                 createdAt: latestPayment.createdAt
               }
@@ -1520,6 +1434,9 @@ exports.getAdminPayments = async (req, res, next) => {
 
     res.json({
       success: true,
+      totalRevenue: revenueAgg[0]?.total || 0,
+      successfulTransactions: successfulCount,
+      unclassifiedSuccessfulTransactions: unclassifiedSuccessfulCount,
       records
     });
   } catch (error) {

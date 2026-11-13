@@ -37,12 +37,14 @@ const organizationRoutes = require("./modules/organizations/organization.routes"
 const propertyRequestRoutes = require("./modules/propertyRequests/propertyRequest.routes");
 const viewingRoutes = require("./modules/viewings/viewing.routes");
 const leadRoutes = require("./modules/leads/lead.routes");
+const analyticsRoutes = require("./modules/analytics/analytics.routes");
 const whatchimpWebhookRoutes = require("./modules/webhooks/whatchimpWebhook.routes");
 const { redactWebhookToken } = require("./modules/webhooks/whatchimpWebhook.logging");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
 morgan.token("url", (req) => redactWebhookToken(req.originalUrl || req.url));
+morgan.token("referrer", (req) => req.path.startsWith("/api/analytics/") ? "-" : (req.get("Referrer") || req.get("Referer") || "-"));
 const devOrigins = isProduction
   ? []
   : [
@@ -143,6 +145,7 @@ app.use("/api/organizations", organizationRoutes);
 app.use("/api/property-requests", propertyRequestRoutes);
 app.use("/api/viewings", viewingRoutes);
 app.use("/api/leads", leadRoutes);
+app.use("/api/analytics", analyticsRoutes);
 app.use("/", seoRoutes);
 
 app.use(errorHandler);

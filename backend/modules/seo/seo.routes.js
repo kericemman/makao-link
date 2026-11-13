@@ -6,6 +6,7 @@ const Blog = require("../blog/blog.model");
 const staticPages = [
   { path: "", changefreq: "daily", priority: "1.0" },
   { path: "/listings", changefreq: "daily", priority: "0.95" },
+  { path: "/categories/short-stays", changefreq: "daily", priority: "0.88" },
   { path: "/categories/rentals", changefreq: "daily", priority: "0.9" },
   { path: "/categories/for-sale", changefreq: "daily", priority: "0.9" },
   { path: "/categories/apartments", changefreq: "daily", priority: "0.85" },
@@ -121,3 +122,4 @@ ${urls.map(urlNode).join("")}
 });
 
 module.exports = router;
+module.exports.staticPages = staticPages;

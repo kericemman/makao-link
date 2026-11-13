@@ -29,7 +29,9 @@ const draftSchema = new mongoose.Schema({
   landlordUser: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   createdListing: { type: mongoose.Schema.Types.ObjectId, ref: "Listing", default: null },
   reviewNote: { type: String, trim: true, maxlength: 1000, default: "" },
-  accountSetupEmailSentAt: { type: Date, default: null }
+  accountSetupEmailSentAt: { type: Date, default: null },
+  lastPropertyEditedByAdmin: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  lastPropertyEditedAt: { type: Date, default: null }
 }, { timestamps: true, collection: "admin_assisted_listing_drafts" });
 
 draftSchema.index({ status: 1, createdAt: -1 });

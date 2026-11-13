@@ -1,9 +1,9 @@
-const { hasRole } = require("../modules/authorization/authorization.service");
+const { hasAdminAccess, sendDenied } = require("./adminAccess");
 
 const requireRole = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !hasRole(req.user, ...roles)) {
-      return res.status(403).json({ message: "Access denied" });
+    if (!req.user || !hasAdminAccess(req, roles)) {
+      return sendDenied(res);
     }
     next();
   };

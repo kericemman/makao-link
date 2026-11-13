@@ -28,6 +28,7 @@ const {
 } = require("../subscriptions/subscription.service");
 const { createEventKey, runIdempotentWebhookEvent } = require("./paystackWebhook.service");
 const { queueStatusNotificationSafely } = require("../renda-assistant/notifications.service");
+const { getPaystackEnvironment } = require("./paymentEnvironment");
 
 const addOneMonth = () => {
   const date = new Date();
@@ -349,6 +350,7 @@ const activateSubscription = async ({
       currency: currency || "KES",
       plan,
       status: "success",
+      paymentEnvironment: getPaystackEnvironment(),
       paidAt: new Date()
     });
   } else if (payment.status !== "success") {
@@ -360,6 +362,7 @@ const activateSubscription = async ({
     payment.currency = currency || "KES";
     payment.plan = plan;
     payment.status = "success";
+    payment.paymentEnvironment = getPaystackEnvironment();
     payment.paidAt = new Date();
     await payment.save();
   }

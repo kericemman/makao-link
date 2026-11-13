@@ -76,6 +76,7 @@ export const useSeo = ({
 
     document.title = pageTitle;
     setLink("canonical", canonical);
+    setLink("icon", image || defaultImage);
 
     setMeta('meta[name="description"]', {
       identity: { name: "description" },

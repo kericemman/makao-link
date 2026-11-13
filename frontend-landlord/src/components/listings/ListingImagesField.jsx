@@ -1,12 +1,12 @@
 import { FiCamera, FiTrash2, FiUpload } from "react-icons/fi";
 
-export default function ListingImagesField({ imagesCount, imageLimit, previews, error, disabled, processing, onFilesChange, onRemove }) {
+export default function ListingImagesField({ imagesCount, imageLimit, previews, error, disabled, processing, onFilesChange, onRemove, inputId = "image-upload", required = true }) {
   return <section className="rounded-md border border-[#E2E8F0] bg-white p-6 shadow-sm">
-    <h2 className="mb-4 flex items-center text-lg font-semibold text-[#0F172A]"><FiCamera className="mr-2 text-[#126542]" />Property Images <span className="ml-1 text-red-500">*</span></h2>
+    <h2 className="mb-4 flex items-center text-lg font-semibold text-[#0F172A]"><FiCamera className="mr-2 text-[#126542]" />Property Images {required && <span className="ml-1 text-red-500">*</span>}</h2>
     <div className="mb-4">
       <div className={`rounded-md border-2 border-dashed p-6 text-center transition-all ${error ? "border-red-300 bg-red-50" : "border-[#E2E8F0] hover:border-[#126542]"}`}>
-        <input type="file" multiple accept="image/*,.heic,.heif,.tif,.tiff" onChange={onFilesChange} className="hidden" id="image-upload" disabled={disabled} />
-        <label htmlFor="image-upload" className={`flex flex-col items-center ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
+        <input type="file" multiple accept="image/*,.heic,.heif,.tif,.tiff" onChange={onFilesChange} className="hidden" id={inputId} disabled={disabled} />
+        <label htmlFor={inputId} className={`flex flex-col items-center ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
           <FiUpload className="mb-2 text-3xl text-[#475569]" /><span className="text-sm text-[#475569]">Click to upload or drag and drop</span>
           <span className="mt-1 text-xs text-[#475569]">{processing ? "Preparing images..." : `Select multiple images. Large files are compressed before upload. Max ${imageLimit} images and 38 MB per upload.`}</span>
         </label>

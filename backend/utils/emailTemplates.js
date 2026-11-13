@@ -47,6 +47,37 @@ exports.passwordResetEmail = ({ name, resetUrl }) => {
   });
 };
 
+exports.adminManagerInvitationEmail = ({ name, setupUrl, loginUrl, permissions = [] }) => {
+  const isNewAccount = Boolean(setupUrl);
+  const safePermissions = permissions.map(escapeHtml).join(", ");
+  return buildEmailLayout({
+    title: "RendaHomes Admin Access",
+    greeting: `Hello ${escapeHtml(name)}`,
+    intro: isNewAccount
+      ? "A RendaHomes super admin has invited you to a limited-access admin manager account."
+      : "A RendaHomes super admin has granted admin manager access to your account.",
+    body: `<p><strong>Your assigned access:</strong> ${safePermissions || "No admin areas assigned"}</p>${isNewAccount ? "<p>Set your password with the single-use link below. It expires in 30 minutes. Email verification will still be required when you sign in.</p>" : "<p>Sign in with your existing account. Your access is limited to the areas listed above.</p>"}`,
+    ctaText: isNewAccount ? "Set Password" : "Open Admin Portal",
+    ctaUrl: setupUrl || loginUrl,
+    footerNote: "If you did not expect this access, contact a RendaHomes super admin."
+  });
+};
+
+exports.landlordOnboardingFollowupEmail = ({ name, whatsappUrl = "" }) => {
+  const help = whatsappUrl
+    ? `<p>Questions or stuck somewhere? <a href="${escapeHtml(whatsappUrl)}" style="color:#0D915C;font-weight:700;">Chat with RendaHomes on WhatsApp</a>.</p>`
+    : "<p>Questions or stuck somewhere? Reply to this email and our team will help.</p>";
+  return buildEmailLayout({
+    title: "Your first property listing is a few steps away",
+    greeting: `Hello ${escapeHtml(name)}`,
+    intro: "You created a RendaHomes landlord account, but it looks like you have not added a property yet.",
+    body: `<p>Your dashboard is ready whenever you are. You can add a property, save a draft, and return to finish it later.</p>${help}<p>This is a one-time setup reminder. You can ignore it if you have already started with our team.</p>`,
+    ctaText: "Continue in your landlord dashboard",
+    ctaUrl: `${landlordClientUrl}/dashboard`,
+    footerNote: "You received this service message because you created a RendaHomes landlord account."
+  });
+};
+
 exports.assistedLandlordSetupEmail = ({ name, planName, setupUrl, loginUrl, isPaidPlan = false }) => {
   return buildEmailLayout({
     title: "Your RendaHomes landlord account is ready",

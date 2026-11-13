@@ -26,7 +26,7 @@ const documents = {
           "Communications and requests: inquiries, replies, saved homes, property requirements, stay requests, viewing dates and messages, support tickets, partner applications and contact details you submit.",
           "Payments and subscriptions: plan selection, transaction references, payment status and subscription metadata. Paystack processes payment transactions; payment details are handled according to its own terms and privacy information.",
           "Assistant conversations: prompts, responses, consent records and limited conversation state when you choose to use Renda Assistant.",
-          "Technical/session information: security logs and essential browser storage used for sign-in, shared sessions and service preferences. We do not claim to use advertising or analytics trackers unless separately disclosed when introduced."
+          "Technical/session information: security logs and essential browser storage used for sign-in, shared sessions and service preferences. On the public website, we also count page views in daily aggregate form by normalized page type and broad traffic source or medium (such as Google, social, WhatsApp, email, direct or referral). This measures page views, not unique people. The analytics record does not contain a visitor ID, IP address, full referrer URL, search terms or campaign name. Repeated views may be counted more than once."
         ]
       },
       {
@@ -74,7 +74,7 @@ const documents = {
         paragraphs: [
           "Public property media and private verification documents are stored separately where supported. Private KYC or application documents are restricted and may be made available to authorized reviewers through time-limited access links. Do not share those links.",
           "We use technical and organizational safeguards, including account authentication, role-based access and restricted document access. No website, storage system or transmission method can be guaranteed completely secure. Please use a unique password, protect your device and tell us promptly if you suspect unauthorized access.",
-          "The portals use essential browser storage and cookies for authentication and shared sign-in between relevant RendaHomes subdomains. You can control browser storage through your browser settings, although removing it may sign you out or affect portal features."
+          "The portals use essential browser storage and cookies for authentication and shared sign-in between relevant RendaHomes subdomains. The public-site page-view measurement described above does not use an analytics cookie or persistent visitor identifier. You can control browser storage through your browser settings, although removing essential storage may sign you out or affect portal features."
         ]
       },
       {

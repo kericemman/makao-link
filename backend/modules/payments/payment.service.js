@@ -1,6 +1,7 @@
 const Payment = require("./payment.model");
 const Subscription = require("../subscriptions/subscription.model");
 const plans = require("./plan.config");
+const { getPaystackEnvironment } = require("./paymentEnvironment");
 
 const addOneMonth = (date = new Date()) => {
   const next = new Date(date);
@@ -42,6 +43,7 @@ const saveSuccessfulPayment = async (data) => {
     currency: data.currency || "KES",
     plan,
     status: "success",
+    paymentEnvironment: getPaystackEnvironment(),
     paidAt: new Date()
   });
 

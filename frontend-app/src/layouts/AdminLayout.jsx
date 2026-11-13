@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/useAuth";
 import {
+  FiActivity,
   FiBarChart2,
   FiAlertTriangle,
   FiBell,
@@ -25,6 +26,7 @@ import {
   FiShield,
   FiSmartphone,
   FiUsers,
+  FiUserPlus,
   FiX
 } from "react-icons/fi";
 import { FaBlog, FaBuilding, FaHandshake } from "react-icons/fa";
@@ -35,6 +37,7 @@ import {
   markAdminNotificationRead,
   markAllAdminNotificationsRead
 } from "../services/admin.service";
+import { canAccessAdminPath, hasSuperAdminRole } from "../utils/adminPermissions";
 
 const AdminLayout = () => {
   const { user, logout } = useAuth();
@@ -60,6 +63,19 @@ const AdminLayout = () => {
             path: "/admin/dashboard",
             icon: FiHome,
             description: "Platform snapshot"
+          },
+          {
+            label: "Website Traffic",
+            path: "/admin/traffic",
+            icon: FiActivity,
+            description: "Page views and traffic sources"
+          },
+          {
+            label: "Admin Managers",
+            path: "/admin/managers",
+            icon: FiUserPlus,
+            description: "Manage delegated access",
+            superAdminOnly: true
           }
         ]
       },
@@ -100,6 +116,12 @@ const AdminLayout = () => {
             path: "/admin/landlords",
             icon: FiUsers,
             description: "Owner accounts"
+          },
+          {
+            label: "Landlord Onboarding",
+            path: "/admin/onboarding",
+            icon: FiUserPlus,
+            description: "Setup progress and follow-ups"
           },
           {
             label: "Assisted Listing",
@@ -241,12 +263,20 @@ const AdminLayout = () => {
     []
   );
 
-  const flatItems = navigationSections.flatMap((section) => section.items);
+  const visibleNavigationSections = navigationSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) =>
+        (!item.superAdminOnly || hasSuperAdminRole(user)) && canAccessAdminPath(user, item.path)
+      )
+    }))
+    .filter((section) => section.items.length > 0);
+  const visibleFlatItems = visibleNavigationSections.flatMap((section) => section.items);
   const currentItem =
-    [...flatItems]
+    [...visibleFlatItems]
       .sort((a, b) => b.path.length - a.path.length)
       .find((item) => location.pathname === item.path || location.pathname.startsWith(`${item.path}/`)) ||
-    flatItems[0];
+    visibleFlatItems[0];
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -270,10 +300,11 @@ const AdminLayout = () => {
   };
 
   useEffect(() => {
+    if (!canAccessAdminPath(user, "/admin/dashboard")) return undefined;
     refreshNotifications(true);
     const interval = setInterval(() => refreshNotifications(), 45000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -488,7 +519,7 @@ const AdminLayout = () => {
           </div>
 
           <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
-            {navigationSections.map((section) => (
+            {visibleNavigationSections.map((section) => (
               <section key={section.title} className="space-y-2">
                 {isSidebarOpen && (
                   <p className="px-2.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#A8D8C1]/70">{section.title}</p>
@@ -535,7 +566,7 @@ const AdminLayout = () => {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <button
+              {canAccessAdminPath(user, "/admin/dashboard") && <button
                 onClick={openNotifications}
                 className="relative rounded-lg p-2.5 text-[#065A57] transition hover:bg-[#F0F7F4]"
                 aria-label="Notifications"
@@ -546,7 +577,7 @@ const AdminLayout = () => {
                     {unreadCount}
                   </span>
                 )}
-              </button>
+              </button>}
 
               <div className="relative">
                 <button

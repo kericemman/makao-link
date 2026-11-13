@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { validateAssistedListingDraft } = require("./assistedListingDraft.controller");
+const { validateAssistedListingDraft, validateAssistedListingEdit } = require("./assistedListingDraft.controller");
 
 const valid = {
   name: "Jane Landlord", email: "jane@example.test", phone: "+254712345678", package: "normal",
@@ -43,4 +43,25 @@ test("building-category inventory is restricted to Premium and Pro package draft
   assert.deepEqual(premium.issues, []);
   const free = validateAssistedListingDraft({ ...valid, totalUnits: "24", availableUnits: "18", portfolioName: "River Park", portfolioCategory: "One bedroom" }, [image]);
   assert.ok(free.issues.some((issue) => issue.includes("Premium and Pro")));
+});
+
+test("approved assisted property can be edited without re-uploading its existing photos", () => {
+  const edit = validateAssistedListingEdit({
+    ...valid,
+    amenities: JSON.stringify({ garden: true }),
+    latitude: "-1.286389",
+    longitude: "36.817223"
+  }, [], { packageName: "normal", existingImageCount: 5 });
+  assert.deepEqual(edit.issues, []);
+  assert.equal(edit.imageLimit, 15);
+  assert.equal(edit.amenities.garden, true);
+});
+
+test("approved assisted edit enforces package image limits and valid location/amenity fields", () => {
+  const tooMany = validateAssistedListingEdit({ ...valid, amenities: "{}" }, Array.from({ length: 31 }, () => image), { packageName: "basic" });
+  assert.ok(tooMany.issues.some((issue) => issue.includes("30 images")));
+  const invalid = validateAssistedListingEdit({ ...valid, town: "mombasa", contactPhone: "0712345678", amenities: JSON.stringify({ admin: true }) }, [], { packageName: "normal", existingImageCount: 1 });
+  assert.ok(invalid.issues.some((issue) => issue.includes("town")));
+  assert.ok(invalid.issues.some((issue) => issue.includes("contact phone")));
+  assert.ok(invalid.issues.some((issue) => issue.includes("Amenities")));
 });

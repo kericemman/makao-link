@@ -37,7 +37,9 @@ const buildAuthUser = (user) => ({
   landlordOwner: user.landlordOwner || null,
   teamRole: user.teamRole || null,
   teamPermissions: user.teamPermissions || [],
-  teamStatus: user.teamStatus || null
+  teamStatus: user.teamStatus || null,
+  adminPermissions: user.adminPermissions || [],
+  adminManagerStatus: user.adminManagerStatus || null
 });
 
 const hashOtp = (otp) =>

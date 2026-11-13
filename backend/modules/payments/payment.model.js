@@ -58,6 +58,13 @@ const paymentSchema = new mongoose.Schema(
       required: true
     },
 
+    paymentEnvironment: {
+      type: String,
+      enum: ["live", "test", "unknown"],
+      default: "unknown",
+      index: true
+    },
+
     paidAt: {
       type: Date,
       default: null

@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const cron = require("node-cron");
 const purgeDeletedListings = require("./jobs/purgeDeletedListings");
 const { processScheduledFreeDowngrades } = require("./modules/subscriptions/subscription.service");
+const { runLandlordOnboardingFollowups } = require("./modules/admin/landlordOnboarding.service");
 
 const PORT = process.env.PORT || 5000;
 
@@ -16,6 +17,15 @@ cron.schedule("30 3 * * *", async () => {
     await processScheduledFreeDowngrades();
   } catch (error) {
     console.error("Scheduled subscription downgrade job failed:", error.message);
+  }
+});
+
+cron.schedule("15 * * * *", async () => {
+  try {
+    const result = await runLandlordOnboardingFollowups();
+    if (result.sent) console.log(`Landlord onboarding follow-ups sent: ${result.sent}`);
+  } catch (error) {
+    console.error("Landlord onboarding follow-up job failed:", error.message);
   }
 });
 

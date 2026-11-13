@@ -31,8 +31,11 @@ const {
 const { protect } = require("../../middleware/auth.middleware");
 const requireRole = require("../../middleware/role.middleware");
 const listingUpload = require("../listings/listingUpload.middleware");
-const { createAssistedListingDraft, getAssistedListingDrafts, approveAssistedListingDraft, rejectAssistedListingDraft, resendAssistedLandlordSetupEmail } = require("./assistedListingDraft.controller");
+const { createAssistedListingDraft, getAssistedListingDrafts, getApprovedAssistedListing, updateApprovedAssistedListing, setAssistedListingImageLimit, approveAssistedListingDraft, rejectAssistedListingDraft, resendAssistedLandlordSetupEmail } = require("./assistedListingDraft.controller");
 const { createAssistedServiceApplication } = require("./assistedServiceApplication.controller");
+const adminManagers = require("./adminManager.controller");
+const landlordOnboarding = require("./landlordOnboarding.controller");
+const { getTrafficSummary } = require("../analytics/trafficAnalytics.controller");
 
 const allowAdminDraftImageCount = (req, _res, next) => {
   req.maxListingImages = 30;
@@ -43,12 +46,22 @@ router.get("/summary", protect, requireRole("admin"), getAdminSummary);
 router.get("/overview-trends", protect, requireRole("admin"), getAdminOverviewTrends);
 router.get("/overview-commercial", protect, requireRole("admin"), getAdminCommercialOverview);
 router.get("/platform-health", protect, requireRole("admin"), getPlatformHealth);
+router.get("/traffic", protect, requireRole("admin"), getTrafficSummary);
 router.get("/notifications", protect, requireRole("admin"), getAdminNotifications);
 router.patch("/notifications/read-all", protect, requireRole("admin"), markAllAdminNotificationsRead);
 router.patch("/notifications/:id/read", protect, requireRole("admin"), markAdminNotificationRead);
 router.get("/landlords", protect, requireRole("admin"), getLandlords);
+router.get("/managers", protect, requireRole("admin"), adminManagers.getAdminManagers);
+router.post("/managers", protect, requireRole("admin"), adminManagers.createAdminManager);
+router.patch("/managers/:id/permissions", protect, requireRole("admin"), adminManagers.updateAdminManagerPermissions);
+router.post("/managers/:id/revoke", protect, requireRole("admin"), adminManagers.revokeAdminManager);
+router.post("/managers/:id/resend-invitation", protect, requireRole("admin"), adminManagers.resendAdminManagerInvitation);
+router.get("/landlord-onboarding", protect, requireRole("admin"), landlordOnboarding.getLandlordOnboarding);
+router.post("/landlord-onboarding/:userId/retry-followup", protect, requireRole("admin"), landlordOnboarding.retryLandlordFollowup);
 router.get("/assisted-listing-drafts", protect, requireRole("admin"), getAssistedListingDrafts);
 router.post("/assisted-listing-drafts", protect, requireRole("admin"), allowAdminDraftImageCount, listingUpload, createAssistedListingDraft);
+router.get("/assisted-listing-drafts/:id/listing", protect, requireRole("admin"), getApprovedAssistedListing);
+router.put("/assisted-listing-drafts/:id/listing", protect, requireRole("admin"), setAssistedListingImageLimit, listingUpload, updateApprovedAssistedListing);
 router.patch("/assisted-listing-drafts/:id/approve", protect, requireRole("admin"), approveAssistedListingDraft);
 router.patch("/assisted-listing-drafts/:id/reject", protect, requireRole("admin"), rejectAssistedListingDraft);
 router.post("/assisted-listing-drafts/:id/resend-setup", protect, requireRole("admin"), resendAssistedLandlordSetupEmail);

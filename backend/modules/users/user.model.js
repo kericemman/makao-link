@@ -73,14 +73,26 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["user", "tenant", "landlord", "landlord_staff", "admin", "service_provider", "agent", "app_manager"],
+      enum: ["user", "tenant", "landlord", "landlord_staff", "admin", "admin_manager", "service_provider", "agent", "app_manager"],
       default: "user"
     },
 
     // `role` remains the legacy primary role; `roles` supports additional, explicitly granted identities.
     roles: {
-      type: [{ type: String, enum: ["user", "tenant", "landlord", "landlord_staff", "admin", "service_provider", "agent", "app_manager"] }],
+      type: [{ type: String, enum: ["user", "tenant", "landlord", "landlord_staff", "admin", "admin_manager", "service_provider", "agent", "app_manager"] }],
       default: []
+    },
+
+    adminPermissions: {
+      type: [{ type: String, enum: require("../admin/adminPermissions").ADMIN_PERMISSION_KEYS }],
+      default: []
+    },
+
+    adminManagerStatus: {
+      type: String,
+      enum: ["active", "revoked", null],
+      default: null,
+      index: true
     },
 
     agentCode: {
@@ -280,6 +292,8 @@ userSchema.pre("validate", function () {
 });
 
 userSchema.index({ phoneCanonical: 1 }, { unique: true, sparse: true });
+userSchema.index({ role: 1, isEmailVerified: 1, createdAt: 1 });
+userSchema.index({ roles: 1, isEmailVerified: 1, createdAt: 1 });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return bcrypt.compare(enteredPassword, this.password);

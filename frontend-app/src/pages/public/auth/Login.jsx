@@ -17,6 +17,7 @@ import {
 } from "react-icons/fi";
 import { FaBuilding, FaKey, FaHandshake } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { getAdminHomePath, hasSuperAdminRole } from "../../../utils/adminPermissions";
 
 const LoginPage = () => {
   useEffect(() => {
@@ -79,7 +80,8 @@ const LoginPage = () => {
       setError("");
 
       const data = await loginLandlord(formData);
-      if (data.user?.role !== "admin") {
+      const roles = [...new Set([...(data.user?.roles || []), data.user?.role].filter(Boolean))];
+      if (!hasSuperAdminRole(data.user) && !roles.includes("admin_manager")) {
         setError("This portal is only for RendaHomes administrators.");
         toast.error("This portal is only for administrators", {
           style: {
@@ -100,7 +102,7 @@ const LoginPage = () => {
         duration: 2000
       });
 
-      navigate("/admin/dashboard");
+      navigate(getAdminHomePath(data.user));
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
       toast.error(err.response?.data?.message || "Login failed", {

@@ -3,10 +3,8 @@ import { getAdminPayments } from "../../services/admin.service";
 import {
   FiAlertCircle,
   FiCheckCircle,
-  FiClock,
   FiCreditCard,
   FiDownload,
-  FiInfo,
   FiRefreshCw,
   FiSearch,
 } from "react-icons/fi";
@@ -14,23 +12,10 @@ import toast from "react-hot-toast";
 
 const subscriptionStatus = {
   free: "bg-[#F1F5F3] text-[#526760]",
-  pending_payment: "bg-amber-50 text-amber-800",
   active: "bg-emerald-50 text-emerald-800",
   grace: "bg-orange-50 text-orange-800",
   expired: "bg-red-50 text-red-700",
   cancelled: "bg-[#F1F5F3] text-[#526760]",
-};
-
-const paymentStatus = {
-  success: "bg-emerald-50 text-emerald-800",
-  failed: "bg-red-50 text-red-700",
-  pending: "bg-amber-50 text-amber-800",
-};
-
-const paymentIcons = {
-  success: FiCheckCircle,
-  failed: FiAlertCircle,
-  pending: FiClock,
 };
 
 const formatDate = (date) => {
@@ -58,6 +43,7 @@ const escapeCsv = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
 
 const AdminPaymentsPage = () => {
   const [records, setRecords] = useState([]);
+  const [paymentSummary, setPaymentSummary] = useState({ totalRevenue: 0, successfulTransactions: 0, unclassifiedSuccessfulTransactions: 0 });
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState("all");
@@ -70,6 +56,11 @@ const AdminPaymentsPage = () => {
       setError("");
       const data = await getAdminPayments();
       setRecords(data.records || []);
+      setPaymentSummary({
+        totalRevenue: Number(data.totalRevenue) || 0,
+        successfulTransactions: Number(data.successfulTransactions) || 0,
+        unclassifiedSuccessfulTransactions: Number(data.unclassifiedSuccessfulTransactions) || 0,
+      });
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load payment records");
       toast.error("Failed to load payment records", {
@@ -114,15 +105,14 @@ const AdminPaymentsPage = () => {
   }, [records, filter, searchTerm, dateRange]);
 
   const stats = useMemo(() => ({
-    accounts: records.length,
-    latestPaymentValue: records.reduce((sum, record) =>
-      sum + (record.latestPayment?.status === "success" ? Number(record.latestPayment.amount) || 0 : 0), 0),
+    payingLandlords: records.length,
+    revenue: paymentSummary.totalRevenue,
+    successfulTransactions: paymentSummary.successfulTransactions,
     activeSubscriptions: records.filter((record) => record.subscription?.status === "active").length,
-    pendingSubscriptions: records.filter((record) => record.subscription?.status === "pending_payment").length,
-  }), [records]);
+  }), [records, paymentSummary]);
 
   const exportPayments = () => {
-    const columns = ["landlord", "email", "subscription_status", "plan", "reference", "payment_status", "amount", "currency", "paid_at"];
+    const columns = ["landlord", "email", "subscription_status", "plan", "reference", "payment_status", "payment_environment", "amount", "currency", "paid_at"];
     const rows = filteredRecords.map((record) => [
       record.landlord?.name,
       record.landlord?.email,
@@ -130,6 +120,7 @@ const AdminPaymentsPage = () => {
       record.latestPayment?.plan || record.subscription?.plan,
       record.latestPayment?.reference,
       record.latestPayment?.status,
+      record.latestPayment?.paymentEnvironment,
       record.latestPayment?.amount,
       record.latestPayment?.currency || "KES",
       record.latestPayment?.paidAt,
@@ -172,7 +163,7 @@ const AdminPaymentsPage = () => {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0D915C]">Revenue</p>
           <h1 className="mt-1 text-2xl font-semibold text-[#013E43]">Payments</h1>
-          <p className="mt-1 text-sm text-[#647C75]">Review landlord billing activity and latest transaction status.</p>
+          <p className="mt-1 text-sm text-[#647C75]">Confirmed successful live Paystack transactions only.</p>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={fetchPayments} title="Refresh payments" aria-label="Refresh payments" className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#DDEAE3] text-[#41635A] transition hover:bg-[#F1F7F3]">
@@ -186,10 +177,10 @@ const AdminPaymentsPage = () => {
 
       <section aria-label="Payment overview" className="grid grid-cols-2 border-y border-[#DDEAE3] sm:grid-cols-4">
         {[
-          ["Landlord accounts", stats.accounts],
-          ["Latest successful payment value", formatCurrency(stats.latestPaymentValue)],
+          ["Paying landlords", stats.payingLandlords],
+          ["Confirmed live revenue", formatCurrency(stats.revenue)],
           ["Active subscriptions", stats.activeSubscriptions],
-          ["Awaiting payment", stats.pendingSubscriptions],
+          ["Successful transactions", stats.successfulTransactions],
         ].map(([label, value], index) => (
           <div key={label} className={`py-4 ${index % 2 ? "pl-4 sm:pl-5" : "pr-4 sm:pr-5"} ${index > 1 ? "border-t border-[#DDEAE3] sm:border-t-0" : ""} ${index > 0 ? "sm:border-l sm:border-[#DDEAE3] sm:pl-5" : ""}`}>
             <p className="text-xs font-medium text-[#647C75]">{label}</p>
@@ -197,7 +188,7 @@ const AdminPaymentsPage = () => {
           </div>
         ))}
       </section>
-      <p className="-mt-4 text-xs text-[#647C75]">Payment value sums each landlord account’s latest successful transaction only; it is not lifetime revenue.</p>
+      {paymentSummary.unclassifiedSuccessfulTransactions > 0 ? <p role="status" className="border-l-2 border-amber-500 bg-amber-50 px-3 py-2 text-xs text-amber-900">{paymentSummary.unclassifiedSuccessfulTransactions} older successful payment record(s) have no recorded Paystack environment. They are excluded from live revenue until reconciled; no records were deleted.</p> : null}
 
       <section aria-label="Payment filters" className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <label className="relative min-w-0 flex-1">
@@ -208,7 +199,6 @@ const AdminPaymentsPage = () => {
           <select aria-label="Filter by subscription status" value={filter} onChange={(event) => setFilter(event.target.value)} className="h-11 min-w-0 rounded-lg border border-[#DDEAE3] bg-white px-3 text-sm text-[#013E43] outline-none focus:border-[#0D915C]">
             <option value="all">All statuses</option>
             <option value="active">Active</option>
-            <option value="pending_payment">Pending payment</option>
             <option value="grace">Grace</option>
             <option value="expired">Expired</option>
             <option value="cancelled">Cancelled</option>
@@ -224,7 +214,7 @@ const AdminPaymentsPage = () => {
       </section>
 
       <div className="flex items-center justify-between border-b border-[#DDEAE3] pb-2 text-xs text-[#647C75]">
-        <span>{filteredRecords.length} of {records.length} landlord accounts</span>
+        <span>{filteredRecords.length} of {records.length} landlords with confirmed live payments</span>
       </div>
 
       {filteredRecords.length === 0 ? (
@@ -237,8 +227,6 @@ const AdminPaymentsPage = () => {
         <div className="divide-y divide-[#E7EFEB]">
           {filteredRecords.map((record) => {
             const latest = record.latestPayment;
-            const paymentState = latest?.status || "none";
-            const PaymentIcon = paymentIcons[paymentState] || FiInfo;
             const subscriptionState = record.subscription?.status || "free";
             return (
               <article key={record._id} className="grid gap-4 py-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(190px,0.8fr)_minmax(180px,0.75fr)_auto] lg:items-center">
@@ -266,13 +254,13 @@ const AdminPaymentsPage = () => {
                       <p className="text-sm font-semibold text-[#013E43]">{formatCurrency(latest.amount, latest.currency)}</p>
                       <p className="truncate font-mono text-xs text-[#647C75]">{latest.reference || "No reference"}</p>
                     </>
-                  ) : <p className="text-sm text-[#647C75]">No payment recorded</p>}
+                  ) : null}
                   {latest?.paidAt && <p className="text-xs text-[#647C75]">{formatDate(latest.paidAt)}</p>}
                 </div>
 
                 <div className="flex items-center gap-2 lg:justify-end">
-                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${paymentStatus[paymentState] || "bg-[#F1F5F3] text-[#526760]"}`}>
-                    <PaymentIcon aria-hidden="true" />{paymentState === "none" ? "No payment" : paymentState}
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold capitalize text-emerald-800">
+                    <FiCheckCircle aria-hidden="true" />Confirmed
                   </span>
                 </div>
               </article>

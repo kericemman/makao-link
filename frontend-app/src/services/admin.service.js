@@ -20,6 +20,11 @@ export const getAdminPlatformHealth = async () => {
   return response.data;
 };
 
+export const getAdminTrafficSummary = async (range = "30d") => {
+  const response = await api.get("/admin/traffic", { params: { range } });
+  return response.data;
+};
+
 export const getAdminStayRequests = async () => {
   const response = await api.get("/admin/stay-requests");
   return response.data;
@@ -218,6 +223,18 @@ export const updateUpdate = (id, payload) => api.patch(`/admin/updates/${id}`, p
 export const deleteUpdate = (id) => api.delete(`/admin/updates/${id}`);
 
 export const getSubscribers = () => api.get("/admin/subscribers");
+
+export const getAdminManagers = async () => (await api.get("/admin/managers")).data;
+export const createAdminManager = async (payload) => (await api.post("/admin/managers", payload)).data;
+export const updateAdminManagerPermissions = async (id, permissions) =>
+  (await api.patch(`/admin/managers/${id}/permissions`, { permissions })).data;
+export const revokeAdminManager = async (id) => (await api.post(`/admin/managers/${id}/revoke`)).data;
+export const resendAdminManagerInvitation = async (id) =>
+  (await api.post(`/admin/managers/${id}/resend-invitation`)).data;
+export const getLandlordOnboarding = async (params = {}) =>
+  (await api.get("/admin/landlord-onboarding", { params })).data;
+export const retryLandlordFollowup = async (userId) =>
+  (await api.post(`/admin/landlord-onboarding/${userId}/retry-followup`)).data;
 
 export const getPolicies = () => api.get("/admin/policies");
 export const upsertPolicy = (payload) => api.post("/admin/policies", payload);

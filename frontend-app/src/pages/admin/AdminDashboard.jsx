@@ -48,7 +48,6 @@ const defaultSummary = {
   totalInquiries: 0,
   totalRevenue: 0,
   activeSubscriptions: 0,
-  pendingPayments: 0,
   totalSupportTickets: 0,
   openSupportTickets: 0,
   pendingKycReviews: 0,
@@ -195,7 +194,6 @@ export default function AdminDashboard() {
     { label: "Website support tickets", value: summary.openSupportTickets, path: "/admin/support", icon: FiHelpCircle },
     { label: "Mobile app support tickets", value: summary.openAppSupportTickets, path: "/admin/app/support-help?tab=tickets", icon: FiSmartphone },
     { label: "Property help requests", value: summary.newHelpRequests, path: "/admin/app/support-help?tab=requests", icon: FiBriefcase },
-    { label: "Subscriptions awaiting payment", value: summary.pendingPayments, path: "/admin/payments", icon: FiCreditCard }
   ];
   const actionCount = actionQueues.reduce((total, queue) => total + queue.value, 0);
   const activityItems = useMemo(() => {
@@ -320,7 +318,6 @@ export default function AdminDashboard() {
             <div className="mt-4 divide-y divide-[#EEF4F0] border-y border-[#EEF4F0]">
               <AddonStatus label="Auto-renewing" value={commercialData.whatsappAddon?.autoRenewing || 0} />
               <AddonStatus label="Non-renewing, access not expired" value={commercialData.whatsappAddon?.nonRenewing || 0} />
-              <AddonStatus label="Payment pending" value={commercialData.whatsappAddon?.pendingPayment || 0} />
               <AddonStatus label="Past due" value={commercialData.whatsappAddon?.pastDue || 0} />
             </div>
             <div className="mt-3 flex justify-between gap-3 text-xs"><span className="text-[#647C75]">Estimated monthly recurring</span><strong className="text-[#013E43]">{formatCurrency(commercialData.whatsappAddon?.estimatedMonthlyRecurring || 0)}</strong></div>
@@ -355,7 +352,7 @@ function PlanMixRow({ plan, total }) {
   return <div>
     <div className="flex items-center justify-between gap-3 text-xs"><span className="font-semibold text-[#013E43]">{label}</span><span className="text-[#647C75]">{formatNumber(plan.current)} current</span></div>
     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#EEF4F0]"><div className="h-full rounded-full bg-[#16865A] transition-all" style={{ width: `${percentage}%` }} /></div>
-    <div className="mt-1 flex flex-wrap gap-x-3 text-[10px] text-[#83958E]"><span>{percentage}% of landlords</span>{plan.grace ? <span>{formatNumber(plan.grace)} grace</span> : null}{plan.pending ? <span>{formatNumber(plan.pending)} awaiting payment</span> : null}</div>
+    <div className="mt-1 flex flex-wrap gap-x-3 text-[10px] text-[#83958E]"><span>{percentage}% of landlords</span>{plan.grace ? <span>{formatNumber(plan.grace)} grace</span> : null}</div>
   </div>;
 }
 
