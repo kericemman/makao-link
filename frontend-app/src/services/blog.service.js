@@ -35,6 +35,13 @@ export const updateBlog = async (id, formData) => {
   return response.data;
 };
 
+export const uploadBlogImage = async (file) => {
+  const formData = new FormData();
+  formData.append("image", file);
+  const response = await api.post("/blog/admin/images", formData);
+  return response.data.image;
+};
+
 export const deleteBlog = async (id) => {
   const response = await api.delete(`/blog/admin/${id}`);
   return response.data;

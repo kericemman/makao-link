@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   createBlog,
   getAdminBlogById,
+  uploadBlogImage,
   updateBlog
 } from "../../../services/blog.service";
 import RichText from "./RichText";
@@ -336,6 +337,7 @@ const AdminBlogEditorPage = () => {
 
               <RichText
                 value={formData.content}
+                onUploadImage={uploadBlogImage}
                 onChange={(html) =>
                   setFormData((prev) => ({
                     ...prev,
